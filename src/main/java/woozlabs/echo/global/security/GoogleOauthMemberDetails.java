@@ -16,6 +16,11 @@ public class GoogleOauthMemberDetails implements OAuth2User {
         this.member = member;
     }
 
+    public GoogleOauthMemberDetails(Member member, Map<String, Object> attributes){
+        this.member = member;
+        this.attributes = attributes;
+    }
+
     @Override
     public Map<String, Object> getAttributes() {
         return this.attributes;
@@ -24,13 +29,8 @@ public class GoogleOauthMemberDetails implements OAuth2User {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Collection<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add((GrantedAuthority) () -> "ROLE_USER");
+        authorities.add((GrantedAuthority) () -> member.getRole().getValue());
         return authorities;
-    }
-
-    public GoogleOauthMemberDetails(Member member, Map<String, Object> attributes){
-        this.member = member;
-        this.attributes = attributes;
     }
 
     @Override

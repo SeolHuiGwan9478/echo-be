@@ -21,6 +21,8 @@ public class Member {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String email;
+    @Enumerated(EnumType.STRING)
+    private Role role;
     @CreatedDate
     private LocalDateTime createdAt;
     @LastModifiedDate

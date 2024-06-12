@@ -11,6 +11,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import woozlabs.echo.global.constant.GlobalConstant;
 
 import java.util.List;
 
@@ -37,10 +38,10 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         // cors 설정
-        config.setAllowedOriginPatterns(List.of("http://127.0.0.1:3000", "http://localhost:3000"));
+        config.setAllowedOriginPatterns(List.of(GlobalConstant.FE_HOST_ADDRESS));
         config.addAllowedMethod("*");
         config.addAllowedHeader("*");
-        config.addExposedHeader("Set-Cookie");
+        //config.addExposedHeader("Set-Cookie");
         config.setAllowCredentials(true);
         // source -> config 적용
         source.registerCorsConfiguration("/**", config);
