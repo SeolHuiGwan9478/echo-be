@@ -11,6 +11,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import woozlabs.echo.domain.member.service.CustomOAuth2UserService;
 import woozlabs.echo.global.constant.GlobalConstant;
 
 import java.util.List;
@@ -19,17 +20,21 @@ import java.util.List;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final CustomOAuth2UserService oAuth2UserService;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(httpSecuritySessionManagementConfigurer ->
-                        httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
-        http.authorizeHttpRequests((configure) -> {
-            configure.anyRequest().permitAll();
-        });
+                        httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests((configure) -> configure.anyRequest().permitAll())
+                .oauth2Login((oauth2) -> oauth2
+                        .userInfoEndpoint(endpoint -> endpoint.userService(oAuth2UserService))
+                        //.successHandler(oAuth2SuccessHandler)
+                );
         return http.build();
     }
 
