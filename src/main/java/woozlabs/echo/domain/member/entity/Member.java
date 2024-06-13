@@ -18,13 +18,26 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 public class Member {
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String email;
+
+    private String name;
+
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    private String provider;
+
+    private String providerId;
+
+    private String profileImage;
+
     @CreatedDate
     private LocalDateTime createdAt;
+
     @LastModifiedDate
     private LocalDateTime updatedAt;
 }
