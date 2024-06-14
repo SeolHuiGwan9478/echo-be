@@ -8,11 +8,14 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import woozlabs.echo.domain.member.service.CustomOAuth2UserService;
 import woozlabs.echo.global.constant.GlobalConstant;
+import woozlabs.echo.global.security.filter.JwtAuthenticationFilter;
+import woozlabs.echo.global.security.handler.OAuth2SuccessHandler;
 
 import java.util.List;
 
@@ -22,6 +25,8 @@ import java.util.List;
 public class SecurityConfig {
 
     private final CustomOAuth2UserService oAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
@@ -33,8 +38,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests((configure) -> configure.anyRequest().permitAll())
                 .oauth2Login((oauth2) -> oauth2
                         .userInfoEndpoint(endpoint -> endpoint.userService(oAuth2UserService))
-                        //.successHandler(oAuth2SuccessHandler)
-                );
+                        .successHandler(oAuth2SuccessHandler)
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
