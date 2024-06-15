@@ -53,8 +53,8 @@ public class RestTemplateConfig {
                 .setSoTimeout(Timeout.ofMilliseconds(5000))
                 .build();
         return PoolingHttpClientConnectionManagerBuilder.create()
-                .setMaxConnTotal(500)
-                .setMaxConnPerRoute(100)
+                .setMaxConnTotal(200)
+                .setMaxConnPerRoute(50)
                 .setDefaultSocketConfig(socketConfig)
                 .setDefaultConnectionConfig(connectionConfig)
                 .build();

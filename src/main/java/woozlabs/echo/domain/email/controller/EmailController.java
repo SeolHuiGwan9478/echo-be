@@ -1,5 +1,6 @@
 package woozlabs.echo.domain.email.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -7,8 +8,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import woozlabs.echo.domain.email.dto.GetUserEmailMessagesResponse;
 import woozlabs.echo.domain.email.service.EmailService;
+import woozlabs.echo.global.constant.GlobalConstant;
+import woozlabs.echo.global.dto.ErrorResponse;
 import woozlabs.echo.global.dto.ResponseDto;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @Slf4j
@@ -19,21 +26,13 @@ public class EmailController {
     public ResponseEntity<ResponseDto> getEmails(@RequestParam("accessToken") String accessToken){
         log.info("Request to get my emails");
         try {
-            emailService.getEmailMessages(accessToken);
-        }catch (Exception e){
-            System.out.println(e.getMessage());
+            GetUserEmailMessagesResponse response = emailService.getEmailMessages(accessToken);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (JsonProcessingException e){
+            Map<String, String> errors = new HashMap<>();
+            errors.put(GlobalConstant.EMAIL_ERR_MSG_KEY, e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse(errors);
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @GetMapping("/api/v1/email/sync/messages")
-    public ResponseEntity<ResponseDto> syncGetEmails(@RequestParam("accessToken") String accessToken){
-        log.info("Sync request to get my emails");
-        try {
-            emailService.syncGetEmailMessages(accessToken);
-        }catch (Exception e){
-            System.out.println(e.getMessage());
-        }
-        return new ResponseEntity<>(HttpStatus.OK);
     }
 }
