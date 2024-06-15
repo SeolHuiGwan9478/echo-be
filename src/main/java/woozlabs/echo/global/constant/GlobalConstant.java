@@ -14,5 +14,7 @@ public final class GlobalConstant {
     // Member Error Message
     public static final String NOT_FOUND_MEMBER_ERR_MSG = "Not Found: Member";
     // Email Error Message
+    public static final String EMAIL_ERR_MSG_KEY = "EmailException";
+    public static final String REQUEST_GMAIL_USER_MESSAGES_LIST_API_ERR_MSG = "Internal Server Error: Request gmail messages get list api";
     public static final String REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG = "Internal Server Error: Request gmail messages get one api";
 }
