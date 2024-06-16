@@ -10,8 +10,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Getter
@@ -19,9 +17,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class Member {
+public class SubAccount {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String email;
@@ -37,8 +36,9 @@ public class Member {
 
     private String profileImage;
 
-    @OneToMany(mappedBy = "superAccount", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SubAccount> subAccounts = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "super_account_id")
+    private Member superAccount;
 
     @CreatedDate
     private LocalDateTime createdAt;
