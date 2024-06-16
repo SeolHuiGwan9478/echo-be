@@ -8,6 +8,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -15,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SubAccount extends BaseEntity {
+public class SuperAccount extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,7 +36,11 @@ public class SubAccount extends BaseEntity {
 
     private String profileImage;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "super_account_id")
-    private SuperAccount superAccount;
+    @OneToMany(mappedBy = "superAccount", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SubAccount> subAccounts = new ArrayList<>();
+
+    public void addSubAccount(SubAccount subAccount) {
+        subAccounts.add(subAccount);
+        subAccount.setSuperAccount(this);
+    }
 }
