@@ -19,10 +19,6 @@ import java.sql.Connection;
 
 @Configuration
 public class RestTemplateConfig {
-    @Bean
-    public ObjectMapper objectMapper(){
-        return new ObjectMapper();
-    }
 
     @Bean
     public RestTemplate buildRestTemplate(RestTemplateBuilder restTemplateBuilder){
