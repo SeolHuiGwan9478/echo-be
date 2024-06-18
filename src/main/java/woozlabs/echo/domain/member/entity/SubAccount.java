@@ -34,6 +34,12 @@ public class SubAccount extends BaseEntity {
 
     private String profileImage;
 
+    private String JwtToken;
+
+    private String googleAccessToken;
+
+    private String googleRefreshToken;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "super_account_id")
     private SuperAccount superAccount;

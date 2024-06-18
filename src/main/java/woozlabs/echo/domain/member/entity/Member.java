@@ -36,4 +36,7 @@ public class Member extends BaseEntity {
     private String providerId;
 
     private String profileImage;
+
+    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private SuperAccount superAccount;
 }

@@ -36,6 +36,16 @@ public class SuperAccount extends BaseEntity {
 
     private String profileImage;
 
+    private String JwtToken;
+
+    private String googleAccessToken;
+
+    private String googleRefreshToken;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private Member member;
+
     @OneToMany(mappedBy = "superAccount", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SubAccount> subAccounts = new ArrayList<>();
 
