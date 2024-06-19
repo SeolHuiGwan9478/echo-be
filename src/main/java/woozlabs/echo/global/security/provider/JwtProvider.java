@@ -30,12 +30,12 @@ public class JwtProvider {
 
     public String generateToken(String subject, Long accessTokenExpiration) {
         Date now = new Date();
-        Date expiration = new Date(now.getTime() + accessTokenExpiration);
+        //Date expiration = new Date(now.getTime() + accessTokenExpiration);
 
         return Jwts.builder()
                 .subject(subject)
                 .issuedAt(now)
-                .expiration(expiration) // 2 hours expiration
+                //.expiration(expiration) 만료기한 무제한으로 설정 | 240618 ldhbenecia
                 .signWith(key)
                 .compact();
     }
