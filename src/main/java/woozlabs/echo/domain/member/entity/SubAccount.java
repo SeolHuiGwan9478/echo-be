@@ -21,24 +21,17 @@ public class SubAccount extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String uid;
+    private String displayName;
     private String email;
+    private boolean emailVerified;
+    private String photoURL;
 
-    private String name;
+    private String googleAccessToken;
+    private String subToken;
 
     @Enumerated(EnumType.STRING)
     private Role role;
-
-    private String provider;
-
-    private String providerId;
-
-    private String profileImage;
-
-    private String JwtToken;
-
-    private String googleAccessToken;
-
-    private String googleRefreshToken;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "super_account_id")

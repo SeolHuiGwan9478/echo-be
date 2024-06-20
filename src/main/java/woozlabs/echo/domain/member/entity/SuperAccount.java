@@ -23,24 +23,19 @@ public class SuperAccount extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String uid;
+    private String displayName;
     private String email;
-
-    private String name;
-
-    @Enumerated(EnumType.STRING)
-    private Role role;
-
-    private String provider;
-
-    private String providerId;
-
-    private String profileImage;
-
-    private String JwtToken;
+    private boolean emailVerified;
+    private String photoURL;
 
     private String googleAccessToken;
 
-    private String googleRefreshToken;
+    @Column(columnDefinition = "TEXT")
+    private String superToken;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
@@ -48,9 +43,4 @@ public class SuperAccount extends BaseEntity {
 
     @OneToMany(mappedBy = "superAccount", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SubAccount> subAccounts = new ArrayList<>();
-
-    public void addSubAccount(SubAccount subAccount) {
-        subAccounts.add(subAccount);
-        subAccount.setSuperAccount(this);
-    }
 }

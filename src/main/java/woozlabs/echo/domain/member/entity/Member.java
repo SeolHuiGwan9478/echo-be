@@ -24,18 +24,14 @@ public class Member extends BaseEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String uid;
+    private String displayName;
     private String email;
-
-    private String name;
+    private boolean emailVerified;
+    private String photoURL;
 
     @Enumerated(EnumType.STRING)
     private Role role;
-
-    private String provider;
-
-    private String providerId;
-
-    private String profileImage;
 
     @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private SuperAccount superAccount;
