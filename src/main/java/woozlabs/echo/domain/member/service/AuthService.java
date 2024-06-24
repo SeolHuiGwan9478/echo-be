@@ -56,9 +56,7 @@ public class AuthService {
 
     @Transactional
     public void addAccount(String idToken, AddAccountRequestDto requestDto) throws FirebaseAuthException {
-        FirebaseToken decodedToken = firebaseTokenVerifier.verifyToken(idToken);
-        String superAccountUid = decodedToken.getUid();
-
+        String superAccountUid = firebaseTokenVerifier.verifyTokenAndGetUid(idToken);
         SuperAccount superAccount = superAccountRepository.findByUid(superAccountUid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SUPER_ACCOUNT));
 
