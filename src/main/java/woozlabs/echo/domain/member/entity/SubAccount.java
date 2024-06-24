@@ -26,12 +26,14 @@ public class SubAccount extends BaseEntity {
     private String email;
     private boolean emailVerified;
     private String photoURL;
-
     private String googleAccessToken;
-    private String subToken;
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "super_account_id")
