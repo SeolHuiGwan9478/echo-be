@@ -13,5 +13,4 @@ public class CreateAccountRequestDto {
     private boolean emailVerified;
     private String photoURL;
     private String googleAccessToken;
-    private String superToken;
 }
