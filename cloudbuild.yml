@@ -18,6 +18,8 @@ steps:
       - 'gcr.io/echo-cloud-427211/echo-be:$COMMIT_SHA'
       - '--region'
       - 'asia-northeast3'
+      - '--set-secrets'
+      - 'GOOGLE_APPLICATION_CREDENTIALS=serviceAccountKey.json'
 
 images:
   - 'gcr.io/echo-cloud-427211/echo-be:$COMMIT_SHA'
