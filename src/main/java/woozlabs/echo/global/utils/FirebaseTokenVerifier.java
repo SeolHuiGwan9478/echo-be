@@ -11,4 +11,9 @@ public class FirebaseTokenVerifier {
     public FirebaseToken verifyToken(String idToken) throws FirebaseAuthException {
         return FirebaseAuth.getInstance().verifyIdToken(idToken);
     }
+
+    public String verifyTokenAndGetUid(String idToken) throws FirebaseAuthException {
+        FirebaseToken decodedToken = verifyToken(idToken);
+        return decodedToken.getUid();
+    }
 }
