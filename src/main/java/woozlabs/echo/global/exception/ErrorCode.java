@@ -18,6 +18,7 @@ public enum ErrorCode {
     NOT_FOUND_MEMBER_ERROR_MESSAGE(404, "Not found: Member"),
     NOT_VERIFY_ID_TOKEN(401, "ID token is incorrect"),
     NOT_FOUND_SUPER_ACCOUNT(404, "Super account not found"),
+    NOT_FOUND_VERIFY_TOKEN(404, "Not found verifyToken"),
 
     // email
     REQUEST_GMAIL_USER_MESSAGES_GET_API_ERROR_MESSAGE(500, "Request gmail messages get one api");
