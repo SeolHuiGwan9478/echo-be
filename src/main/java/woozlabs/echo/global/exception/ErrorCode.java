@@ -14,6 +14,9 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(500, "Server Error"),
     OBJECT_MAPPER_JSON_PARSING_ERROR_MESSAGE(500, "ObjectMapper Json Parsing Error"),
 
+    // firebase
+    NOT_FOUND_FIREBASE_SERVICE_ACCOUNT_KEY(404, "Not found Firebase SDK file"),
+
     // member
     NOT_FOUND_MEMBER_ERROR_MESSAGE(404, "Not found: Member"),
     NOT_VERIFY_ID_TOKEN(401, "ID token is incorrect"),
