@@ -19,6 +19,10 @@ spring:
       hibernate:
         format_sql: true
 
+firebase:
+  sdk:
+    path: serviceAccountKey.json
+
 logging:
   level:
     org.hibernate.SQL: debug

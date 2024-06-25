@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class CreateAccountRequestDto {
+public class AddAccountRequestDto {
 
     private String uid;
     private String displayName;
