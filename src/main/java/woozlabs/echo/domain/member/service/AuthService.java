@@ -28,7 +28,7 @@ public class AuthService {
     private final FirebaseTokenVerifier firebaseTokenVerifier;
 
     @Transactional
-    public void createAccount(CreateAccountRequestDto requestDto) {
+    public void signIn(CreateAccountRequestDto requestDto) {
         Member member = Member.builder()
                 .uid(requestDto.getUid())
                 .displayName(requestDto.getDisplayName())

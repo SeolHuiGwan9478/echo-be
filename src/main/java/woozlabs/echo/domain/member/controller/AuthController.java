@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import woozlabs.echo.domain.member.dto.AddAccountRequestDto;
 import woozlabs.echo.domain.member.dto.CreateAccountRequestDto;
 import woozlabs.echo.domain.member.service.AuthService;
+import woozlabs.echo.global.aop.annotations.VerifyToken;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
@@ -18,9 +19,9 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/create-account")
-    public ResponseEntity<Void> createAccount(@RequestBody CreateAccountRequestDto requestDto) {
-        authService.createAccount(requestDto);
+    @PostMapping("/sign-in")
+    public ResponseEntity<Void> signIn(@RequestBody CreateAccountRequestDto requestDto) {
+        authService.signIn(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -34,5 +35,11 @@ public class AuthController {
         } catch (FirebaseAuthException e) {
             throw new CustomErrorException(ErrorCode.NOT_VERIFY_ID_TOKEN);
         }
+    }
+
+    @GetMapping("/verify-token")
+    @VerifyToken
+    public ResponseEntity<String> testVerify() {
+        return ResponseEntity.ok("Token is valid");
     }
 }
