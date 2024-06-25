@@ -12,7 +12,7 @@ steps:
     entrypoint: gcloud
     args:
       - 'run'
-      - 'update'
+      - 'deploy'
       - 'echo-be'
       - '--platform=managed'
       - '--image'
@@ -20,7 +20,7 @@ steps:
       - '--region'
       - 'asia-northeast3'
       - '--update-env-vars'
-      - 'GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccountKey.json'
+      - 'GOOGLE_APPLICATION_CREDENTIALS=projects/976838833561/secrets/serviceAccountKey/versions/latest'
 
 images:
   - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
