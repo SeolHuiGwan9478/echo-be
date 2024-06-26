@@ -12,7 +12,6 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       max-lifetime: 1770000
-
   jpa:
     hibernate:
       ddl-auto: create-drop
