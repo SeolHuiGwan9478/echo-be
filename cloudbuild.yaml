@@ -1,4 +1,5 @@
 steps:
+  # Retrieve the latest version of the 'serviceAccountKey' secret from Secrets Manager
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
