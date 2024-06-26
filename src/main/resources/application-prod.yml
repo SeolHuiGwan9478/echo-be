@@ -14,13 +14,13 @@ spring:
       max-lifetime: 1770000
 
   jpa:
-    database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
       ddl-auto: create-drop
       show_sql: true
       default_batch_fetch_size: 100
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
 
 firebase:
