@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "sub_account")
 public class SubAccount extends BaseEntity {
 
     @Id
