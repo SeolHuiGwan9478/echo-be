@@ -8,5 +8,6 @@ FROM openjdk:17
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 COPY serviceAccountKey.json /app/src/main/resources/serviceAccountKey.json
+COPY application-prod.yml /app/src/main/resources/application-prod.yml
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "app.jar"]

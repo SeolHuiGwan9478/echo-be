@@ -1,11 +1,19 @@
 steps:
-  # Retrieve the latest version of the 'serviceAccountKey' secret from Secrets Manager 
+  # Retrieve the latest version of the 'serviceAccountKey' secret from Secrets Manager
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
         gcloud secrets versions access latest --secret="serviceAccountKey" > serviceAccountKey.json
+
+  # Retrieve the latest version of the 'applicationProdYml' secret from Secrets Manager
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud secrets versions access latest --secret="application-prod" > application-prod.yml
 
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
