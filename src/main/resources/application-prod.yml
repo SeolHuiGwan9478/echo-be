@@ -14,6 +14,7 @@ spring:
       max-lifetime: 1770000
 
   jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
       ddl-auto: create-drop
       show_sql: true
