@@ -1,7 +1,16 @@
 steps:
+  # Saves files from Secret Manager
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud secrets versions access latest --secret="serviceAccountKey" > serviceAccountKey.json
+
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA', '.']
+    dir: './'
 
   # Push the container image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
@@ -9,7 +18,7 @@ steps:
 
   # Deploy container image to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+    entrypoint: 'gcloud'
     args:
       - 'run'
       - 'deploy'
@@ -19,8 +28,8 @@ steps:
       - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
       - '--region'
       - 'asia-northeast3'
-      - '--update-env-vars'
-      - 'GOOGLE_APPLICATION_CREDENTIALS=projects/976838833561/secrets/serviceAccountKey/versions/latest'
+      - '--set-secrets'
+      - 'GOOGLE_APPLICATION_CREDENTIALS=projects/976838833561/secrets/serviceAccountKey:latest'
 
 images:
   - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
