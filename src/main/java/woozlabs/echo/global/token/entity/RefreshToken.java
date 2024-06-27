@@ -1,4 +1,4 @@
-package woozlabs.echo.global.auth.token;
+package woozlabs.echo.global.token.entity;
 
 import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
