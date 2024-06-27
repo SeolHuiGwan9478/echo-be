@@ -27,8 +27,6 @@ public class SubAccount extends BaseEntity {
     private String email;
     private boolean emailVerified;
     private String photoURL;
-    private String googleAccessToken;
-    private String googleRefreshToken;
 
     @Enumerated(EnumType.STRING)
     private Role role;
