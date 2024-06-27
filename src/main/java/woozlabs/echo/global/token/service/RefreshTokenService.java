@@ -13,17 +13,17 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
-    public void saveRefreshToken(String token, Long memberId) {
-        RefreshToken refreshToken = new RefreshToken(token, memberId);
+    public void saveRefreshToken(Long memberId, String token) {
+        RefreshToken refreshToken = new RefreshToken(memberId, token);
         refreshTokenRepository.save(refreshToken);
     }
 
-    public RefreshToken getAccessToken(String token) {
-        return refreshTokenRepository.findById(token)
+    public RefreshToken getAccessToken(Long memberId) {
+        return refreshTokenRepository.findById(memberId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_REFRESH_TOKEN));
     }
 
-    public void deleteAccessToken(String token) {
-        refreshTokenRepository.deleteById(token);
+    public void deleteAccessToken(Long memberId) {
+        refreshTokenRepository.deleteById(memberId);
     }
 }

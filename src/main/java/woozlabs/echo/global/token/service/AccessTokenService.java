@@ -13,17 +13,17 @@ public class AccessTokenService {
 
     private final AccessTokenRepository accessTokenRepository;
 
-    public void saveAccessToken(String token, Long memberId) {
-        AccessToken accessToken = new AccessToken(token, memberId);
+    public void saveAccessToken(Long memberId, String token) {
+        AccessToken accessToken = new AccessToken(memberId, token);
         accessTokenRepository.save(accessToken);
     }
 
-    public AccessToken getAccessToken(String token) {
-        return accessTokenRepository.findById(token)
+    public AccessToken getAccessToken(Long memberId) {
+        return accessTokenRepository.findById(memberId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCESS_TOKEN));
     }
 
-    public void deleteAccessToken(String token) {
-        accessTokenRepository.deleteById(token);
+    public void deleteAccessToken(Long memberId) {
+        accessTokenRepository.deleteById(memberId);
     }
 }
