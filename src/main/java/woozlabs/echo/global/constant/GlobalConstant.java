@@ -11,6 +11,9 @@ public final class GlobalConstant {
     // Gmail global
     public static final String USER_ID = "me";
     // Gmail threads
+    public static final String THREAD_PAYLOAD_HEADER_SUBJECT_KEY = "Subject";
+    public static final String THREAD_PAYLOAD_HEADER_FROM_KEY = "From";
+    public static final String THREAD_PAYLOAD_HEADER_DATE_KEY = "Date";
     public static final String THREADS_GET_METADATA_FORMAT = "metadata";
     public static final String THREADS_GET_FULL_FORMAT = "full";
     public static final Long THREADS_LIST_MAX_LENGTH = 50L;

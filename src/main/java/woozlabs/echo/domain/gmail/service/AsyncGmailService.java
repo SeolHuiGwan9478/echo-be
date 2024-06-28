@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListAttachments;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListThreads;
 import woozlabs.echo.domain.gmail.exception.GmailException;
+import woozlabs.echo.global.utility.GlobalUtility;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -21,12 +22,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
+import static woozlabs.echo.global.utility.GlobalUtility.splitSenderData;
 
 @Service
 public class AsyncGmailService {
-    private final String THREAD_PAYLOAD_HEADER_SUBJECT_KEY = "Subject";
-    private final String THREAD_PAYLOAD_HEADER_FROM_KEY = "From";
-    private final String THREAD_PAYLOAD_HEADER_DATE_KEY = "Date";
     private final String SPLIT_SENDER_DATA_ERR_MSG = "발신자의 데이터를 분리할 수 없습니다.";
 
     @Async
@@ -40,7 +39,7 @@ public class AsyncGmailService {
                     .setFormat(THREADS_GET_FULL_FORMAT)
                     .execute();
             List<Message> messages = detailedThread.getMessages();
-            Message topMessage = messages.stream().findFirst().orElseThrow(() -> new EntityNotFoundException("test"));
+            Message topMessage = messages.get(0);
             MessagePart payload = topMessage.getPayload();
             List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
             headers.forEach((header) -> {
@@ -98,20 +97,5 @@ public class AsyncGmailService {
                 );
             }
         }
-    }
-
-    private List<String> splitSenderData(String sender){
-        List<String> splitSender = new ArrayList<>();
-        String replaceSender = sender.replace("\"", "");
-        String regex = "(.*)\\s*<(.*)>";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(replaceSender);
-        if(matcher.find()){
-            splitSender.add(matcher.group(1).trim());
-            splitSender.add(matcher.group(2).trim());
-        }else{
-            splitSender.add(sender);
-        }
-        return splitSender;
     }
 }

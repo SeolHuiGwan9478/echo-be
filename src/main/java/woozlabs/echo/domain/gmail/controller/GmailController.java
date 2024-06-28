@@ -5,8 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import woozlabs.echo.domain.gmail.dto.GmailThreadGetResponse;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListResponse;
 import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.global.dto.ResponseDto;
@@ -24,6 +26,18 @@ public class GmailController {
         log.info("Request to get threads");
         try {
             GmailThreadListResponse response = gmailService.getUserEmailThreads(accessToken, pageToken, category);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/api/v1/gmail/threads/{id}")
+    public ResponseEntity<ResponseDto> getThread(@RequestParam("accessToken") String accessToken, @PathVariable("id") String id){
+        log.info("Request to get thread");
+        try{
+            GmailThreadGetResponse response = gmailService.getUserEmailThread(accessToken, id);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (Exception e){
             System.out.println(e.getMessage());

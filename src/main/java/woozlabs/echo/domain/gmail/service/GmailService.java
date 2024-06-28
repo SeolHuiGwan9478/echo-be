@@ -14,6 +14,8 @@ import com.google.auth.oauth2.GoogleCredentials;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import woozlabs.echo.domain.gmail.dto.GmailThreadGetMessages;
+import woozlabs.echo.domain.gmail.dto.GmailThreadGetResponse;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListResponse;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListThreads;
@@ -52,6 +54,17 @@ public class GmailService {
                 .build();
     }
 
+    public GmailThreadGetResponse getUserEmailThread(String accessToken, String id) throws Exception{
+        Gmail gmailService = createGmailService(accessToken);
+        Thread thread = getOneThreadResponse(id, gmailService);
+        List<GmailThreadGetMessages> messages = getConvertedMessages(thread.getMessages());
+        return GmailThreadGetResponse.builder()
+                .id(thread.getId())
+                .historyId(thread.getHistoryId())
+                .messages(messages)
+                .build();
+    }
+
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
         List<CompletableFuture<Optional<GmailThreadListThreads>>> futures = threads.stream()
                 .map((thread) -> asyncGmailService.asyncRequestGmailThreadGetForList(thread, gmailService)
@@ -73,6 +86,10 @@ public class GmailService {
         }).toList();
     }
 
+    private List<GmailThreadGetMessages> getConvertedMessages(List<Message> messages){
+        return messages.stream().map(GmailThreadGetMessages::toGmailThreadGetMessages).toList();
+    }
+
     private ListThreadsResponse getListThreadsResponse(String pageToken, String category, Gmail gmailService) throws IOException {
         return gmailService.users().threads()
                 .list(USER_ID)
@@ -80,6 +97,14 @@ public class GmailService {
                 .setPageToken(pageToken)
                 .setPrettyPrint(Boolean.TRUE)
                 .setQ(THREADS_LIST_Q + SPACE_CHAR + category)
+                .execute();
+    }
+
+    private Thread getOneThreadResponse(String id, Gmail gmailService) throws IOException{
+        return gmailService.users().threads()
+                .get(USER_ID, id)
+                .setFormat(THREADS_GET_FULL_FORMAT)
+                .setPrettyPrint(Boolean.TRUE)
                 .execute();
     }
 
