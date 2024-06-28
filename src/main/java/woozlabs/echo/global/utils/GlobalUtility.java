@@ -1,4 +1,4 @@
-package woozlabs.echo.global.utility;
+package woozlabs.echo.global.utils;
 
 import java.util.ArrayList;
 import java.util.List;

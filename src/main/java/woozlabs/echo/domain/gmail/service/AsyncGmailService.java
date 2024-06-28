@@ -1,28 +1,21 @@
 package woozlabs.echo.domain.gmail.service;
 
-import com.google.api.client.googleapis.batch.BatchRequest;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.*;
 import com.google.api.services.gmail.model.Thread;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListAttachments;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListThreads;
-import woozlabs.echo.domain.gmail.exception.GmailException;
-import woozlabs.echo.global.utility.GlobalUtility;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
-import static woozlabs.echo.global.utility.GlobalUtility.splitSenderData;
+import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Service
 public class AsyncGmailService {

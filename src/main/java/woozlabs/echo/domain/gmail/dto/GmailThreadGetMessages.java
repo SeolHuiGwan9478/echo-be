@@ -9,7 +9,7 @@ import java.math.BigInteger;
 import java.util.List;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
-import static woozlabs.echo.global.utility.GlobalUtility.splitSenderData;
+import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Data
 public class GmailThreadGetMessages {
