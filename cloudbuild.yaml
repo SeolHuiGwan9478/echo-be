@@ -36,6 +36,10 @@ steps:
       - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
       - '--region'
       - 'asia-northeast3'
+      - '--vpc-connector'
+      - 'echo-connecter'
+      - '--set-secrets'
+      - 'REDIS_HOST=REDIS_HOST:latest,REDIS_PORT=REDIS_PORT:latest'
 
 images:
   - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
