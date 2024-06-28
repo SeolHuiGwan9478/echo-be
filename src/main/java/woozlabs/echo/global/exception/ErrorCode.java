@@ -24,7 +24,7 @@ public enum ErrorCode {
     NOT_FOUND_VERIFY_TOKEN(404, "Not found verifyToken"),
 
     // email
-    REQUEST_GMAIL_USER_MESSAGES_GET_API_ERROR_MESSAGE(500, "Request gmail messages get one api");
+    REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE(500, "Request gmail threads get one api");
 
 
     private final int status;
