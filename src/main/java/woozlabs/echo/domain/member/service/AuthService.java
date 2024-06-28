@@ -15,9 +15,7 @@ import woozlabs.echo.domain.member.repository.SubAccountRepository;
 import woozlabs.echo.domain.member.repository.SuperAccountRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
-import woozlabs.echo.global.token.entity.AccessToken;
 import woozlabs.echo.global.token.service.AccessTokenService;
-import woozlabs.echo.global.token.service.RefreshTokenService;
 import woozlabs.echo.global.utils.FirebaseTokenVerifier;
 
 @Service
@@ -30,7 +28,6 @@ public class AuthService {
     private final SubAccountRepository subAccountRepository;
     private final FirebaseTokenVerifier firebaseTokenVerifier;
     private final AccessTokenService accessTokenService;
-    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public void signIn(SignInRequestDto requestDto) {
@@ -58,7 +55,6 @@ public class AuthService {
         superAccountRepository.save(superAccount);
 
         accessTokenService.saveAccessToken(member.getId(), requestDto.getGoogleAccessToken());
-        refreshTokenService.saveRefreshToken(member.getId(), requestDto.getGoogleAccessToken());
     }
 
     @Transactional
@@ -92,6 +88,5 @@ public class AuthService {
         subAccountRepository.save(subAccount);
 
         accessTokenService.saveAccessToken(member.getId(), requestDto.getGoogleAccessToken());
-        refreshTokenService.saveRefreshToken(member.getId(), requestDto.getGoogleAccessToken());
     }
 }
