@@ -7,7 +7,7 @@ steps:
       - |
         gcloud secrets versions access latest --secret="serviceAccountKey" > serviceAccountKey.json
 
-  # Retrieve the latest version of the 'applicationProdYml' secret from Secrets Manager
+  # Retrieve the latest version of the 'application-prod.yml' secret from Secrets Manager
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
@@ -36,10 +36,11 @@ steps:
       - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
       - '--region'
       - 'asia-northeast3'
+      - '--allow-unauthenticated'
       - '--vpc-connector'
-      - 'echo-connecter'
+      - 'echo-connector'
       - '--set-secrets'
-      - 'REDIS_HOST=REDIS_HOST:latest,REDIS_PORT=REDIS_PORT:latest'
+      - 'REDISHOST=REDIS_HOST:latest,REDISPORT=REDIS_PORT:latest'
 
 images:
   - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
