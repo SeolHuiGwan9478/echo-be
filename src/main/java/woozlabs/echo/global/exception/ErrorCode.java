@@ -23,6 +23,10 @@ public enum ErrorCode {
     NOT_FOUND_SUPER_ACCOUNT(404, "Super account not found"),
     NOT_FOUND_VERIFY_TOKEN(404, "Not found verifyToken"),
 
+    // token
+    NOT_FOUND_ACCESS_TOKEN(404, "Not found: Access Token"),
+    NOT_FOUND_REFRESH_TOKEN(404, "Not found: Refresh Token"),
+
     // email
     REQUEST_GMAIL_USER_MESSAGES_GET_API_ERROR_MESSAGE(500, "Request gmail messages get one api");
 

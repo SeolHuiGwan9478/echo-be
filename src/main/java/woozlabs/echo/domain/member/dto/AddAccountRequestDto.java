@@ -13,4 +13,5 @@ public class AddAccountRequestDto {
     private boolean emailVerified;
     private String photoURL;
     private String googleAccessToken;
+    private String refreshToken;
 }
