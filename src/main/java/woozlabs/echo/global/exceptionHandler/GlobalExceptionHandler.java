@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import woozlabs.echo.domain.email.exception.EmailException;
+import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.dto.ErrorResponse;
 
@@ -13,8 +13,8 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(EmailException.class)
-    protected ResponseEntity<ErrorResponse> handleEmailException(EmailException ex){
+    @ExceptionHandler(GmailException.class)
+    protected ResponseEntity<ErrorResponse> handleEmailException(GmailException ex){
         Map<String, String> errors = new HashMap<>();
         errors.put(GlobalConstant.EMAIL_ERR_MSG_KEY, ex.getMessage());
         final ErrorResponse errorResponse = new ErrorResponse(errors);
