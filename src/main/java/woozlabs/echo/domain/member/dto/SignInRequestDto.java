@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class CreateAccountRequestDto {
+public class SignInRequestDto {
 
     private String uid;
     private String displayName;
@@ -13,4 +13,5 @@ public class CreateAccountRequestDto {
     private boolean emailVerified;
     private String photoURL;
     private String googleAccessToken;
+    private String refreshToken;
 }

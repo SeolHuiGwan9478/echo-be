@@ -29,7 +29,6 @@ public class SuperAccount extends BaseEntity {
     private String email;
     private boolean emailVerified;
     private String photoURL;
-    private String googleAccessToken;
 
     @Enumerated(EnumType.STRING)
     private Role role;
