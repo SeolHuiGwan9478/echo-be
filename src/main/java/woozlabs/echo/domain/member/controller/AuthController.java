@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import woozlabs.echo.domain.member.dto.AddAccountRequestDto;
 import woozlabs.echo.domain.member.dto.SignInRequestDto;
+import woozlabs.echo.domain.member.dto.GoogleResponseDto;
 import woozlabs.echo.domain.member.service.AuthService;
 import woozlabs.echo.global.aop.annotations.VerifyToken;
 import woozlabs.echo.global.exception.CustomErrorException;
@@ -19,9 +20,15 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @GetMapping("/google/callback")
+    public ResponseEntity<GoogleResponseDto> signIn(@RequestParam("code") String code) {
+        GoogleResponseDto response = authService.signIn(code);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
     @PostMapping("/sign-in")
-    public ResponseEntity<Void> signIn(@RequestBody SignInRequestDto requestDto) {
-        authService.signIn(requestDto);
+    public ResponseEntity<Void> createAccount(@RequestBody SignInRequestDto requestDto) {
+        authService.createAccount(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
