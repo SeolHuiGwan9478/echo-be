@@ -34,7 +34,8 @@ public class GmailService {
     private final List<String> SCOPES = Arrays.asList(
             "https://www.googleapis.com/auth/gmail.readonly",
             "https://www.googleapis.com/auth/userinfo.profile",
-            "https://www.googleapis.com/auth/userinfo.email"
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/gmail.modify"
     );
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
@@ -64,8 +65,11 @@ public class GmailService {
 
     public GmailThreadDeleteResponse deleteUserEmailThread(String accessToken, String id) throws Exception{
         Gmail gmailService = createGmailService(accessToken);
-        gmailService.users().threads().delete(USER_ID, id);
-        return new GmailThreadDeleteResponse(id);
+        Thread trashedThread = gmailService.users().threads().trash(USER_ID, id)
+                .setPrettyPrint(Boolean.TRUE)
+                .execute();
+        System.out.println(trashedThread);
+        return new GmailThreadDeleteResponse(trashedThread);
     }
 
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
@@ -124,6 +128,7 @@ public class GmailService {
         HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
         HttpRequestInitializer requestInitializer = createCredentialWithAccessToken(accessToken);
         return new Gmail.Builder(httpTransport, JSON_FACTORY, requestInitializer)
+                .setApplicationName("Echo")
                 .build();
     }
 }

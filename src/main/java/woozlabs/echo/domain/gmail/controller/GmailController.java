@@ -1,6 +1,5 @@
 package woozlabs.echo.domain.gmail.controller;
 
-import com.google.api.Http;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,10 +10,6 @@ import woozlabs.echo.domain.gmail.dto.GmailThreadGetResponse;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListResponse;
 import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.global.dto.ResponseDto;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 @Slf4j
 @RestController
@@ -53,6 +48,7 @@ public class GmailController {
             GmailThreadDeleteResponse response = gmailService.deleteUserEmailThread(accessToken, id);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (Exception e){
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
