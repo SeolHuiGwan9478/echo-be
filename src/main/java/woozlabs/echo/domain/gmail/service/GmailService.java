@@ -14,11 +14,8 @@ import com.google.auth.oauth2.GoogleCredentials;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import woozlabs.echo.domain.gmail.dto.GmailThreadGetMessages;
-import woozlabs.echo.domain.gmail.dto.GmailThreadGetResponse;
+import woozlabs.echo.domain.gmail.dto.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
-import woozlabs.echo.domain.gmail.dto.GmailThreadListResponse;
-import woozlabs.echo.domain.gmail.dto.GmailThreadListThreads;
 import woozlabs.echo.global.constant.GlobalConstant;
 
 import java.io.IOException;
@@ -65,6 +62,12 @@ public class GmailService {
                 .build();
     }
 
+    public GmailThreadDeleteResponse deleteUserEmailThread(String accessToken, String id) throws Exception{
+        Gmail gmailService = createGmailService(accessToken);
+        gmailService.users().threads().delete(USER_ID, id);
+        return new GmailThreadDeleteResponse(id);
+    }
+
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
         List<CompletableFuture<Optional<GmailThreadListThreads>>> futures = threads.stream()
                 .map((thread) -> asyncGmailService.asyncRequestGmailThreadGetForList(thread, gmailService)
@@ -78,7 +81,7 @@ public class GmailService {
         return futures.stream().map((future) -> {
             try{
                 Optional<GmailThreadListThreads> result = future.get();
-                if(result.isEmpty()) throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
+                if(result.isEmpty())throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
                 return result.get();
             }catch (InterruptedException | CancellationException | ExecutionException e){
                 throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);

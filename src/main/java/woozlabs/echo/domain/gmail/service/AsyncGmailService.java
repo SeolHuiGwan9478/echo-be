@@ -7,11 +7,13 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListAttachments;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListThreads;
+import woozlabs.echo.domain.gmail.exception.GmailException;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
@@ -19,8 +21,6 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Service
 public class AsyncGmailService {
-    private final String SPLIT_SENDER_DATA_ERR_MSG = "발신자의 데이터를 분리할 수 없습니다.";
-
     @Async
     public CompletableFuture<GmailThreadListThreads> asyncRequestGmailThreadGetForList(Thread thread, Gmail gmailService){
         try {
@@ -46,7 +46,7 @@ public class AsyncGmailService {
                     gmailThreadListThreads.setLabelIds(message.getLabelIds());
                     gmailThreadListThreads.setMimeType(payload.getMimeType());
                 }
-                if(idxForLambda == message.size()-1) gmailThreadListThreads.setSnippet(message.getSnippet());
+                if(idxForLambda == messages.size()-1) gmailThreadListThreads.setSnippet(message.getSnippet());
                 // get attachments
                 getAttachments(payload, attachments);
                 headers.forEach((header) -> {
@@ -65,13 +65,12 @@ public class AsyncGmailService {
                             }
                     }
                     // last message -> extraction date
-                    else if(idxForLambda == message.size()-1 && headerName.equals(THREAD_PAYLOAD_HEADER_DATE_KEY)){
+                    else if(idxForLambda == messages.size()-1 && headerName.equals(THREAD_PAYLOAD_HEADER_DATE_KEY)){
                         gmailThreadListThreads.setDate(header.getValue());
                     }
                 });
             }
             gmailThreadListThreads.setId(id);
-            //gmailThreadListThreads.setSnippet(snippet);
             gmailThreadListThreads.setHistoryId(historyId);
             gmailThreadListThreads.setFromEmail(emails);
             gmailThreadListThreads.setFromName(names);
@@ -80,7 +79,7 @@ public class AsyncGmailService {
             gmailThreadListThreads.setAttachmentSize(attachments.size());
             return CompletableFuture.completedFuture(gmailThreadListThreads);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new GmailException(e.getMessage());
         }
     }
 

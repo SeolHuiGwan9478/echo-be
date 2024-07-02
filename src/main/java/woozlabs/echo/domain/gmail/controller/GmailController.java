@@ -1,17 +1,20 @@
 package woozlabs.echo.domain.gmail.controller;
 
+import com.google.api.Http;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import woozlabs.echo.domain.gmail.dto.GmailThreadDeleteResponse;
 import woozlabs.echo.domain.gmail.dto.GmailThreadGetResponse;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListResponse;
 import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.global.dto.ResponseDto;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 @Slf4j
 @RestController
@@ -28,7 +31,6 @@ public class GmailController {
             GmailThreadListResponse response = gmailService.getUserEmailThreads(accessToken, pageToken, category);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (Exception e){
-            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
@@ -40,7 +42,17 @@ public class GmailController {
             GmailThreadGetResponse response = gmailService.getUserEmailThread(accessToken, id);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (Exception e){
-            System.out.println(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @DeleteMapping("/api/v1/gmail/threads/{id}")
+    public ResponseEntity<ResponseDto> deleteThread(@RequestParam("accessToken") String accessToken, @PathVariable("id") String id){
+        log.info("Request to delete thread");
+        try {
+            GmailThreadDeleteResponse response = gmailService.deleteUserEmailThread(accessToken, id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
