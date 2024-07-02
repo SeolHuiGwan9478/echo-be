@@ -16,6 +16,12 @@ public class GlobalUtility {
             splitSender.add(matcher.group(1).trim());
             splitSender.add(matcher.group(2).trim());
         }else{
+            String emailRegex = "^([^@]+)@[^@]+$";
+            // Compile the regular expression into a pattern
+            Pattern emailpattern = Pattern.compile(emailRegex);
+            // Match the pattern against the email
+            Matcher matcherEmail = emailpattern.matcher(sender);
+            splitSender.add(matcherEmail.group(1));
             splitSender.add(sender);
         }
         return splitSender;

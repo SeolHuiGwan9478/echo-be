@@ -14,8 +14,8 @@ public class GmailThreadListThreads {
     private String mimeType;
     private int attachmentSize;
     private List<GmailThreadListAttachments> attachments;
-    private String fromName;
-    private String fromEmail;
+    private List<String> fromName;
+    private List<String> fromEmail;
     private String subject;
     private String snippet;
     private String date;
