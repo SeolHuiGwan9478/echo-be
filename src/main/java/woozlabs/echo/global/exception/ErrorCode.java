@@ -29,6 +29,7 @@ public enum ErrorCode {
     NOT_FOUND_ACCESS_TOKEN(404, "Not found: Access Token"),
     NOT_FOUND_REFRESH_TOKEN(404, "Not found: Refresh Token"),
     FAILED_TO_CREATE_CUSTOM_TOKEN(500, "Failed to create custom token"),
+    FAILED_TO_VERIFY_ID_TOKEN(500, "failed to verify Id Token"),
 
 
     // email
