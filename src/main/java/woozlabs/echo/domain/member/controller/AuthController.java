@@ -1,6 +1,7 @@
 package woozlabs.echo.domain.member.controller;
 
 import com.google.firebase.auth.FirebaseAuthException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,26 +22,18 @@ public class AuthController {
     private final AuthService authService;
 
     @GetMapping("/google/callback")
-    public ResponseEntity<GoogleResponseDto> signIn(@RequestParam("code") String code) {
-        GoogleResponseDto response = authService.signIn(code);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    @PostMapping("/sign-in")
-    public ResponseEntity<Void> createAccount(@RequestBody SignInRequestDto requestDto) {
-        authService.createAccount(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    @PostMapping("/add-account")
-    public ResponseEntity<Void> addAccount(@RequestHeader("Authorization") String authorizationHeader,
-                                           @RequestBody AddAccountRequestDto requestDto) {
+    public void handleOAuthCallback(@RequestParam("code") String code,
+                                    @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+                                    HttpServletResponse response) {
         try {
-            String idToken = authorizationHeader.replace("Bearer ", "");
-            authService.addAccount(idToken, requestDto);
-            return ResponseEntity.status(HttpStatus.CREATED).build();
+            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+                String idToken = authorizationHeader.replace("Bearer ", "");
+                authService.addAccount(code, idToken, response);
+            } else {
+                authService.signIn(code, response);
+            }
         } catch (FirebaseAuthException e) {
-            throw new CustomErrorException(ErrorCode.NOT_VERIFY_ID_TOKEN);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_VERIFY_ID_TOKEN);
         }
     }
 

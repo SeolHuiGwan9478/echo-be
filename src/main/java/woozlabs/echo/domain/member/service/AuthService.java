@@ -2,12 +2,11 @@ package woozlabs.echo.domain.member.service;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import woozlabs.echo.domain.member.dto.AddAccountRequestDto;
-import woozlabs.echo.domain.member.dto.SignInRequestDto;
-import woozlabs.echo.domain.member.dto.GoogleResponseDto;
+import org.springframework.web.util.UriComponentsBuilder;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.entity.Role;
 import woozlabs.echo.domain.member.entity.SubAccount;
@@ -17,7 +16,6 @@ import woozlabs.echo.domain.member.repository.SubAccountRepository;
 import woozlabs.echo.domain.member.repository.SuperAccountRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
-import woozlabs.echo.global.token.service.AccessTokenService;
 import woozlabs.echo.global.utils.FirebaseTokenVerifier;
 import woozlabs.echo.global.utils.GoogleOAuthUtils;
 
@@ -32,7 +30,6 @@ public class AuthService {
     private final SuperAccountRepository superAccountRepository;
     private final SubAccountRepository subAccountRepository;
     private final FirebaseTokenVerifier firebaseTokenVerifier;
-    private final AccessTokenService accessTokenService;
     private final GoogleOAuthUtils googleOAuthUtils;
 
     private String createCustomToken(String uid) throws FirebaseAuthException {
@@ -43,82 +40,106 @@ public class AuthService {
         }
     }
 
-    public GoogleResponseDto signIn(String code) {
+    private Map<String, Object> getGoogleUserInfoAndTokens(String code) {
         try {
             Map<String, String> tokenResponse = googleOAuthUtils.getGoogleTokens(code);
-
             String accessToken = tokenResponse.get("access_token");
+            String refreshToken = tokenResponse.get("refresh_token");
+
             Map<String, Object> userInfo = googleOAuthUtils.getGoogleUserInfo(accessToken);
+            userInfo.put("access_token", accessToken);
+            userInfo.put("refresh_token", refreshToken);
 
-            String providerId = (String) userInfo.get("id");
-            String customToken = createCustomToken(providerId);
+            return userInfo;
+        } catch (Exception e) {
+            throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_USER_INFO);
+        }
+    }
 
-            return GoogleResponseDto.builder()
-                    .providerId(providerId)
-                    .displayName((String) userInfo.get("name"))
-                    .email((String) userInfo.get("email"))
-                    .profileImageUrl((String) userInfo.get("picture"))
-                    .googleIdToken(tokenResponse.get("id_token"))
-                    .customToken(customToken)
-                    .googleAccessToken(accessToken)
-                    .googleRefreshToken(tokenResponse.get("refresh_token"))
-                    .build();
+    private Member createOrUpdateMember(Map<String, Object> userInfo) {
+        String providerId = (String) userInfo.get("id");
+        String displayName = (String) userInfo.get("name");
+        String email = (String) userInfo.get("email");
+        String profileImageUrl = (String) userInfo.get("picture");
+        String accessToken = (String) userInfo.get("access_token");
+        String refreshToken = (String) userInfo.get("refresh_token");
+
+        Member member = memberRepository.findByGoogleProviderId(providerId)
+                .orElse(Member.builder()
+                        .uid(providerId)
+                        .googleProviderId(providerId)
+                        .displayName(displayName)
+                        .email(email)
+                        .profileImageUrl(profileImageUrl)
+                        .accessToken(accessToken)
+                        .refreshToken(refreshToken)
+                        .role(Role.ROLE_USER)
+                        .build());
+
+        return memberRepository.save(member);
+    }
+
+    private void constructAndRedirect(HttpServletResponse response, String customToken, String displayName, String profileImageUrl, String email) {
+        String url = UriComponentsBuilder.fromHttpUrl("http://localhost:3000")
+                .queryParam("customToken", customToken)
+                .queryParam("displayName", displayName)
+                .queryParam("profileImageUrl", profileImageUrl)
+                .queryParam("email", email)
+                .toUriString();
+
+        try {
+            response.sendRedirect(url);
         } catch (Exception e) {
             throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_USER_INFO);
         }
     }
 
     @Transactional
-    public void createAccount(SignInRequestDto requestDto) {
-        Member member = Member.builder()
-                .uid(requestDto.getUid())
-                .displayName(requestDto.getDisplayName())
-                .email(requestDto.getEmail())
-                .emailVerified(requestDto.isEmailVerified())
-                .photoURL(requestDto.getPhotoURL())
-                .role(Role.ROLE_USER)
-                .build();
+    public void signIn(String code, HttpServletResponse response) throws FirebaseAuthException {
+        Map<String, Object> userInfo = getGoogleUserInfoAndTokens(code);
+        String providerId = (String) userInfo.get("id");
+        String customToken = createCustomToken(providerId);
 
-        memberRepository.save(member);
+        Member member = createOrUpdateMember(userInfo);
 
-        SuperAccount superAccount = SuperAccount.builder()
-                .uid(requestDto.getUid())
-                .displayName(requestDto.getDisplayName())
-                .email(requestDto.getEmail())
-                .emailVerified(requestDto.isEmailVerified())
-                .photoURL(requestDto.getPhotoURL())
-                .role(Role.ROLE_USER)
-                .member(member)
-                .build();
+        SuperAccount superAccount = superAccountRepository.findByMember(member)
+                .orElse(SuperAccount.builder()
+                        .uid(providerId)
+                        .googleProviderId(providerId)
+                        .displayName(member.getDisplayName())
+                        .email(member.getEmail())
+                        .profileImageUrl(member.getProfileImageUrl())
+                        .accessToken(member.getAccessToken())
+                        .refreshToken(member.getRefreshToken())
+                        .role(Role.ROLE_USER)
+                        .member(member)
+                        .build());
 
         superAccountRepository.save(superAccount);
 
-        accessTokenService.saveAccessToken(member.getId(), requestDto.getGoogleAccessToken());
+        constructAndRedirect(response, customToken, member.getDisplayName(), member.getProfileImageUrl(), member.getEmail());
     }
 
     @Transactional
-    public void addAccount(String idToken, AddAccountRequestDto requestDto) throws FirebaseAuthException {
+    public void addAccount(String idToken, String code, HttpServletResponse response) throws FirebaseAuthException {
         String superAccountUid = firebaseTokenVerifier.verifyTokenAndGetUid(idToken);
         SuperAccount superAccount = superAccountRepository.findByUid(superAccountUid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SUPER_ACCOUNT));
 
-        Member member = Member.builder()
-                .uid(requestDto.getUid())
-                .displayName(requestDto.getDisplayName())
-                .email(requestDto.getEmail())
-                .emailVerified(requestDto.isEmailVerified())
-                .photoURL(requestDto.getPhotoURL())
-                .role(Role.ROLE_USER)
-                .build();
+        Map<String, Object> userInfo = getGoogleUserInfoAndTokens(code);
+        String providerId = (String) userInfo.get("id");
+        String customToken = createCustomToken(providerId);
 
-        memberRepository.save(member);
+        Member member = createOrUpdateMember(userInfo);
 
         SubAccount subAccount = SubAccount.builder()
-                .uid(requestDto.getUid())
-                .displayName(requestDto.getDisplayName())
-                .email(requestDto.getEmail())
-                .emailVerified(requestDto.isEmailVerified())
-                .photoURL(requestDto.getPhotoURL())
+                .uid(providerId)
+                .googleProviderId(providerId)
+                .displayName(member.getDisplayName())
+                .email(member.getEmail())
+                .profileImageUrl(member.getProfileImageUrl())
+                .accessToken(member.getAccessToken())
+                .refreshToken(member.getRefreshToken())
                 .role(Role.ROLE_USER)
                 .member(member)
                 .superAccount(superAccount)
@@ -126,6 +147,6 @@ public class AuthService {
 
         subAccountRepository.save(subAccount);
 
-        accessTokenService.saveAccessToken(member.getId(), requestDto.getGoogleAccessToken());
+        constructAndRedirect(response, customToken, member.getDisplayName(), member.getProfileImageUrl(), member.getEmail());
     }
 }
