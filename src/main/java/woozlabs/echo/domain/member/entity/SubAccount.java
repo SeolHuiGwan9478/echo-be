@@ -2,12 +2,7 @@ package woozlabs.echo.domain.member.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import woozlabs.echo.global.common.entity.BaseEntity;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -23,10 +18,12 @@ public class SubAccount extends BaseEntity {
     private Long id;
 
     private String uid;
+    private String googleProviderId;
     private String displayName;
     private String email;
-    private boolean emailVerified;
-    private String photoURL;
+    private String profileImageUrl;
+    private String accessToken;
+    private String refreshToken;
 
     @Enumerated(EnumType.STRING)
     private Role role;
