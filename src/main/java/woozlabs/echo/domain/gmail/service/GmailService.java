@@ -73,11 +73,16 @@ public class GmailService {
         return new GmailThreadDeleteResponse(trashedThread.getId());
     }
 
-    public void searchUserEmailThreads(String accessToken, GmailSearchParams params) throws Exception{
+    public GmailThreadListSearchResponse searchUserEmailThreads(String accessToken, GmailSearchParams params) throws Exception{
         Gmail gmailService = createGmailService(accessToken);
         ListThreadsResponse response = getSearchListThreadsResponse(params, gmailService);
         List<Thread> threads = response.getThreads();
-        System.out.println(threads);
+        List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
+        Collections.sort(detailedThreads);
+        return GmailThreadListSearchResponse.builder()
+                .threads(detailedThreads)
+                .nextPageToken(response.getNextPageToken())
+                .build();
     }
 
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {

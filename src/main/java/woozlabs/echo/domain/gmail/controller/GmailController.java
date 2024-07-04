@@ -32,13 +32,13 @@ public class GmailController {
     public ResponseEntity<ResponseDto> searchThreads(@RequestParam(value = "from", required = false) String from,
                                                      @RequestParam(value = "to", required = false) String to,
                                                      @RequestParam(value = "subject", required = false) String subject,
-                                                     @RequestParam("q") String query, @RequestParam("accessToken") String accessToken){
+                                                     @RequestParam(value = "q", required = false) String query, @RequestParam("accessToken") String accessToken){
         log.info("Request to search threads");
         try {
             GmailSearchParams params = GmailSearchParams.builder()
                     .from(from).to(to).subject(subject).query(query).build();
-            //GmailThreadListSearchResponse response = gmailService.searchUserEmailThreads(accessToken, params);
-            return new ResponseEntity<>(HttpStatus.OK);
+            GmailThreadListSearchResponse response = gmailService.searchUserEmailThreads(accessToken, params);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }

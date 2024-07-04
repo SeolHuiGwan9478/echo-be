@@ -15,14 +15,19 @@ public class GmailSearchParams {
     private String query;
 
     public String createQ(){
+        // local var
         StringBuilder q = new StringBuilder();
+        final String FROM_QUERY_KEY = "from:";
+        final String TO_QUERY_KEY = "to:";
+        final String SUBJECT_QUERY_KEY = "subject:";
+        // generate query
         List<String> queries = new ArrayList<>();
-        if(from != null) queries.add("from:" + from);
-        if(to != null) queries.add("to:" + to);
-        if(subject != null) queries.add("subject:" + subject);
-        queries.add(query);
+        if(from != null) queries.add(FROM_QUERY_KEY + from);
+        if(to != null) queries.add(TO_QUERY_KEY + to);
+        if(subject != null) queries.add(SUBJECT_QUERY_KEY + subject);
+        if(query != null) queries.add(query);
         for(int idx = 0;idx < queries.size();idx++){
-            q.append(query);
+            q.append(queries.get(idx));
             if(idx != queries.size()-1) q.append(" OR ");
         }
         return q.toString();
