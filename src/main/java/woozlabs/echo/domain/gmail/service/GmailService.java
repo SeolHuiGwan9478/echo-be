@@ -46,6 +46,7 @@ public class GmailService {
         ListThreadsResponse response = getListThreadsResponse(pageToken, category, gmailService);
         List<Thread> threads = response.getThreads(); // get threads
         List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
+        Collections.sort(detailedThreads);
         return GmailThreadListResponse.builder()
                 .threads(detailedThreads)
                 .nextPageToken(response.getNextPageToken())

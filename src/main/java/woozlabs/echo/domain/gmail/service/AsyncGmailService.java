@@ -13,6 +13,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -25,7 +29,6 @@ public class AsyncGmailService {
     public CompletableFuture<GmailThreadListThreads> asyncRequestGmailThreadGetForList(Thread thread, Gmail gmailService){
         try {
             String id = thread.getId();
-            //String snippet = thread.getSnippet();
             BigInteger historyId = thread.getHistoryId();
             GmailThreadListThreads gmailThreadListThreads= new GmailThreadListThreads();
             Thread detailedThread = gmailService.users().threads().get(USER_ID, id)
@@ -46,7 +49,12 @@ public class AsyncGmailService {
                     gmailThreadListThreads.setLabelIds(message.getLabelIds());
                     gmailThreadListThreads.setMimeType(payload.getMimeType());
                 }
-                if(idxForLambda == messages.size()-1) gmailThreadListThreads.setSnippet(message.getSnippet());
+                if(idxForLambda == messages.size()-1){
+                    Long rawInternalDate = message.getInternalDate();
+                    LocalDateTime internalDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(rawInternalDate), ZoneId.systemDefault());
+                    gmailThreadListThreads.setSnippet(message.getSnippet());
+                    gmailThreadListThreads.setInternalDate(internalDate);
+                }
                 // get attachments
                 getAttachments(payload, attachments);
                 headers.forEach((header) -> {
@@ -63,10 +71,6 @@ public class AsyncGmailService {
                                 names.add(splitSender.get(0));
                                 emails.add(splitSender.get(1));
                             }
-                    }
-                    // last message -> extraction date
-                    else if(idxForLambda == messages.size()-1 && headerName.equals(THREAD_PAYLOAD_HEADER_DATE_KEY)){
-                        gmailThreadListThreads.setDate(header.getValue());
                     }
                 });
             }
