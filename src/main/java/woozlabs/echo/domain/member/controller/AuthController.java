@@ -1,12 +1,14 @@
 package woozlabs.echo.domain.member.controller;
 
 import com.google.firebase.auth.FirebaseAuthException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import woozlabs.echo.domain.member.dto.AddAccountRequestDto;
 import woozlabs.echo.domain.member.dto.SignInRequestDto;
+import woozlabs.echo.domain.member.dto.GoogleResponseDto;
 import woozlabs.echo.domain.member.service.AuthService;
 import woozlabs.echo.global.aop.annotations.VerifyToken;
 import woozlabs.echo.global.exception.CustomErrorException;
@@ -19,21 +21,19 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/sign-in")
-    public ResponseEntity<Void> signIn(@RequestBody SignInRequestDto requestDto) {
-        authService.signIn(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    @PostMapping("/add-account")
-    public ResponseEntity<Void> addAccount(@RequestHeader("Authorization") String authorizationHeader,
-                                           @RequestBody AddAccountRequestDto requestDto) {
+    @GetMapping("/google/callback")
+    public void handleOAuthCallback(@RequestParam("code") String code,
+                                    @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+                                    HttpServletResponse response) {
         try {
-            String idToken = authorizationHeader.replace("Bearer ", "");
-            authService.addAccount(idToken, requestDto);
-            return ResponseEntity.status(HttpStatus.CREATED).build();
+            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+                String idToken = authorizationHeader.replace("Bearer ", "");
+                authService.addAccount(code, idToken, response);
+            } else {
+                authService.signIn(code, response);
+            }
         } catch (FirebaseAuthException e) {
-            throw new CustomErrorException(ErrorCode.NOT_VERIFY_ID_TOKEN);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_VERIFY_ID_TOKEN);
         }
     }
 

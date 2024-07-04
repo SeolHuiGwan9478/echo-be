@@ -22,10 +22,15 @@ public enum ErrorCode {
     NOT_VERIFY_ID_TOKEN(401, "ID token is incorrect"),
     NOT_FOUND_SUPER_ACCOUNT(404, "Super account not found"),
     NOT_FOUND_VERIFY_TOKEN(404, "Not found verifyToken"),
+    FAILED_TO_FETCH_GOOGLE_USER_INFO(500, "Failed to fetch Google user info"),
+    FAILED_TO_FETCH_GOOGLE_USER_INFO_UTILS(500, "Failed to fetch Google user info (GoogleOAuthUtils)"),
 
     // token
     NOT_FOUND_ACCESS_TOKEN(404, "Not found: Access Token"),
     NOT_FOUND_REFRESH_TOKEN(404, "Not found: Refresh Token"),
+    FAILED_TO_CREATE_CUSTOM_TOKEN(500, "Failed to create custom token"),
+    FAILED_TO_VERIFY_ID_TOKEN(500, "failed to verify Id Token"),
+
 
     // email
     REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE(500, "Request gmail threads get one api");
