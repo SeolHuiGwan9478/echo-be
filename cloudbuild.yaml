@@ -15,31 +15,64 @@ steps:
       - |
         gcloud secrets versions access latest --secret="application-prod" > application-prod.yml
 
-  # Build the container image
+  # Pull the cached image if it exists
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA', '.']
+    entrypoint: 'bash'
+    args: [
+      '-c',
+      'docker pull asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA || exit 0'
+    ]
+
+  # Build the container image with caching
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
+      '--cache-from', 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
+      '.'
+    ]
     dir: './'
 
   # Push the container image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA']
+    args: [
+      'push',
+      'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
+    ]
+
+  # Tag the latest image for cache purposes
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'tag',
+      'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
+      'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:latest'
+    ]
+
+  # Push the latest tagged image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push',
+      'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:latest'
+    ]
 
   # Deploy container image to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'gcloud'
-    args:
-      - 'run'
-      - 'deploy'
-      - 'echo-be'
-      - '--platform=managed'
-      - '--image'
-      - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
-      - '--region'
-      - 'asia-northeast3'
-      - '--allow-unauthenticated'
+    args: [
+      'run',
+      'deploy',
+      'echo-be',
+      '--platform=managed',
+      '--image',
+      'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
+      '--region',
+      'asia-northeast3',
+      '--allow-unauthenticated'
+    ]
 
 images:
   - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
+  - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY

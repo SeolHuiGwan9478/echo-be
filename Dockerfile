@@ -6,7 +6,7 @@ COPY application-prod.yml /app/src/main/resources/application-prod.yml
 RUN chmod +x ./gradlew
 RUN ./gradlew clean build -x test
 
-FROM openjdk:17
+FROM openjdk:17-jdk-alpine
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
