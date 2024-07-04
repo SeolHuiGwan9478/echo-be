@@ -42,10 +42,12 @@ public class AuthService {
 
     private Map<String, Object> getGoogleUserInfoAndTokens(String code) {
         try {
+            // Google Token 추출
             Map<String, String> tokenResponse = googleOAuthUtils.getGoogleTokens(code);
             String accessToken = tokenResponse.get("access_token");
             String refreshToken = tokenResponse.get("refresh_token");
 
+            // userInfo에 Token 삽입해서 반환
             Map<String, Object> userInfo = googleOAuthUtils.getGoogleUserInfo(accessToken);
             userInfo.put("access_token", accessToken);
             userInfo.put("refresh_token", refreshToken);
@@ -80,7 +82,7 @@ public class AuthService {
     }
 
     private void constructAndRedirect(HttpServletResponse response, String customToken, String displayName, String profileImageUrl, String email) {
-        String url = UriComponentsBuilder.fromHttpUrl("http://localhost:3000")
+        String url = UriComponentsBuilder.fromHttpUrl("https://echo-homepage.vercel.app/sign-in")
                 .queryParam("customToken", customToken)
                 .queryParam("displayName", displayName)
                 .queryParam("profileImageUrl", profileImageUrl)
@@ -90,7 +92,7 @@ public class AuthService {
         try {
             response.sendRedirect(url);
         } catch (Exception e) {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_USER_INFO);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_REDIRECT_GOOGLE_USER_INFO);
         }
     }
 
