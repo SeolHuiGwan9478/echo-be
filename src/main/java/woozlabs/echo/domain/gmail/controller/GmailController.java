@@ -59,8 +59,19 @@ public class GmailController {
     public ResponseEntity<ResponseDto> trashThread(@RequestParam("accessToken") String accessToken, @PathVariable("id") String id){
         log.info("Request to trash thread");
         try {
-            GmailThreadDeleteResponse response = gmailService.trashUserEmailThread(accessToken, id);
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            GmailThreadTrashResponse response = gmailService.trashUserEmailThread(accessToken, id);
+            return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @DeleteMapping("/api/v1/gmail/threads/{id}")
+    public ResponseEntity<ResponseDto> deleteThread(@RequestParam("accessToken") String accessToken, @PathVariable("id") String id){
+        log.info("Request to delete thread");
+        try {
+            GmailThreadDeleteResponse response = gmailService.deleteUserEmailThread(accessToken, id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }

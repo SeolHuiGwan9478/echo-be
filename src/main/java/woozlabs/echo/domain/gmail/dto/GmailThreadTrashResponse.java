@@ -6,6 +6,6 @@ import woozlabs.echo.global.dto.ResponseDto;
 
 @Getter
 @AllArgsConstructor
-public class GmailThreadDeleteResponse implements ResponseDto {
-    private String id;
+public class GmailThreadTrashResponse implements ResponseDto {
+    private final String id;
 }

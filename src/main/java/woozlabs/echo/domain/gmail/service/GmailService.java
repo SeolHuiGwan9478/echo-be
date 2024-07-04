@@ -65,12 +65,20 @@ public class GmailService {
                 .build();
     }
 
-    public GmailThreadDeleteResponse trashUserEmailThread(String accessToken, String id) throws Exception{
+    public GmailThreadTrashResponse trashUserEmailThread(String accessToken, String id) throws Exception{
         Gmail gmailService = createGmailService(accessToken);
         Thread trashedThread = gmailService.users().threads().trash(USER_ID, id)
                 .setPrettyPrint(Boolean.TRUE)
                 .execute();
-        return new GmailThreadDeleteResponse(trashedThread.getId());
+        return new GmailThreadTrashResponse(trashedThread.getId());
+    }
+
+    public GmailThreadDeleteResponse deleteUserEmailThread(String accessToken, String id) throws Exception{
+        Gmail gmailService = createGmailService(accessToken);
+        gmailService.users().threads().delete(USER_ID, id)
+                .setPrettyPrint(Boolean.TRUE)
+                .execute();
+        return new GmailThreadDeleteResponse(id);
     }
 
     public GmailThreadListSearchResponse searchUserEmailThreads(String accessToken, GmailSearchParams params) throws Exception{
