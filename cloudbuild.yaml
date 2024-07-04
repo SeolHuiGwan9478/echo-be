@@ -20,7 +20,7 @@ steps:
     entrypoint: 'bash'
     args: [
       '-c',
-      'docker pull asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA || exit 0'
+      'docker pull asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:latest || exit 0'
     ]
 
   # Build the container image with caching
@@ -28,10 +28,9 @@ steps:
     args: [
       'build',
       '-t', 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
-      '--cache-from', 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
+      '--cache-from', 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:latest',
       '.'
     ]
-    dir: './'
 
   # Push the container image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
@@ -57,7 +56,6 @@ steps:
 
   # Deploy container image to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'gcloud'
     args: [
       'run',
       'deploy',
