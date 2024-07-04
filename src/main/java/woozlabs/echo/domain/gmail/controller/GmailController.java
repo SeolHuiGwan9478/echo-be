@@ -78,7 +78,7 @@ public class GmailController {
     }
 
     @PostMapping("/api/v1/gmail/messages/send")
-    public ResponseEntity<ResponseDto> sendMessage(){
+    public ResponseEntity<ResponseDto> sendMessage(@RequestBody GmailMessageSendRequest request){
         log.info("Request to send message");
         try {
             return new ResponseEntity<>(HttpStatus.CREATED);
