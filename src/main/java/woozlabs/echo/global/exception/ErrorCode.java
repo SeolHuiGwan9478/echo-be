@@ -24,6 +24,7 @@ public enum ErrorCode {
     NOT_FOUND_VERIFY_TOKEN(404, "Not found verifyToken"),
     FAILED_TO_FETCH_GOOGLE_USER_INFO(500, "Failed to fetch Google user info"),
     FAILED_TO_FETCH_GOOGLE_USER_INFO_UTILS(500, "Failed to fetch Google user info (GoogleOAuthUtils)"),
+    FAILED_TO_REDIRECT_GOOGLE_USER_INFO(500, "Failed to redirect Google user info"),
 
     // token
     NOT_FOUND_ACCESS_TOKEN(404, "Not found: Access Token"),
