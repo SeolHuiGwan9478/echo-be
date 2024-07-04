@@ -73,6 +73,13 @@ public class GmailService {
         return new GmailThreadDeleteResponse(trashedThread.getId());
     }
 
+    public void searchUserEmailThreads(String accessToken, GmailSearchParams params) throws Exception{
+        Gmail gmailService = createGmailService(accessToken);
+        ListThreadsResponse response = getSearchListThreadsResponse(params, gmailService);
+        List<Thread> threads = response.getThreads();
+        System.out.println(threads);
+    }
+
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
         List<CompletableFuture<Optional<GmailThreadListThreads>>> futures = threads.stream()
                 .map((thread) -> asyncGmailService.asyncRequestGmailThreadGetForList(thread, gmailService)
@@ -105,6 +112,16 @@ public class GmailService {
                 .setPageToken(pageToken)
                 .setPrettyPrint(Boolean.TRUE)
                 .setQ(THREADS_LIST_Q + SPACE_CHAR + category)
+                .execute();
+    }
+
+    private ListThreadsResponse getSearchListThreadsResponse(GmailSearchParams params, Gmail gmailService) throws IOException{
+        String q = params.createQ();
+        return gmailService.users().threads()
+                .list(USER_ID)
+                .setMaxResults(THREADS_LIST_MAX_LENGTH)
+                .setPrettyPrint(Boolean.TRUE)
+                .setQ(q)
                 .execute();
     }
 
