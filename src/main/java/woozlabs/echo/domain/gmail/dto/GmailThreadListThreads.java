@@ -26,6 +26,8 @@ public class GmailThreadListThreads implements Comparable<GmailThreadListThreads
 
     @Override
     public int compareTo(GmailThreadListThreads o) {
-        return internalDate.compareTo(o.getInternalDate());
+        if (internalDate.isBefore(o.getInternalDate())) return 1;
+        else if (internalDate.isAfter(o.getInternalDate())) return -1;
+        else return 0;
     }
 }

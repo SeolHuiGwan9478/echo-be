@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
 
@@ -90,7 +91,7 @@ public class GmailService {
             }catch (InterruptedException | CancellationException | ExecutionException e){
                 throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
-        }).toList();
+        }).collect(Collectors.toList());
     }
 
     private List<GmailThreadGetMessages> getConvertedMessages(List<Message> messages){
