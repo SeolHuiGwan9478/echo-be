@@ -93,6 +93,11 @@ public class GmailService {
                 .build();
     }
 
+    public void sendUserEmailMessage(String accessToken) throws Exception{
+        Gmail gmailService = createGmailService(accessToken);
+        //gmailService.users().messages().send(USER_ID);
+    }
+
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
         List<CompletableFuture<Optional<GmailThreadListThreads>>> futures = threads.stream()
                 .map((thread) -> asyncGmailService.asyncRequestGmailThreadGetForList(thread, gmailService)
