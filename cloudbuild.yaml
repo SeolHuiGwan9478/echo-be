@@ -37,7 +37,7 @@ steps:
       - '--region'
       - 'asia-northeast3'
       - '--allow-unauthenticated'
-      -
+
 images:
   - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
 
