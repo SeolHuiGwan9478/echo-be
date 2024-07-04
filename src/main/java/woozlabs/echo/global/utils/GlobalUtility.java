@@ -16,6 +16,7 @@ public class GlobalUtility {
             splitSender.add(matcher.group(1).trim());
             splitSender.add(matcher.group(2).trim());
         }else{
+            splitSender.add(sender.substring(0, sender.indexOf("@")));
             splitSender.add(sender);
         }
         return splitSender;

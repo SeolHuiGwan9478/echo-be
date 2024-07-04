@@ -14,11 +14,8 @@ import com.google.auth.oauth2.GoogleCredentials;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import woozlabs.echo.domain.gmail.dto.GmailThreadGetMessages;
-import woozlabs.echo.domain.gmail.dto.GmailThreadGetResponse;
+import woozlabs.echo.domain.gmail.dto.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
-import woozlabs.echo.domain.gmail.dto.GmailThreadListResponse;
-import woozlabs.echo.domain.gmail.dto.GmailThreadListThreads;
 import woozlabs.echo.global.constant.GlobalConstant;
 
 import java.io.IOException;
@@ -26,6 +23,7 @@ import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
 
@@ -37,7 +35,8 @@ public class GmailService {
     private final List<String> SCOPES = Arrays.asList(
             "https://www.googleapis.com/auth/gmail.readonly",
             "https://www.googleapis.com/auth/userinfo.profile",
-            "https://www.googleapis.com/auth/userinfo.email"
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/gmail.modify"
     );
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
@@ -48,6 +47,7 @@ public class GmailService {
         ListThreadsResponse response = getListThreadsResponse(pageToken, category, gmailService);
         List<Thread> threads = response.getThreads(); // get threads
         List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
+        Collections.sort(detailedThreads);
         return GmailThreadListResponse.builder()
                 .threads(detailedThreads)
                 .nextPageToken(response.getNextPageToken())
@@ -65,6 +65,39 @@ public class GmailService {
                 .build();
     }
 
+    public GmailThreadTrashResponse trashUserEmailThread(String accessToken, String id) throws Exception{
+        Gmail gmailService = createGmailService(accessToken);
+        Thread trashedThread = gmailService.users().threads().trash(USER_ID, id)
+                .setPrettyPrint(Boolean.TRUE)
+                .execute();
+        return new GmailThreadTrashResponse(trashedThread.getId());
+    }
+
+    public GmailThreadDeleteResponse deleteUserEmailThread(String accessToken, String id) throws Exception{
+        Gmail gmailService = createGmailService(accessToken);
+        gmailService.users().threads().delete(USER_ID, id)
+                .setPrettyPrint(Boolean.TRUE)
+                .execute();
+        return new GmailThreadDeleteResponse(id);
+    }
+
+    public GmailThreadListSearchResponse searchUserEmailThreads(String accessToken, GmailSearchParams params) throws Exception{
+        Gmail gmailService = createGmailService(accessToken);
+        ListThreadsResponse response = getSearchListThreadsResponse(params, gmailService);
+        List<Thread> threads = response.getThreads();
+        List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
+        Collections.sort(detailedThreads);
+        return GmailThreadListSearchResponse.builder()
+                .threads(detailedThreads)
+                .nextPageToken(response.getNextPageToken())
+                .build();
+    }
+
+    public void sendUserEmailMessage(String accessToken) throws Exception{
+        Gmail gmailService = createGmailService(accessToken);
+        //gmailService.users().messages().send(USER_ID);
+    }
+
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
         List<CompletableFuture<Optional<GmailThreadListThreads>>> futures = threads.stream()
                 .map((thread) -> asyncGmailService.asyncRequestGmailThreadGetForList(thread, gmailService)
@@ -78,12 +111,12 @@ public class GmailService {
         return futures.stream().map((future) -> {
             try{
                 Optional<GmailThreadListThreads> result = future.get();
-                if(result.isEmpty()) throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
+                if(result.isEmpty())throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
                 return result.get();
             }catch (InterruptedException | CancellationException | ExecutionException e){
                 throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
-        }).toList();
+        }).collect(Collectors.toList());
     }
 
     private List<GmailThreadGetMessages> getConvertedMessages(List<Message> messages){
@@ -97,6 +130,16 @@ public class GmailService {
                 .setPageToken(pageToken)
                 .setPrettyPrint(Boolean.TRUE)
                 .setQ(THREADS_LIST_Q + SPACE_CHAR + category)
+                .execute();
+    }
+
+    private ListThreadsResponse getSearchListThreadsResponse(GmailSearchParams params, Gmail gmailService) throws IOException{
+        String q = params.createQ();
+        return gmailService.users().threads()
+                .list(USER_ID)
+                .setMaxResults(THREADS_LIST_MAX_LENGTH)
+                .setPrettyPrint(Boolean.TRUE)
+                .setQ(q)
                 .execute();
     }
 
@@ -121,6 +164,7 @@ public class GmailService {
         HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
         HttpRequestInitializer requestInitializer = createCredentialWithAccessToken(accessToken);
         return new Gmail.Builder(httpTransport, JSON_FACTORY, requestInitializer)
+                .setApplicationName("Echo")
                 .build();
     }
 }

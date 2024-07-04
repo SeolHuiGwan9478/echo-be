@@ -7,11 +7,17 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListAttachments;
 import woozlabs.echo.domain.gmail.dto.GmailThreadListThreads;
+import woozlabs.echo.domain.gmail.exception.GmailException;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
@@ -19,49 +25,65 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Service
 public class AsyncGmailService {
-    private final String SPLIT_SENDER_DATA_ERR_MSG = "발신자의 데이터를 분리할 수 없습니다.";
-
     @Async
     public CompletableFuture<GmailThreadListThreads> asyncRequestGmailThreadGetForList(Thread thread, Gmail gmailService){
         try {
             String id = thread.getId();
-            String snippet = thread.getSnippet();
             BigInteger historyId = thread.getHistoryId();
             GmailThreadListThreads gmailThreadListThreads= new GmailThreadListThreads();
             Thread detailedThread = gmailService.users().threads().get(USER_ID, id)
                     .setFormat(THREADS_GET_FULL_FORMAT)
                     .execute();
             List<Message> messages = detailedThread.getMessages();
-            Message topMessage = messages.get(0);
-            MessagePart payload = topMessage.getPayload();
-            List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
-            headers.forEach((header) -> {
-                switch (header.getName()) {
-                    case THREAD_PAYLOAD_HEADER_SUBJECT_KEY -> gmailThreadListThreads.setSubject(header.getValue());
-                    case THREAD_PAYLOAD_HEADER_FROM_KEY -> {
-                        String sender = header.getValue();
-                        List<String> splitSender = splitSenderData(sender);
-                        if(splitSender.size() != 1) gmailThreadListThreads.setFromEmail(splitSender.get(1));
-                        gmailThreadListThreads.setFromName(splitSender.get(0));
-                    }
-                    case THREAD_PAYLOAD_HEADER_DATE_KEY -> gmailThreadListThreads.setDate(header.getValue());
-                }
-            });
-            List<String> labelIds = topMessage.getLabelIds();
-            String mimType = payload.getMimeType();
+
+            List<String> names = new ArrayList<>();
+            List<String> emails = new ArrayList<>();
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
-            getAttachments(payload, attachments);
+
+            for(int idx = 0;idx < messages.size();idx++){
+                int idxForLambda = idx;
+                Message message = messages.get(idx);
+                MessagePart payload = message.getPayload();
+                List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
+                if(idxForLambda == 0){
+                    gmailThreadListThreads.setLabelIds(message.getLabelIds());
+                    gmailThreadListThreads.setMimeType(payload.getMimeType());
+                }
+                if(idxForLambda == messages.size()-1){
+                    Long rawInternalDate = message.getInternalDate();
+                    LocalDateTime internalDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(rawInternalDate), ZoneId.systemDefault());
+                    gmailThreadListThreads.setSnippet(message.getSnippet());
+                    gmailThreadListThreads.setInternalDate(internalDate);
+                }
+                // get attachments
+                getAttachments(payload, attachments);
+                headers.forEach((header) -> {
+                    String headerName = header.getName();
+                    // first message -> extraction subject
+                    if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)){
+                        gmailThreadListThreads.setSubject(header.getValue());
+                    }
+                    // all messages -> extraction emails & names
+                    else if(headerName.equals(THREAD_PAYLOAD_HEADER_FROM_KEY)){
+                            String sender = header.getValue();
+                            List<String> splitSender = splitSenderData(sender);
+                            if(!names.contains(splitSender.get(0))){
+                                names.add(splitSender.get(0));
+                                emails.add(splitSender.get(1));
+                            }
+                    }
+                });
+            }
             gmailThreadListThreads.setId(id);
-            gmailThreadListThreads.setSnippet(snippet);
             gmailThreadListThreads.setHistoryId(historyId);
-            gmailThreadListThreads.setMimeType(mimType);
-            gmailThreadListThreads.setLabelIds(labelIds);
+            gmailThreadListThreads.setFromEmail(emails);
+            gmailThreadListThreads.setFromName(names);
             gmailThreadListThreads.setThreadSize(messages.size());
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());
             return CompletableFuture.completedFuture(gmailThreadListThreads);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new GmailException(e.getMessage());
         }
     }
 
