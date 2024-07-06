@@ -93,9 +93,10 @@ public class GmailController {
 
 
     @PostMapping("/api/v1/gmail/messages/send")
-    public ResponseEntity<ResponseDto> sendMessage(@RequestBody GmailMessageSendRequest request){
+    public ResponseEntity<ResponseDto> sendMessage(@RequestParam("accessToken") String accessToken, @RequestBody GmailMessageSendRequest request){
         log.info("Request to send message");
         try {
+            GmailMessageSendResponse response = gmailService.sendUserEmailMessage(accessToken, request);
             return new ResponseEntity<>(HttpStatus.CREATED);
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

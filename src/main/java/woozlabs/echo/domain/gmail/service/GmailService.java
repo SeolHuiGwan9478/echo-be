@@ -13,11 +13,17 @@ import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.binary.Base64;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gmail.dto.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.global.constant.GlobalConstant;
 
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CancellationException;
@@ -105,9 +111,16 @@ public class GmailService {
                 .data(attachment.getData()).build();
     }
 
-    public void sendUserEmailMessage(String accessToken) throws Exception{
+    public GmailMessageSendResponse sendUserEmailMessage(String accessToken, GmailMessageSendRequest request) throws Exception{
         Gmail gmailService = createGmailService(accessToken);
-        //gmailService.users().messages().send(USER_ID);
+        MimeMessage mimeMessage = createEmail(request);
+        Message message = createMessage(mimeMessage);
+        Message responseMessage = gmailService.users().messages().send(USER_ID, message).execute();
+        return GmailMessageSendResponse.builder()
+                .id(responseMessage.getId())
+                .threadId(responseMessage.getThreadId())
+                .labelsId(responseMessage.getLabelIds())
+                .snippet(responseMessage.getSnippet()).build();
     }
 
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
@@ -178,5 +191,28 @@ public class GmailService {
         return new Gmail.Builder(httpTransport, JSON_FACTORY, requestInitializer)
                 .setApplicationName("Echo")
                 .build();
+    }
+
+    private MimeMessage createEmail(GmailMessageSendRequest request) throws MessagingException {
+        Properties props = new Properties();
+        Session session = Session.getDefaultInstance(props, null);
+        MimeMessage email = new MimeMessage(session);
+
+        email.setFrom(new InternetAddress(request.getFromEmailAddress()));
+        email.addRecipient(javax.mail.Message.RecipientType.TO,
+                new InternetAddress(request.getToEmailAddress()));
+        email.setSubject(request.getSubject());
+        email.setText(request.getBodyText());
+        return email;
+    }
+
+    private Message createMessage(MimeMessage emailContent) throws MessagingException, IOException{
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        emailContent.writeTo(buffer);
+        byte[] bytes = buffer.toByteArray();
+        String encodedEmail = Base64.encodeBase64URLSafeString(bytes);
+        Message message = new Message();
+        message.setRaw(encodedEmail);
+        return message;
     }
 }
