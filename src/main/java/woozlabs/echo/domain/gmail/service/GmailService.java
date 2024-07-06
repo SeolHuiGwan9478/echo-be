@@ -113,6 +113,9 @@ public class GmailService {
 
     public GmailMessageSendResponse sendUserEmailMessage(String accessToken, GmailMessageSendRequest request) throws Exception{
         Gmail gmailService = createGmailService(accessToken);
+        Profile profile = gmailService.users().getProfile(USER_ID).execute();
+        String fromEmailAddress = profile.getEmailAddress();
+        request.setFromEmailAddress(fromEmailAddress);
         MimeMessage mimeMessage = createEmail(request);
         Message message = createMessage(mimeMessage);
         Message responseMessage = gmailService.users().messages().send(USER_ID, message).execute();

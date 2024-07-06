@@ -97,7 +97,7 @@ public class GmailController {
         log.info("Request to send message");
         try {
             GmailMessageSendResponse response = gmailService.sendUserEmailMessage(accessToken, request);
-            return new ResponseEntity<>(HttpStatus.CREATED);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
