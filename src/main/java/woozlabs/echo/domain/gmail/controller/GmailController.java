@@ -15,10 +15,11 @@ import woozlabs.echo.global.dto.ResponseDto;
 public class GmailController {
     private final GmailService gmailService;
 
+    // threads
     @GetMapping("/api/v1/gmail/threads/inbox")
     public ResponseEntity<ResponseDto> getInboxThreads(@RequestParam("accessToken") String accessToken,
-                                                  @RequestParam(value = "pageToken", required = false) String pageToken,
-                                                  @RequestParam(value = "category", required = false, defaultValue = "category:primary") String category){
+                                                       @RequestParam(value = "pageToken", required = false) String pageToken,
+                                                       @RequestParam(value = "category", required = false, defaultValue = "category:primary") String category){
         log.info("Request to get threads");
         try {
             GmailThreadListResponse response = gmailService.getUserEmailThreads(accessToken, pageToken, category);
@@ -76,6 +77,20 @@ public class GmailController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
+
+    // messages
+    @GetMapping("/api/v1/gmail/messages/{messageid}/attachments/{id}")
+    public ResponseEntity<ResponseDto> getAttachment(@RequestParam("accessToken") String accessToken,
+                                                     @PathVariable("messageid") String messageId, @PathVariable("id") String id){
+        log.info("Request to get attachment in message");
+        try {
+            GmailMessageAttachmentResponse response = gmailService.getAttachment(accessToken, messageId, id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
 
     @PostMapping("/api/v1/gmail/messages/send")
     public ResponseEntity<ResponseDto> sendMessage(@RequestBody GmailMessageSendRequest request){

@@ -93,6 +93,18 @@ public class GmailService {
                 .build();
     }
 
+    public GmailMessageAttachmentResponse getAttachment(String accessToken, String messageId, String id) throws Exception{
+        Gmail gmailService = createGmailService(accessToken);
+        MessagePartBody attachment = gmailService.users().messages()
+                .attachments()
+                .get(USER_ID, messageId, id)
+                .execute();
+        return GmailMessageAttachmentResponse.builder()
+                .attachmentId(attachment.getAttachmentId())
+                .size(attachment.getSize())
+                .data(attachment.getData()).build();
+    }
+
     public void sendUserEmailMessage(String accessToken) throws Exception{
         Gmail gmailService = createGmailService(accessToken);
         //gmailService.users().messages().send(USER_ID);
