@@ -41,11 +41,12 @@ public class TokenSchedulerService {
             SuperAccount superAccount = member.getSuperAccount();
             if (superAccount != null && shouldRefreshToken(superAccount.getAccessTokenFetchedAt())) {
                 refreshToken(superAccount);
-            }
 
-            for (SubAccount subAccount : member.getSubAccount()) {
-                if (shouldRefreshToken(subAccount.getAccessTokenFetchedAt())) {
-                    refreshToken(subAccount);
+                List<SubAccount> subAccounts = superAccount.getSubAccounts();
+                for (SubAccount subAccount : subAccounts) {
+                    if (shouldRefreshToken(subAccount.getAccessTokenFetchedAt())) {
+                        refreshToken(subAccount);
+                    }
                 }
             }
         }
