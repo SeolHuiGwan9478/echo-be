@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Setter
@@ -24,6 +26,7 @@ public class SubAccount extends BaseEntity {
     private String profileImageUrl;
     private String accessToken;
     private String refreshToken;
+    private LocalDateTime accessTokenFetchedAt;
 
     @Enumerated(EnumType.STRING)
     private Role role;
