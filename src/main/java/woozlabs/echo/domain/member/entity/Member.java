@@ -1,14 +1,15 @@
 package woozlabs.echo.domain.member.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
 import woozlabs.echo.global.common.entity.BaseEntity;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,6 +25,7 @@ public class Member extends BaseEntity {
     private String profileImageUrl;
     private String accessToken;
     private String refreshToken;
+    private LocalDateTime accessTokenFetchedAt;
 
     @Enumerated(EnumType.STRING)
     private Role role;
