@@ -19,6 +19,7 @@ import woozlabs.echo.global.exception.ErrorCode;
 import woozlabs.echo.global.utils.FirebaseTokenVerifier;
 import woozlabs.echo.global.utils.GoogleOAuthUtils;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Service
@@ -75,6 +76,7 @@ public class AuthService {
                         .profileImageUrl(profileImageUrl)
                         .accessToken(accessToken)
                         .refreshToken(refreshToken)
+                        .accessTokenFetchedAt(LocalDateTime.now())
                         .role(Role.ROLE_USER)
                         .build());
 
@@ -113,6 +115,7 @@ public class AuthService {
                         .profileImageUrl(member.getProfileImageUrl())
                         .accessToken(member.getAccessToken())
                         .refreshToken(member.getRefreshToken())
+                        .accessTokenFetchedAt(LocalDateTime.now())
                         .role(Role.ROLE_USER)
                         .member(member)
                         .build());
@@ -142,6 +145,7 @@ public class AuthService {
                 .profileImageUrl(member.getProfileImageUrl())
                 .accessToken(member.getAccessToken())
                 .refreshToken(member.getRefreshToken())
+                .accessTokenFetchedAt(LocalDateTime.now())
                 .role(Role.ROLE_USER)
                 .member(member)
                 .superAccount(superAccount)
