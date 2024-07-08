@@ -35,7 +35,8 @@ public enum ErrorCode {
 
 
     // email
-    REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE(500, "Request gmail threads get one api");
+    REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE(500, "failed get gmail threads api"),
+    REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE(400, "failed send gmail messages api");
 
 
     private final int status;

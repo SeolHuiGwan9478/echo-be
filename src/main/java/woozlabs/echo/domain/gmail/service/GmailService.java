@@ -13,11 +13,27 @@ import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.binary.Base64;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.global.constant.GlobalConstant;
+import woozlabs.echo.global.exception.CustomErrorException;
+import woozlabs.echo.global.exception.ErrorCode;
 
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.activation.FileDataSource;
+import javax.mail.MessagingException;
+import javax.mail.Multipart;
+import javax.mail.Session;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CancellationException;
@@ -32,11 +48,15 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 @RequiredArgsConstructor
 public class GmailService {
     // constants
+    private final String MULTI_PART_TEXT_PLAIN = "text/plain";
+    private final String TEMP_FILE_PREFIX = "echo";
     private final List<String> SCOPES = Arrays.asList(
             "https://www.googleapis.com/auth/gmail.readonly",
             "https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/userinfo.email",
-            "https://www.googleapis.com/auth/gmail.modify"
+            "https://www.googleapis.com/auth/gmail.modify",
+            "https://mail.google.com/"
+
     );
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
@@ -93,9 +113,31 @@ public class GmailService {
                 .build();
     }
 
-    public void sendUserEmailMessage(String accessToken) throws Exception{
+    public GmailMessageAttachmentResponse getAttachment(String accessToken, String messageId, String id) throws Exception{
         Gmail gmailService = createGmailService(accessToken);
-        //gmailService.users().messages().send(USER_ID);
+        MessagePartBody attachment = gmailService.users().messages()
+                .attachments()
+                .get(USER_ID, messageId, id)
+                .execute();
+        return GmailMessageAttachmentResponse.builder()
+                .attachmentId(attachment.getAttachmentId())
+                .size(attachment.getSize())
+                .data(attachment.getData()).build();
+    }
+
+    public GmailMessageSendResponse sendUserEmailMessage(String accessToken, GmailMessageSendRequest request) throws Exception{
+        Gmail gmailService = createGmailService(accessToken);
+        Profile profile = gmailService.users().getProfile(USER_ID).execute();
+        String fromEmailAddress = profile.getEmailAddress();
+        request.setFromEmailAddress(fromEmailAddress);
+        MimeMessage mimeMessage = createEmail(request);
+        Message message = createMessage(mimeMessage);
+        Message responseMessage = gmailService.users().messages().send(USER_ID, message).execute();
+        return GmailMessageSendResponse.builder()
+                .id(responseMessage.getId())
+                .threadId(responseMessage.getThreadId())
+                .labelsId(responseMessage.getLabelIds())
+                .snippet(responseMessage.getSnippet()).build();
     }
 
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
@@ -166,5 +208,45 @@ public class GmailService {
         return new Gmail.Builder(httpTransport, JSON_FACTORY, requestInitializer)
                 .setApplicationName("Echo")
                 .build();
+    }
+
+    private MimeMessage createEmail(GmailMessageSendRequest request) throws MessagingException, IOException {
+        Properties props = new Properties();
+        Session session = Session.getDefaultInstance(props, null);
+        MimeMessage email = new MimeMessage(session);
+        // setting base
+        email.setFrom(new InternetAddress(request.getFromEmailAddress()));
+        email.addRecipient(javax.mail.Message.RecipientType.TO,
+                new InternetAddress(request.getToEmailAddress()));
+        email.setSubject(request.getSubject());
+        // setting body
+        Multipart multipart = new MimeMultipart();
+        MimeBodyPart mimeBodyPart = new MimeBodyPart();
+        mimeBodyPart.setContent(request.getBodyText(), MULTI_PART_TEXT_PLAIN);
+        multipart.addBodyPart(mimeBodyPart); // set bodyText
+
+        for(MultipartFile mimFile : request.getFiles()){
+            MimeBodyPart fileMimeBodyPart = new MimeBodyPart();
+            if(mimFile.getOriginalFilename() == null) throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE);
+            File file = File.createTempFile(TEMP_FILE_PREFIX, mimFile.getOriginalFilename());
+            mimFile.transferTo(file);
+            DataSource source = new FileDataSource(file);
+            fileMimeBodyPart.setFileName(mimFile.getOriginalFilename());
+            fileMimeBodyPart.setDataHandler(new DataHandler(source));
+            multipart.addBodyPart(fileMimeBodyPart);
+            file.deleteOnExit();
+        }
+        email.setContent(multipart);
+        return email;
+    }
+
+    private Message createMessage(MimeMessage emailContent) throws MessagingException, IOException{
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        emailContent.writeTo(buffer);
+        byte[] bytes = buffer.toByteArray();
+        String encodedEmail = Base64.encodeBase64URLSafeString(bytes);
+        Message message = new Message();
+        message.setRaw(encodedEmail);
+        return message;
     }
 }
