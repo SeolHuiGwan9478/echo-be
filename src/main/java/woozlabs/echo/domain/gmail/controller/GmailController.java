@@ -3,11 +3,15 @@ package woozlabs.echo.domain.gmail.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
 import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.global.dto.ResponseDto;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -92,10 +96,19 @@ public class GmailController {
     }
 
 
-    @PostMapping("/api/v1/gmail/messages/send")
-    public ResponseEntity<ResponseDto> sendMessage(@RequestParam("accessToken") String accessToken, @RequestBody GmailMessageSendRequest request){
+    @PostMapping(value = "/api/v1/gmail/messages/send", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseDto> sendMessage(@RequestParam("accessToken") String accessToken,
+                                                   @RequestPart("toEmailAddress") String toEmailAddress,
+                                                   @RequestPart("subject") String subject,
+                                                   @RequestPart("bodyText") String bodyText,
+                                                   @RequestPart("files") List<MultipartFile> files){
         log.info("Request to send message");
         try {
+            GmailMessageSendRequest request = new GmailMessageSendRequest();
+            request.setToEmailAddress(toEmailAddress);
+            request.setSubject(subject);
+            request.setBodyText(bodyText);
+            request.setFiles(files);
             GmailMessageSendResponse response = gmailService.sendUserEmailMessage(accessToken, request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         }catch (Exception e){
