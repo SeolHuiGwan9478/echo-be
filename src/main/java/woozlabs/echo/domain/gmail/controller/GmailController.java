@@ -101,7 +101,7 @@ public class GmailController {
                                                    @RequestPart("toEmailAddress") String toEmailAddress,
                                                    @RequestPart("subject") String subject,
                                                    @RequestPart("bodyText") String bodyText,
-                                                   @RequestPart("files") List<MultipartFile> files){
+                                                   @RequestPart(value = "files", required = false) List<MultipartFile> files){
         log.info("Request to send message");
         try {
             GmailMessageSendRequest request = new GmailMessageSendRequest();
