@@ -32,11 +32,11 @@ public class TokenSchedulerService {
     @Scheduled(fixedRate = 60000)
     @Transactional
     public void checkAndRefreshTokens() {
-        List<Member> members = memberRepository.findAll();
+        LocalDateTime cutoffTime = LocalDateTime.now().minus(57, ChronoUnit.MINUTES);
+
+        List<Member> members = memberRepository.findMembersWithAccountsByCutoffTime(cutoffTime);
         for (Member member : members) {
-            if (shouldRefreshToken(member.getAccessTokenFetchedAt())) {
-                refreshToken(member);
-            }
+            refreshToken(member);
 
             SuperAccount superAccount = member.getSuperAccount();
             if (superAccount != null && shouldRefreshToken(superAccount.getAccessTokenFetchedAt())) {
