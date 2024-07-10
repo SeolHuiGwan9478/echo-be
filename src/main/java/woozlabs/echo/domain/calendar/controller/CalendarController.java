@@ -2,12 +2,14 @@ package woozlabs.echo.domain.calendar.controller;
 
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.model.*;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import woozlabs.echo.domain.calendar.dto.EventRequestDto;
 import woozlabs.echo.domain.calendar.service.CalendarService;
+import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
@@ -40,9 +42,10 @@ public class CalendarController {
     }
 
     @GetMapping("/events")
-    public ResponseEntity<List<Event>> getEvents(@RequestParam("accessToken") String accessToken) {
+    public ResponseEntity<List<Event>> getEvents(HttpServletRequest httpServletRequest) {
         try {
-            List<Event> events = calendarService.getEvents(accessToken);
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            List<Event> events = calendarService.getEvents(uid);
             return ResponseEntity.ok(events);
         } catch (GeneralSecurityException e) {
             log.error("Security error while fetching Google Calendar events", e);
@@ -54,10 +57,11 @@ public class CalendarController {
     }
 
     @PostMapping("/events")
-    public ResponseEntity<Event> createEvent(@RequestParam("accessToken") String accessToken,
+    public ResponseEntity<Event> createEvent(HttpServletRequest httpServletRequest,
                                               @RequestBody EventRequestDto requestDto) {
         Event createEvent = null;
         try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             Event event = new Event()
                     .setSummary(requestDto.getSummary())
                     .setLocation(requestDto.getLocation())
@@ -67,9 +71,9 @@ public class CalendarController {
 
             if (requestDto.isCreateGoogleMeet()) {
                 event.setConferenceData(createGoogleMeetConferenceData());
-                createEvent = calendarService.createEventWithConference(accessToken, event);
+                createEvent = calendarService.createEventWithConference(uid, event);
             } else {
-                createEvent = calendarService.createEvent(accessToken, event);
+                createEvent = calendarService.createEvent(uid, event);
             }
         } catch (GeneralSecurityException e) {
             log.error("Security error while fetching Google Calendar events", e);
@@ -82,11 +86,12 @@ public class CalendarController {
     }
 
     @PutMapping("/events/{eventId}")
-    public ResponseEntity<Event> updateEvent(@RequestParam("accessToken") String accessToken,
+    public ResponseEntity<Event> updateEvent(HttpServletRequest httpServletRequest,
                                              @PathVariable("eventId") String eventId,
                                              @RequestBody EventRequestDto requestDto) {
 
         try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             Event event = new Event()
                     .setSummary(requestDto.getSummary())
                     .setLocation(requestDto.getLocation())
@@ -98,7 +103,7 @@ public class CalendarController {
                 event.setConferenceData(createGoogleMeetConferenceData());
             }
 
-            Event updatedEvent = calendarService.updateEvent(accessToken, eventId, event);
+            Event updatedEvent = calendarService.updateEvent(uid, eventId, event);
             return ResponseEntity.ok(updatedEvent);
         } catch (GeneralSecurityException e) {
             log.error("Security error while updating Google Calendar event", e);
@@ -110,10 +115,11 @@ public class CalendarController {
     }
 
     @DeleteMapping("/events/{eventId}")
-    public ResponseEntity<Void> deleteEvent(@RequestParam("accessToken") String accessToken,
+    public ResponseEntity<Void> deleteEvent(HttpServletRequest httpServletRequest,
                                             @PathVariable("eventId") String eventId) {
         try {
-            calendarService.deleteEvent(accessToken, eventId);
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            calendarService.deleteEvent(uid, eventId);
             return ResponseEntity.noContent().build();
         } catch (GeneralSecurityException e) {
             log.error("Security error while deleting Google Calendar event", e);
