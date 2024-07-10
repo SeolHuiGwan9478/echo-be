@@ -4,10 +4,13 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public final class GlobalConstant {
+    // Auth
+    public static final String AUTH_UNAUTHORIZED_ERR_MSG = "인증되지 않은 사용자입니다.";
     // End Points
     public static final String FE_HOST_ADDRESS = "http://127.0.0.1:3000";
     // Basic Char
     public static final String SPACE_CHAR = " ";
+    public static final String EMPTY_CHAR = "";
     // Gmail global
     public static final String USER_ID = "me";
     // Gmail threads
@@ -21,4 +24,6 @@ public final class GlobalConstant {
     // Email Error Message
     public static final String EMAIL_ERR_MSG_KEY = "EmailException";
     public static final String REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG = "Internal Server Error: Request gmail messages get one api";
+    // firebase
+    public static final String FIREBASE_UID_KEY = "uid";
 }
