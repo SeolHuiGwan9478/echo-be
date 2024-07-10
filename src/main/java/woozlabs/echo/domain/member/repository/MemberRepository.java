@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
+    Optional<Member> findByUid(String uid);
 
     Optional<Member> findByGoogleProviderId(String googleProviderId);
 

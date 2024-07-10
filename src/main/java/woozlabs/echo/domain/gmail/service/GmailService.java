@@ -11,6 +11,7 @@ import com.google.api.services.gmail.model.Thread;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
+import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
@@ -47,6 +50,7 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 @Slf4j
 @RequiredArgsConstructor
 public class GmailService {
+    private final MemberRepository memberRepository;
     // constants
     private final String MULTI_PART_TEXT_PLAIN = "text/plain";
     private final String TEMP_FILE_PREFIX = "echo";
@@ -62,7 +66,10 @@ public class GmailService {
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private final AsyncGmailService asyncGmailService;
 
-    public GmailThreadListResponse getUserEmailThreads(String accessToken, String pageToken, String category) throws Exception{
+    public GmailThreadListResponse getUserEmailThreads(String uid, String pageToken, String category) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         ListThreadsResponse response = getListThreadsResponse(pageToken, category, gmailService);
         List<Thread> threads = response.getThreads(); // get threads
@@ -74,7 +81,10 @@ public class GmailService {
                 .build();
     }
 
-    public GmailThreadGetResponse getUserEmailThread(String accessToken, String id) throws Exception{
+    public GmailThreadGetResponse getUserEmailThread(String uid, String id) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Thread thread = getOneThreadResponse(id, gmailService);
         List<GmailThreadGetMessages> messages = getConvertedMessages(thread.getMessages());
@@ -85,7 +95,10 @@ public class GmailService {
                 .build();
     }
 
-    public GmailThreadTrashResponse trashUserEmailThread(String accessToken, String id) throws Exception{
+    public GmailThreadTrashResponse trashUserEmailThread(String uid, String id) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Thread trashedThread = gmailService.users().threads().trash(USER_ID, id)
                 .setPrettyPrint(Boolean.TRUE)
@@ -93,7 +106,10 @@ public class GmailService {
         return new GmailThreadTrashResponse(trashedThread.getId());
     }
 
-    public GmailThreadDeleteResponse deleteUserEmailThread(String accessToken, String id) throws Exception{
+    public GmailThreadDeleteResponse deleteUserEmailThread(String uid, String id) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         gmailService.users().threads().delete(USER_ID, id)
                 .setPrettyPrint(Boolean.TRUE)
@@ -101,7 +117,10 @@ public class GmailService {
         return new GmailThreadDeleteResponse(id);
     }
 
-    public GmailThreadListSearchResponse searchUserEmailThreads(String accessToken, GmailSearchParams params) throws Exception{
+    public GmailThreadListSearchResponse searchUserEmailThreads(String uid, GmailSearchParams params) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         ListThreadsResponse response = getSearchListThreadsResponse(params, gmailService);
         List<Thread> threads = response.getThreads();
@@ -113,7 +132,10 @@ public class GmailService {
                 .build();
     }
 
-    public GmailMessageAttachmentResponse getAttachment(String accessToken, String messageId, String id) throws Exception{
+    public GmailMessageAttachmentResponse getAttachment(String uid, String messageId, String id) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         MessagePartBody attachment = gmailService.users().messages()
                 .attachments()
