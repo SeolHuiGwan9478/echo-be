@@ -147,7 +147,10 @@ public class GmailService {
                 .data(attachment.getData()).build();
     }
 
-    public GmailMessageSendResponse sendUserEmailMessage(String accessToken, GmailMessageSendRequest request) throws Exception{
+    public GmailMessageSendResponse sendUserEmailMessage(String uid, GmailMessageSendRequest request) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Profile profile = gmailService.users().getProfile(USER_ID).execute();
         String fromEmailAddress = profile.getEmailAddress();
