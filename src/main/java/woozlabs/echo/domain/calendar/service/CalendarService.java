@@ -51,6 +51,13 @@ public class CalendarService {
         return service.events().insert("primary", event).execute();
     }
 
+    public Event createEventWithConference(String accessToken, Event event) throws IOException, GeneralSecurityException {
+        Calendar service = getCalendarService(accessToken);
+        return service.events().insert("primary", event)
+                .setConferenceDataVersion(1)
+                .execute();
+    }
+
     public Event updateEvent(String accessToken, String eventId, Event event) throws IOException, GeneralSecurityException {
         Calendar service = getCalendarService(accessToken);
         return service.events().update("primary", eventId, event).execute();
