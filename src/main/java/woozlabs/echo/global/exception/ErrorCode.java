@@ -41,7 +41,9 @@ public enum ErrorCode {
     // calendar
     GOOGLE_CALENDAR_SECURITY_ERROR(500, "Security error while fetching Google Calendar events"),
     FAILED_TO_FETCH_GOOGLE_CALENDAR(500, "Failed to get Google Calendar Events"),
-    FAILED_TO_POST_GOOGLE_CALENDAR(500, "Failed to post Google Calendar Events");
+    FAILED_TO_POST_GOOGLE_CALENDAR(500, "Failed to post Google Calendar Events"),
+    FAILED_TO_UPDATE_GOOGLE_CALENDAR(500, "Failed to update Google Calendar Events"),
+    FAILED_TO_DELETE_GOOGLE_CALENDAR(500, "Failed to delete Google Calendar Events");
 
     private final int status;
     private final String message;
