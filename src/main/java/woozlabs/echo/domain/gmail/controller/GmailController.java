@@ -90,9 +90,9 @@ public class GmailController {
     }
 
     // messages
-    @GetMapping("/api/v1/gmail/messages/{messageid}/attachments/{id}")
+    @GetMapping("/api/v1/gmail/messages/{messageId}/attachments/{id}")
     public ResponseEntity<ResponseDto> getAttachment(HttpServletRequest httpServletRequest,
-                                                     @PathVariable("messageid") String messageId, @PathVariable("id") String id){
+                                                     @PathVariable("messageId") String messageId, @PathVariable("id") String id){
         log.info("Request to get attachment in message");
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
@@ -118,7 +118,7 @@ public class GmailController {
             request.setSubject(subject);
             request.setBodyText(bodyText);
             request.setFiles(files);
-            GmailMessageSendResponse response = gmailService.sendUserEmailMessage(accessToken, request);
+            GmailMessageSendResponse response = gmailService.sendUserEmailMessage(uid, request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
