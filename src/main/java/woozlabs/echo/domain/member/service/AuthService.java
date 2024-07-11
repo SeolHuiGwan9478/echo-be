@@ -68,6 +68,17 @@ public class AuthService {
         String refreshToken = (String) userInfo.get("refresh_token");
 
         Member member = memberRepository.findByGoogleProviderId(providerId)
+                .map(existingMember -> {
+                    existingMember.setDisplayName(displayName);
+                    existingMember.setEmail(email);
+                    existingMember.setProfileImageUrl(profileImageUrl);
+                    existingMember.setAccessToken(accessToken);
+                    if (refreshToken != null) {
+                        existingMember.setRefreshToken(refreshToken);
+                    }
+                    existingMember.setAccessTokenFetchedAt(LocalDateTime.now());
+                    return existingMember;
+                })
                 .orElse(Member.builder()
                         .uid(providerId)
                         .googleProviderId(providerId)
