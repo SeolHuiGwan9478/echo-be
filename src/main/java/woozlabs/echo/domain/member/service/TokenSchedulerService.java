@@ -29,7 +29,7 @@ public class TokenSchedulerService {
     private final SubAccountRepository subAccountRepository;
     private final GoogleOAuthUtils googleOAuthUtils;
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 5 * 60 * 1000)
     @Transactional
     public void checkAndRefreshTokens() {
         LocalDateTime cutoffTime = LocalDateTime.now().minus(57, ChronoUnit.MINUTES);
