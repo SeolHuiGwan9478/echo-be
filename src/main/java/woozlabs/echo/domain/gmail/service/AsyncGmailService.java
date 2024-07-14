@@ -94,8 +94,7 @@ public class AsyncGmailService {
             Draft detailedDraft = gmailService.users().drafts().get(USER_ID, id)
                     .setFormat(DRAFTS_GET_FULL_FORMAT)
                     .execute();
-            Message message = detailedDraft.getMessage();
-            BigInteger historyId = message.getHistoryId();
+            Message message = detailedDraft.getMessage();;
 
             List<String> names = new ArrayList<>();
             List<String> emails = new ArrayList<>();
@@ -108,11 +107,11 @@ public class AsyncGmailService {
             headers.forEach((header) -> {
                 String headerName = header.getName();
                 // first message -> extraction subject
-                if (headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)){
+                if (headerName.equals(DRAFT_PAYLOAD_HEADER_SUBJECT_KEY)){
                     gmailDraftListDrafts.setSubject(header.getValue());
                 }
                 // all messages -> extraction emails & names
-                else if(headerName.equals(THREAD_PAYLOAD_HEADER_FROM_KEY)){
+                else if(headerName.equals(DRAFT_PAYLOAD_HEADER_FROM_KEY)){
                     String sender = header.getValue();
                     List<String> splitSender = splitSenderData(sender);
                     if(!names.contains(splitSender.get(0))){
@@ -123,7 +122,6 @@ public class AsyncGmailService {
             });
 
             gmailDraftListDrafts.setId(id);
-            gmailDraftListDrafts.setHistoryId(historyId);
             gmailDraftListDrafts.setFromEmail(emails);
             gmailDraftListDrafts.setFromName(names);
             gmailDraftListDrafts.setAttachments(attachments);

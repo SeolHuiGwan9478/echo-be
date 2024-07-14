@@ -17,6 +17,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
+import woozlabs.echo.domain.gmail.dto.darft.GmailDraftGetMessage;
+import woozlabs.echo.domain.gmail.dto.darft.GmailDraftGetResponse;
 import woozlabs.echo.domain.gmail.dto.darft.GmailDraftListDrafts;
 import woozlabs.echo.domain.gmail.dto.darft.GmailDraftListResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
@@ -185,6 +187,18 @@ public class GmailService {
                 .snippet(responseMessage.getSnippet()).build();
     }
 
+    public GmailDraftGetResponse getUserEmailDraft(String uid, String id) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        Draft draft = getOneDraftResponse(id, gmailService);
+        GmailDraftGetMessage message = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
+        return GmailDraftGetResponse.builder()
+                .id(draft.getId())
+                .message(message)
+                .build();
+    }
 
     // Methods : get something
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
@@ -268,6 +282,14 @@ public class GmailService {
                 .setPrettyPrint(Boolean.TRUE)
                 .setPageToken(pageToken)
                 .setQ(q)
+                .execute();
+    }
+
+    private Draft getOneDraftResponse(String id, Gmail gmailService) throws IOException{
+        return gmailService.users().drafts()
+                .get(USER_ID, id)
+                .setFormat(DRAFTS_GET_FULL_FORMAT)
+                .setPrettyPrint(Boolean.TRUE)
                 .execute();
     }
 

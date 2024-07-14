@@ -10,7 +10,6 @@ import java.util.List;
 @Data
 public class GmailDraftListDrafts {
     private String id;
-    private BigInteger historyId;
     private List<String> labelIds;
     private String mimeType;
     private int attachmentSize;

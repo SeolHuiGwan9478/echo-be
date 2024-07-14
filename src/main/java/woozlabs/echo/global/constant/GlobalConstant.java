@@ -24,6 +24,9 @@ public final class GlobalConstant {
 
     // Gmail drafts
     public static final String DRAFTS_GET_FULL_FORMAT = "full";
+    public static final String DRAFT_PAYLOAD_HEADER_SUBJECT_KEY = "Subject";
+    public static final String DRAFT_PAYLOAD_HEADER_FROM_KEY = "From";
+    public static final String DRAFT_PAYLOAD_HEADER_DATE_KEY = "Date";
 
     // Email Error Message
     public static final String EMAIL_ERR_MSG_KEY = "EmailException";

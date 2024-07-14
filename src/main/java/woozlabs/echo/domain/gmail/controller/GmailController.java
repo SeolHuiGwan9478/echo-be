@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
+import woozlabs.echo.domain.gmail.dto.darft.GmailDraftGetResponse;
 import woozlabs.echo.domain.gmail.dto.darft.GmailDraftListResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
@@ -40,21 +41,6 @@ public class GmailController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
-
-    @GetMapping("/api/v1/gmail/drafts")
-    public ResponseEntity<ResponseDto> getDrafts(HttpServletRequest httpServletRequest,
-                                                 @RequestParam(value = "pageToken", required = false) String pageToken,
-                                                 @RequestParam(value = "q", required = false) String q){
-        log.info("Request to get drafts");
-        try{
-            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-            GmailDraftListResponse response = gmailService.getUserEmailDrafts(uid, pageToken, q);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-    }
-
 
     @GetMapping("/api/v1/gmail/threads")
     public ResponseEntity<ResponseDto> searchThreads(@RequestParam(value = "from", required = false) String from,
@@ -140,6 +126,32 @@ public class GmailController {
             request.setFiles(files);
             GmailMessageSendResponse response = gmailService.sendUserEmailMessage(uid, request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/api/v1/gmail/drafts")
+    public ResponseEntity<ResponseDto> getDrafts(HttpServletRequest httpServletRequest,
+                                                 @RequestParam(value = "pageToken", required = false) String pageToken,
+                                                 @RequestParam(value = "q", required = false) String q){
+        log.info("Request to get drafts");
+        try{
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailDraftListResponse response = gmailService.getUserEmailDrafts(uid, pageToken, q);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/api/v1/gmail/drafts/{id}")
+    public ResponseEntity<ResponseDto> getDraft(HttpServletRequest httpServletRequest, @PathVariable("id") String id){
+        log.info("Request to get draft");
+        try{
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailDraftGetResponse response = gmailService.getUserEmailDraft(uid, id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
