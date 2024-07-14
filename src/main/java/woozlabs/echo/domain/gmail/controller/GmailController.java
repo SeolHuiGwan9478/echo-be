@@ -36,6 +36,21 @@ public class GmailController {
         }
     }
 
+    @GetMapping("/api/v1/gmail/drafts")
+    public ResponseEntity<ResponseDto> getDrafts(HttpServletRequest httpServletRequest,
+                                                 @RequestParam(value = "pageToken", required = false) String pageToken,
+                                                 @RequestParam(value = "q", required = false) String q){
+        log.info("Request to get drafts");
+        try{
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailDraftListResponse response = gmailService.getUserEmailDrafts(uid, pageToken, q);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+
     @GetMapping("/api/v1/gmail/threads")
     public ResponseEntity<ResponseDto> searchThreads(@RequestParam(value = "from", required = false) String from,
                                                      @RequestParam(value = "to", required = false) String to,
