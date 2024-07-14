@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.gmail.dto;
+package woozlabs.echo.domain.gmail.dto.message;
 
 import lombok.Builder;
 import lombok.Getter;

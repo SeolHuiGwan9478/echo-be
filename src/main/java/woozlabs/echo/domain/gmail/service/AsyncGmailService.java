@@ -5,10 +5,10 @@ import com.google.api.services.gmail.model.*;
 import com.google.api.services.gmail.model.Thread;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import woozlabs.echo.domain.gmail.dto.GmailDraftListAttachments;
-import woozlabs.echo.domain.gmail.dto.GmailDraftListDrafts;
-import woozlabs.echo.domain.gmail.dto.GmailThreadListAttachments;
-import woozlabs.echo.domain.gmail.dto.GmailThreadListThreads;
+import woozlabs.echo.domain.gmail.dto.darft.GmailDraftListAttachments;
+import woozlabs.echo.domain.gmail.dto.darft.GmailDraftListDrafts;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListAttachments;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListThreads;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 
 import java.io.IOException;

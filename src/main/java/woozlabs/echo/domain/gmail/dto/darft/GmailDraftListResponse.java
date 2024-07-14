@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.gmail.dto;
+package woozlabs.echo.domain.gmail.dto.darft;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -8,7 +8,7 @@ import java.util.List;
 
 @Getter
 @Builder
-public class GmailThreadListSearchResponse implements ResponseDto {
-    private List<GmailThreadListThreads> threads;
+public class GmailDraftListResponse implements ResponseDto {
+    private List<GmailDraftListDrafts> drafts;
     private String nextPageToken;
 }

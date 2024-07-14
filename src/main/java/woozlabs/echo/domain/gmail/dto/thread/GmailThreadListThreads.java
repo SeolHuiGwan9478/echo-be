@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.gmail.dto;
+package woozlabs.echo.domain.gmail.dto.thread;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;

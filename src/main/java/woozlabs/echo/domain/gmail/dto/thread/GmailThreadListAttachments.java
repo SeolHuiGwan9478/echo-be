@@ -1,11 +1,11 @@
-package woozlabs.echo.domain.gmail.dto;
+package woozlabs.echo.domain.gmail.dto.thread;
 
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class GmailDraftListAttachments {
+public class GmailThreadListAttachments {
     private String mimeType;
     private String fileName;
     private String attachmentId;
