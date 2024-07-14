@@ -37,7 +37,7 @@ public class AuthService {
         try {
             return FirebaseAuth.getInstance().createCustomToken(uid);
         } catch (FirebaseAuthException e) {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_CREATE_CUSTOM_TOKEN);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_CREATE_CUSTOM_TOKEN, e.getMessage());
         }
     }
 
@@ -55,7 +55,7 @@ public class AuthService {
 
             return userInfo;
         } catch (Exception e) {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_USER_INFO);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_USER_INFO, e.getMessage());
         }
     }
 
