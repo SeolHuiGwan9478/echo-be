@@ -1,6 +1,7 @@
 package woozlabs.echo.domain.gemini.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gemini.GeminiInterface;
 import woozlabs.echo.domain.gemini.dto.GeminiRequest;
@@ -8,10 +9,13 @@ import woozlabs.echo.domain.gemini.dto.GeminiResponse;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessages;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetPart;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetResponse;
+import woozlabs.echo.global.exception.CustomErrorException;
+import woozlabs.echo.global.exception.ErrorCode;
 
 import java.util.Base64;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GeminiService {
@@ -23,7 +27,12 @@ public class GeminiService {
     private final GeminiInterface geminiInterface;
 
     private GeminiResponse getCompletion(GeminiRequest request) {
-        return geminiInterface.getCompletion(GEMINI_PRO, request);
+        try {
+            return geminiInterface.getCompletion(GEMINI_PRO, request);
+        } catch (Exception e) {
+            log.error("Error while getting completion from Gemini", e);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GEMINI_COMPLETION, e.getMessage());
+        }
     }
 
     public String getCompletion(String text) {
@@ -44,14 +53,13 @@ public class GeminiService {
             You are an AI assistant specializing in creating concise, natural-sounding email summaries. Your task is to provide a brief summary of the given Gmail thread, focusing on the most important points.
     
             Guidelines:
-            1. Summarize the thread in 3-5 sentences, regardless of the thread's length.
+            1. Summarize in 1-2 sentences, regardless of thread length.
             2. Focus on the most critical information, action items, or decisions.
-            3. Use clear, direct language without unnecessary details.
+            3. Omit all pleasantries, greetings, signatures, and unnecessary details.
             4. Present the summary as a cohesive paragraph, not bullet points.
-            5. Exclude all pleasantries, greetings, and signatures.
-            6. Do not mention names or email addresses unless absolutely crucial to the context.
-            7. Use a natural, flowing style that's easy to read quickly.
-            8. If the thread is mostly irrelevant, state this briefly in 1-2 sentences.
+            5. Do not mention names or email addresses unless absolutely crucial to the context.
+            6. Use extremely concise and direct language.
+            7. If the thread is mostly irrelevant, state this briefly in 1-2 sentences.
     
             Analyze and summarize the following Gmail thread content:
     
@@ -68,7 +76,6 @@ public class GeminiService {
             extractContentFromParts(message.getPayload().getParts(), threadContent);
         }
 
-        System.out.println("threadContent = " + threadContent);
         String prompt = getThreadSummaryPrompt(threadContent.toString());
         return getCompletion(prompt);
     }
