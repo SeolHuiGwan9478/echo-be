@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.gmail.dto;
+package woozlabs.echo.domain.gmail.dto.message;
 
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;

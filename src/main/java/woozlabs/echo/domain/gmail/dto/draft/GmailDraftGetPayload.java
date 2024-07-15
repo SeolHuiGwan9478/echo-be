@@ -1,28 +1,26 @@
-package woozlabs.echo.domain.gmail.dto;
+package woozlabs.echo.domain.gmail.dto.draft;
 
 import com.google.api.services.gmail.model.MessagePart;
-import com.google.api.services.gmail.model.MessagePartBody;
-import lombok.Builder;
 import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-public class GmailThreadGetPayload {
+public class GmailDraftGetPayload {
     private final String partId;
     private final String mimeType;
     private final String fileName;
-    private final GmailThreadGetBody body;
-    private final List<GmailThreadGetPart> parts;
+    private final GmailDraftGetBody body;
+    private final List<GmailDraftGetPart> parts;
 
-    GmailThreadGetPayload(MessagePart messagePart){
+    GmailDraftGetPayload(MessagePart messagePart){
         this.partId = messagePart.getPartId();
         this.mimeType = messagePart.getMimeType();
         this.fileName = messagePart.getFilename();
-        this.body = GmailThreadGetBody.toGmailThreadGetBody(messagePart.getBody());
+        this.body = GmailDraftGetBody.toGmailDraftGetBody(messagePart.getBody());
         if(messagePart.getParts() != null) {
-            this.parts = messagePart.getParts().stream().map(GmailThreadGetPart::new).toList();
+            this.parts = messagePart.getParts().stream().map(GmailDraftGetPart::new).toList();
         }else{
             this.parts = new ArrayList<>();
         }

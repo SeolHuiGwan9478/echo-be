@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.gmail.dto;
+package woozlabs.echo.domain.gmail.dto.thread;
 
 import com.google.api.services.gmail.model.MessagePart;
 import lombok.Getter;

@@ -5,18 +5,17 @@ import com.google.api.services.gmail.model.*;
 import com.google.api.services.gmail.model.Thread;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import woozlabs.echo.domain.gmail.dto.GmailThreadListAttachments;
-import woozlabs.echo.domain.gmail.dto.GmailThreadListThreads;
+import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListAttachments;
+import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListDrafts;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListAttachments;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListThreads;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -56,7 +55,7 @@ public class AsyncGmailService {
                     gmailThreadListThreads.setInternalDate(internalDate);
                 }
                 // get attachments
-                getAttachments(payload, attachments);
+                getThreadsAttachments(payload, attachments);
                 headers.forEach((header) -> {
                     String headerName = header.getName();
                     // first message -> extraction subject
@@ -87,7 +86,53 @@ public class AsyncGmailService {
         }
     }
 
-    private void getAttachments(MessagePart part, List<GmailThreadListAttachments> attachments){
+    @Async
+    public CompletableFuture<GmailDraftListDrafts> asyncRequestGmailDraftGetForList(Draft draft, Gmail gmailService){
+        try {
+            String id = draft.getId();
+            GmailDraftListDrafts gmailDraftListDrafts= new GmailDraftListDrafts();
+            Draft detailedDraft = gmailService.users().drafts().get(USER_ID, id)
+                    .setFormat(DRAFTS_GET_FULL_FORMAT)
+                    .execute();
+            Message message = detailedDraft.getMessage();;
+
+            List<String> names = new ArrayList<>();
+            List<String> emails = new ArrayList<>();
+            List<GmailDraftListAttachments> attachments = new ArrayList<>();
+
+            MessagePart payload = message.getPayload();
+            List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
+            getDraftsAttachments(payload, attachments);
+
+            headers.forEach((header) -> {
+                String headerName = header.getName();
+                // first message -> extraction subject
+                if (headerName.equals(DRAFT_PAYLOAD_HEADER_SUBJECT_KEY)){
+                    gmailDraftListDrafts.setSubject(header.getValue());
+                }
+                // all messages -> extraction emails & names
+                else if(headerName.equals(DRAFT_PAYLOAD_HEADER_FROM_KEY)){
+                    String sender = header.getValue();
+                    List<String> splitSender = splitSenderData(sender);
+                    if(!names.contains(splitSender.get(0))){
+                        names.add(splitSender.get(0));
+                        emails.add(splitSender.get(1));
+                    }
+                }
+            });
+
+            gmailDraftListDrafts.setId(id);
+            gmailDraftListDrafts.setFromEmail(emails);
+            gmailDraftListDrafts.setFromName(names);
+            gmailDraftListDrafts.setAttachments(attachments);
+            gmailDraftListDrafts.setAttachmentSize(attachments.size());
+            return CompletableFuture.completedFuture(gmailDraftListDrafts);
+        } catch (IOException e) {
+            throw new GmailException(e.getMessage());
+        }
+    }
+
+    private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments){
         if(part.getParts() == null){ // base condition
             if(part.getFilename() != null && !part.getFilename().isBlank()){
                 MessagePartBody body = part.getBody();
@@ -100,11 +145,38 @@ public class AsyncGmailService {
             }
         }else{ // recursion
             for(MessagePart subPart : part.getParts()){
-                getAttachments(subPart, attachments);
+                getThreadsAttachments(subPart, attachments);
             }
             if(part.getFilename() != null && !part.getFilename().isBlank()){
                 MessagePartBody body = part.getBody();
                 attachments.add(GmailThreadListAttachments.builder()
+                        .mimeType(part.getMimeType())
+                        .fileName(part.getFilename())
+                        .attachmentId(body.getAttachmentId())
+                        .size(body.getSize()).build()
+                );
+            }
+        }
+    }
+
+    private void getDraftsAttachments(MessagePart part, List<GmailDraftListAttachments> attachments){
+        if(part.getParts() == null){ // base condition
+            if(part.getFilename() != null && !part.getFilename().isBlank()){
+                MessagePartBody body = part.getBody();
+                attachments.add(GmailDraftListAttachments.builder()
+                        .mimeType(part.getMimeType())
+                        .fileName(part.getFilename())
+                        .attachmentId(body.getAttachmentId())
+                        .size(body.getSize()).build()
+                );
+            }
+        }else{ // recursion
+            for(MessagePart subPart : part.getParts()){
+                getDraftsAttachments(subPart, attachments);
+            }
+            if(part.getFilename() != null && !part.getFilename().isBlank()){
+                MessagePartBody body = part.getBody();
+                attachments.add(GmailDraftListAttachments.builder()
                         .mimeType(part.getMimeType())
                         .fileName(part.getFilename())
                         .attachmentId(body.getAttachmentId())

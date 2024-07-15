@@ -1,11 +1,10 @@
-package woozlabs.echo.domain.gmail.dto;
+package woozlabs.echo.domain.gmail.dto.thread;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 
 @Data
