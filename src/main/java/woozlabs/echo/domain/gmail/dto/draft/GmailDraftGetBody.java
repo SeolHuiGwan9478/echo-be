@@ -1,9 +1,8 @@
-package woozlabs.echo.domain.gmail.dto.darft;
+package woozlabs.echo.domain.gmail.dto.draft;
 
 import com.google.api.services.gmail.model.MessagePartBody;
 import lombok.Builder;
 import lombok.Getter;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetBody;
 
 @Getter
 @Builder

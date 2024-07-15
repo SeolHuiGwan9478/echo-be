@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.gmail.dto.darft;
+package woozlabs.echo.domain.gmail.dto.draft;
 
 import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.MessagePart;

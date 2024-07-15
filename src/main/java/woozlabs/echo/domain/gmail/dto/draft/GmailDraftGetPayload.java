@@ -1,22 +1,20 @@
-package woozlabs.echo.domain.gmail.dto.darft;
+package woozlabs.echo.domain.gmail.dto.draft;
 
 import com.google.api.services.gmail.model.MessagePart;
 import lombok.Getter;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetBody;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetPart;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-public class GmailDraftGetPart {
+public class GmailDraftGetPayload {
     private final String partId;
     private final String mimeType;
     private final String fileName;
     private final GmailDraftGetBody body;
     private final List<GmailDraftGetPart> parts;
 
-    GmailDraftGetPart(MessagePart messagePart){
+    GmailDraftGetPayload(MessagePart messagePart){
         this.partId = messagePart.getPartId();
         this.mimeType = messagePart.getMimeType();
         this.fileName = messagePart.getFilename();

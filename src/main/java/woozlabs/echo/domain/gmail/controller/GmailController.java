@@ -9,8 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
-import woozlabs.echo.domain.gmail.dto.darft.GmailDraftGetResponse;
-import woozlabs.echo.domain.gmail.dto.darft.GmailDraftListResponse;
+import woozlabs.echo.domain.gmail.dto.draft.GmailDraftGetResponse;
+import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
@@ -28,21 +28,21 @@ public class GmailController {
     private final GmailService gmailService;
 
     // threads
-    @GetMapping("/api/v1/gmail/threads/inbox")
-    public ResponseEntity<ResponseDto> getInboxThreads(HttpServletRequest httpServletRequest,
+    @GetMapping("/api/v1/gmail/threads")
+    public ResponseEntity<ResponseDto> getQueryThreads(HttpServletRequest httpServletRequest,
                                                        @RequestParam(value = "pageToken", required = false) String pageToken,
-                                                       @RequestParam(value = "category", required = false, defaultValue = "category:primary") String category){
+                                                       @RequestParam(value = "q") String q){
         log.info("Request to get threads");
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-            GmailThreadListResponse response = gmailService.getUserEmailThreads(uid, pageToken, category);
+            GmailThreadListResponse response = gmailService.getQueryUserEmailThreads(uid, pageToken, q);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 
-    @GetMapping("/api/v1/gmail/threads")
+    @GetMapping("/api/v1/gmail/threads/search")
     public ResponseEntity<ResponseDto> searchThreads(@RequestParam(value = "from", required = false) String from,
                                                      @RequestParam(value = "to", required = false) String to,
                                                      @RequestParam(value = "subject", required = false) String subject,

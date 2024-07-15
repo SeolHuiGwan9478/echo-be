@@ -1,9 +1,8 @@
-package woozlabs.echo.domain.gmail.dto.darft;
+package woozlabs.echo.domain.gmail.dto.draft;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
-import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.List;
 

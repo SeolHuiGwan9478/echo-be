@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.gmail.dto.darft;
+package woozlabs.echo.domain.gmail.dto.draft;
 
 import lombok.Builder;
 import lombok.Getter;
