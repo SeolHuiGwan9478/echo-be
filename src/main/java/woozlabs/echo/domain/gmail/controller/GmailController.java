@@ -18,7 +18,10 @@ import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.dto.ResponseDto;
+import woozlabs.echo.global.exception.CustomErrorException;
+import woozlabs.echo.global.exception.ErrorCode;
 
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -37,8 +40,10 @@ public class GmailController {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             GmailThreadListResponse response = gmailService.getQueryUserEmailThreads(uid, pageToken, q);
             return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
         }
     }
 
@@ -54,8 +59,10 @@ public class GmailController {
                     .from(from).to(to).subject(subject).query(query).build();
             GmailThreadListSearchResponse response = gmailService.searchUserEmailThreads(uid, params);
             return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
         }
     }
 
@@ -66,8 +73,10 @@ public class GmailController {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             GmailThreadGetResponse response = gmailService.getUserEmailThread(uid, id);
             return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
         }
     }
 
@@ -78,8 +87,10 @@ public class GmailController {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             GmailThreadTrashResponse response = gmailService.trashUserEmailThread(uid, id);
             return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
         }
     }
 
@@ -90,8 +101,10 @@ public class GmailController {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             GmailThreadDeleteResponse response = gmailService.deleteUserEmailThread(uid, id);
             return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
         }
     }
 
@@ -104,8 +117,10 @@ public class GmailController {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             GmailMessageAttachmentResponse response = gmailService.getAttachment(uid, messageId, id);
             return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
         }
     }
 
@@ -126,8 +141,10 @@ public class GmailController {
             request.setFiles(files);
             GmailMessageSendResponse response = gmailService.sendUserEmailMessage(uid, request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
         }
     }
 
@@ -140,8 +157,10 @@ public class GmailController {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             GmailDraftListResponse response = gmailService.getUserEmailDrafts(uid, pageToken, q);
             return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
         }
     }
 
@@ -152,8 +171,10 @@ public class GmailController {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             GmailDraftGetResponse response = gmailService.getUserEmailDraft(uid, id);
             return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
         }
     }
 }
