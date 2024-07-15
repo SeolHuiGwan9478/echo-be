@@ -30,7 +30,7 @@ public class AuthController {
                 authService.signIn(code, response);
             }
         } catch (FirebaseAuthException e) {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_VERIFY_ID_TOKEN);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_VERIFY_ID_TOKEN, e.getMessage());
         }
     }
 

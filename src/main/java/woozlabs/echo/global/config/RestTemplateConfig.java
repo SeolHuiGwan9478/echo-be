@@ -8,13 +8,19 @@ import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuil
 import org.apache.hc.client5.http.io.HttpClientConnectionManager;
 import org.apache.hc.core5.http.io.SocketConfig;
 import org.apache.hc.core5.util.Timeout;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.support.RestClientAdapter;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
+import woozlabs.echo.domain.gemini.GeminiInterface;
 
 import java.util.Arrays;
 import java.util.List;
@@ -65,5 +71,23 @@ public class RestTemplateConfig {
                 .setDefaultSocketConfig(socketConfig)
                 .setDefaultConnectionConfig(connectionConfig)
                 .build();
+    }
+
+    @Bean
+    public RestClient geminiRestClient(@Value("${gemini.api.url}") String apiUrl,
+                                       @Value("${gemini.api.key}") String apiKey) {
+        return RestClient.builder()
+                .baseUrl(apiUrl)
+                .defaultHeader("x-goog-api-key", apiKey)
+                .defaultHeader("Content-Type", "application/json")
+                .defaultHeader("Accept", "application/json")
+                .build();
+    }
+
+    @Bean
+    public GeminiInterface geminiInterface(@Qualifier("geminiRestClient") RestClient client) {
+        RestClientAdapter adapter = RestClientAdapter.create(client);
+        HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(adapter).build();
+        return factory.createClient(GeminiInterface.class);
     }
 }

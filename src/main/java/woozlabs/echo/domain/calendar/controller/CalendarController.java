@@ -49,10 +49,10 @@ public class CalendarController {
             return ResponseEntity.ok(events);
         } catch (GeneralSecurityException e) {
             log.error("Security error while fetching Google Calendar events", e);
-            throw new CustomErrorException(ErrorCode.GOOGLE_CALENDAR_SECURITY_ERROR);
+            throw new CustomErrorException(ErrorCode.GOOGLE_CALENDAR_SECURITY_ERROR, e.getMessage());
         } catch (IOException e) {
             log.error("IO error while fetching Google Calendar events", e);
-            throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_CALENDAR);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_CALENDAR, e.getMessage());
         }
     }
 
@@ -77,10 +77,10 @@ public class CalendarController {
             }
         } catch (GeneralSecurityException e) {
             log.error("Security error while fetching Google Calendar events", e);
-            throw new CustomErrorException(ErrorCode.GOOGLE_CALENDAR_SECURITY_ERROR);
+            throw new CustomErrorException(ErrorCode.GOOGLE_CALENDAR_SECURITY_ERROR, e.getMessage());
         } catch (IOException e) {
             log.error("IO error while posting Google Calendar events", e);
-            throw new CustomErrorException(ErrorCode.FAILED_TO_POST_GOOGLE_CALENDAR);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_POST_GOOGLE_CALENDAR, e.getMessage());
         }
         return ResponseEntity.ok(createEvent);
     }
@@ -107,10 +107,10 @@ public class CalendarController {
             return ResponseEntity.ok(updatedEvent);
         } catch (GeneralSecurityException e) {
             log.error("Security error while updating Google Calendar event", e);
-            throw new CustomErrorException(ErrorCode.GOOGLE_CALENDAR_SECURITY_ERROR);
+            throw new CustomErrorException(ErrorCode.GOOGLE_CALENDAR_SECURITY_ERROR, e.getMessage());
         } catch (IOException e) {
             log.error("IO error while updating Google Calendar event", e);
-            throw new CustomErrorException(ErrorCode.FAILED_TO_UPDATE_GOOGLE_CALENDAR);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_UPDATE_GOOGLE_CALENDAR, e.getMessage());
         }
     }
 
@@ -123,10 +123,10 @@ public class CalendarController {
             return ResponseEntity.noContent().build();
         } catch (GeneralSecurityException e) {
             log.error("Security error while deleting Google Calendar event", e);
-            throw new CustomErrorException(ErrorCode.GOOGLE_CALENDAR_SECURITY_ERROR);
+            throw new CustomErrorException(ErrorCode.GOOGLE_CALENDAR_SECURITY_ERROR, e.getMessage());
         } catch (IOException e) {
             log.error("IO error while deleting Google Calendar event", e);
-            throw new CustomErrorException(ErrorCode.FAILED_TO_DELETE_GOOGLE_CALENDAR);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_DELETE_GOOGLE_CALENDAR, e.getMessage());
         }
     }
 }
