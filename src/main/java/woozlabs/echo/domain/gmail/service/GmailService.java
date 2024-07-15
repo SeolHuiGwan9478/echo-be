@@ -80,6 +80,7 @@ public class GmailService {
         Gmail gmailService = createGmailService(accessToken);
         ListThreadsResponse response = getQueryListThreadsResponse(pageToken, q, gmailService);
         List<Thread> threads = response.getThreads(); // get threads
+        threads = isEmptyResult(threads);
         List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
         Collections.sort(detailedThreads);
         return GmailThreadListResponse.builder()
@@ -96,6 +97,7 @@ public class GmailService {
         Gmail gmailService = createGmailService(accessToken);
         ListDraftsResponse response = getListDraftsResponse(gmailService, pageToken, q);
         List<Draft> drafts = response.getDrafts();
+        drafts = isEmptyResult(drafts);
         List<GmailDraftListDrafts> detailedDrafts = getDetailedDrafts(drafts, gmailService);
         return GmailDraftListResponse.builder()
                 .drafts(detailedDrafts)
@@ -146,6 +148,7 @@ public class GmailService {
         Gmail gmailService = createGmailService(accessToken);
         ListThreadsResponse response = getSearchListThreadsResponse(params, gmailService);
         List<Thread> threads = response.getThreads();
+        threads = isEmptyResult(threads);
         List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
         Collections.sort(detailedThreads);
         return GmailThreadListSearchResponse.builder()
@@ -350,5 +353,10 @@ public class GmailService {
         Message message = new Message();
         message.setRaw(encodedEmail);
         return message;
+    }
+
+    private <T> List<T> isEmptyResult(List<T> list){
+        if(list == null) return new ArrayList<>();
+        return list;
     }
 }
