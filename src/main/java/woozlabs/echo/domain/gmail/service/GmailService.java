@@ -221,6 +221,23 @@ public class GmailService {
                 .build();
     }
 
+    public GmailThreadUpdateResponse updateUserEmailThread(String uid, String id, GmailThreadUpdateRequest request) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        ModifyThreadRequest modifyThreadRequest = new ModifyThreadRequest();
+        modifyThreadRequest.setAddLabelIds(request.getAddLabelIds());
+        modifyThreadRequest.setRemoveLabelIds(request.getRemoveLabelIds());
+        Thread thread = gmailService.users().threads().modify(USER_ID, id, modifyThreadRequest).execute();
+        System.out.println("hihihi");
+        System.out.println(thread);
+        return GmailThreadUpdateResponse.builder()
+                .addLabelIds(request.getAddLabelIds())
+                .removeLabelIds(request.getRemoveLabelIds())
+                .build();
+    }
+
     // Methods : get something
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
         List<CompletableFuture<Optional<GmailThreadListThreads>>> futures = threads.stream()

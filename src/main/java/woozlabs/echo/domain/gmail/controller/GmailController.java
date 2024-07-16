@@ -110,6 +110,22 @@ public class GmailController {
         }
     }
 
+    @PatchMapping("/api/v1/gmail/threads/{id}/modify")
+    public ResponseEntity<ResponseDto> updateThread(HttpServletRequest httpServletRequest,
+                                                    @PathVariable("id") String id,
+                                                    @RequestBody GmailThreadUpdateRequest request){
+        log.info("Request to update thread");
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailThreadUpdateResponse response = gmailService.updateUserEmailThread(uid, id, request);
+            return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
+        }
+    }
+
     // messages
     @GetMapping("/api/v1/gmail/messages/{messageId}/attachments/{id}")
     public ResponseEntity<ResponseDto> getAttachment(HttpServletRequest httpServletRequest,
@@ -203,5 +219,5 @@ public class GmailController {
         }
     }
 }
-// update
+
 // message pub & sub
