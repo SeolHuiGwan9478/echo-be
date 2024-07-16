@@ -17,10 +17,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
-import woozlabs.echo.domain.gmail.dto.draft.GmailDraftGetMessage;
-import woozlabs.echo.domain.gmail.dto.draft.GmailDraftGetResponse;
-import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListDrafts;
-import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListResponse;
+import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
@@ -190,6 +187,27 @@ public class GmailService {
                 .snippet(responseMessage.getSnippet()).build();
     }
 
+    public GmailDraftSendResponse sendUserEmailDraft(String uid, GmailDraftSendRequest request) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        Profile profile = gmailService.users().getProfile(USER_ID).execute();
+        String fromEmailAddress = profile.getEmailAddress();
+        request.setFromEmailAddress(fromEmailAddress);
+        MimeMessage mimeMessage = createDraft(request);
+        Message message = createMessage(mimeMessage);
+        // create draft
+        Draft draft = new Draft();
+        draft.setMessage(message);
+        Message responseMessage = gmailService.users().drafts().send(USER_ID, draft).execute();
+        return GmailDraftSendResponse.builder()
+                .id(responseMessage.getId())
+                .threadId(responseMessage.getThreadId())
+                .labelsId(responseMessage.getLabelIds())
+                .snippet(responseMessage.getSnippet()).build();
+    }
+
     public GmailDraftGetResponse getUserEmailDraft(String uid, String id) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
@@ -344,6 +362,37 @@ public class GmailService {
         email.setContent(multipart);
         return email;
     }
+
+    private MimeMessage createDraft(GmailDraftSendRequest request) throws MessagingException, IOException {
+        Properties props = new Properties();
+        Session session = Session.getDefaultInstance(props, null);
+        MimeMessage email = new MimeMessage(session);
+        // setting base
+        email.setFrom(new InternetAddress(request.getFromEmailAddress()));
+        email.addRecipient(javax.mail.Message.RecipientType.TO,
+                new InternetAddress(request.getToEmailAddress()));
+        email.setSubject(request.getSubject());
+        // setting body
+        Multipart multipart = new MimeMultipart();
+        MimeBodyPart mimeBodyPart = new MimeBodyPart();
+        mimeBodyPart.setContent(request.getBodyText(), MULTI_PART_TEXT_PLAIN);
+        multipart.addBodyPart(mimeBodyPart); // set bodyText
+
+        for(MultipartFile mimFile : request.getFiles()){
+            MimeBodyPart fileMimeBodyPart = new MimeBodyPart();
+            if(mimFile.getOriginalFilename() == null) throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_DRAFTS_SEND_API_ERROR_MESSAGE);
+            File file = File.createTempFile(TEMP_FILE_PREFIX, mimFile.getOriginalFilename());
+            mimFile.transferTo(file);
+            DataSource source = new FileDataSource(file);
+            fileMimeBodyPart.setFileName(mimFile.getOriginalFilename());
+            fileMimeBodyPart.setDataHandler(new DataHandler(source));
+            multipart.addBodyPart(fileMimeBodyPart);
+            file.deleteOnExit();
+        }
+        email.setContent(multipart);
+        return email;
+    }
+
 
     private Message createMessage(MimeMessage emailContent) throws MessagingException, IOException{
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();

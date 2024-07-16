@@ -11,6 +11,8 @@ import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftGetResponse;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListResponse;
+import woozlabs.echo.domain.gmail.dto.draft.GmailDraftSendRequest;
+import woozlabs.echo.domain.gmail.dto.draft.GmailDraftSendResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
@@ -177,4 +179,29 @@ public class GmailController {
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
         }
     }
+
+    @PostMapping(value = "/api/v1/gmail/drafts/send", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseDto> sendDraft(HttpServletRequest httpServletRequest,
+                                                   @RequestPart("toEmailAddress") String toEmailAddress,
+                                                   @RequestPart("subject") String subject,
+                                                   @RequestPart("bodyText") String bodyText,
+                                                   @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+        log.info("Request to send draft");
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailDraftSendRequest request = new GmailDraftSendRequest();
+            request.setToEmailAddress(toEmailAddress);
+            request.setSubject(subject);
+            request.setBodyText(bodyText);
+            request.setFiles(files);
+            GmailDraftSendResponse response = gmailService.sendUserEmailDraft(uid, request);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
+        } catch (Exception e) {
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
+        }
+    }
 }
+// update
+// message pub & sub
