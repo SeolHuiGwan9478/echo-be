@@ -7,6 +7,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListAttachments;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListDrafts;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessages;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListAttachments;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListThreads;
 import woozlabs.echo.domain.gmail.exception.GmailException;
@@ -27,6 +28,7 @@ public class AsyncGmailService {
     @Async
     public CompletableFuture<GmailThreadListThreads> asyncRequestGmailThreadGetForList(Thread thread, Gmail gmailService){
         try {
+            // init
             String id = thread.getId();
             BigInteger historyId = thread.getHistoryId();
             GmailThreadListThreads gmailThreadListThreads= new GmailThreadListThreads();
@@ -34,15 +36,16 @@ public class AsyncGmailService {
                     .setFormat(THREADS_GET_FULL_FORMAT)
                     .execute();
             List<Message> messages = detailedThread.getMessages();
-
             List<String> names = new ArrayList<>();
             List<String> emails = new ArrayList<>();
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
+            List<GmailThreadGetMessages> convertedMessages = new ArrayList<>();
 
             for(int idx = 0;idx < messages.size();idx++){
                 int idxForLambda = idx;
                 Message message = messages.get(idx);
                 MessagePart payload = message.getPayload();
+                convertedMessages.add(GmailThreadGetMessages.toGmailThreadGetMessages(message));
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
                 if(idxForLambda == 0){
                     gmailThreadListThreads.setLabelIds(message.getLabelIds());
@@ -80,6 +83,7 @@ public class AsyncGmailService {
             gmailThreadListThreads.setThreadSize(messages.size());
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());
+            gmailThreadListThreads.setMessages(convertedMessages);
             return CompletableFuture.completedFuture(gmailThreadListThreads);
         } catch (IOException e) {
             throw new GmailException(e.getMessage());

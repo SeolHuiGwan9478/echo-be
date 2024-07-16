@@ -15,6 +15,7 @@ public class GmailThreadListThreads implements Comparable<GmailThreadListThreads
     private String mimeType;
     private int attachmentSize;
     private List<GmailThreadListAttachments> attachments;
+    private List<GmailThreadGetMessages> messages;
     private List<String> fromName;
     private List<String> fromEmail;
     private String subject;
