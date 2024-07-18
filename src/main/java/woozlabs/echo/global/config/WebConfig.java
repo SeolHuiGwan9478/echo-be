@@ -24,6 +24,6 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(firebaseAuthInterceptor)
-                .addPathPatterns("/api/v1/gmail/**", "/api/v1/calendar/**");
+                .addPathPatterns("/api/v1/gmail/**", "/api/v1/calendar/**", "/api/v1/gemini/**");
     }
 }

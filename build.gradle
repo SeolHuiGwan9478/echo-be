@@ -47,6 +47,7 @@ dependencies {
 	implementation group: 'javax.mail', name: 'mail', version: '1.4'
 	implementation group: 'org.apache.httpcomponents.client5', name: 'httpclient5', version: '5.3.1'
 	implementation group: 'com.google.firebase', name: 'firebase-admin', version: '9.3.0'
+	implementation 'org.jsoup:jsoup:1.15.3'
 }
 
 tasks.named('test') {

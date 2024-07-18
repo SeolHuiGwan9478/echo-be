@@ -33,7 +33,6 @@ public enum ErrorCode {
     FAILED_TO_CREATE_CUSTOM_TOKEN(500, "Failed to create custom token"),
     FAILED_TO_VERIFY_ID_TOKEN(500, "failed to verify Id Token"),
 
-
     // email
     REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE(500, "Failed to get gmail threads api"),
     REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE(500, "Failed to send gmail messages api"),
@@ -45,7 +44,10 @@ public enum ErrorCode {
     FAILED_TO_FETCH_GOOGLE_CALENDAR(500, "Failed to get Google Calendar Events"),
     FAILED_TO_POST_GOOGLE_CALENDAR(500, "Failed to post Google Calendar Events"),
     FAILED_TO_UPDATE_GOOGLE_CALENDAR(500, "Failed to update Google Calendar Events"),
-    FAILED_TO_DELETE_GOOGLE_CALENDAR(500, "Failed to delete Google Calendar Events");
+    FAILED_TO_DELETE_GOOGLE_CALENDAR(500, "Failed to delete Google Calendar Events"),
+
+    // gemini
+    FAILED_TO_GEMINI_COMPLETION(500, "Error while getting completion from Gemini");
 
     private final int status;
     private final String message;
