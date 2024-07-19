@@ -22,7 +22,27 @@ public class ThreadSummaryPrompt {
             Concise, natural summary (10 words or fewer):
             """;
 
+    private static final String GMAIL_SUMMARIZE_GUIDELINES = """
+            Summarize and refine the following text in a natural way. The output should:
+            
+            1. Capture the main points and essential information
+            2. Maintain the original tone and style of the writer
+            3. Be concise but preserve important details
+            4. Improve clarity and coherence if needed
+            5. Keep the same language as the input text
+   
+            Original text:
+            
+            %s
+   
+            Please provide the summarized and refined version:
+            """;
+
     public static String getPrompt(String threadContent) {
         return String.format(THREAD_SUMMARY_GUIDELINES, threadContent);
+    }
+
+    public static String getGmailSummarizeGuidelinesPrompt(String threadContent) {
+        return String.format(GMAIL_SUMMARIZE_GUIDELINES, threadContent);
     }
 }

@@ -102,4 +102,19 @@ public class GeminiService {
             threadContent.append(decodedBody).append("\n\n");
         }
     }
+
+    public String changeTone(String text, String tone) {
+        String prompt = "Change the tone of the following text to " + tone + ": " + text;
+        return getCompletion(prompt);
+    }
+
+    public String checkGrammar(String text) {
+        String prompt = "Check and correct the grammar of the following text: " + text;
+        return getCompletion(prompt);
+    }
+
+    public String summarize(String text) {
+        String prompt = ThreadSummaryPrompt.getGmailSummarizeGuidelinesPrompt(text);
+        return getCompletion(prompt);
+    }
 }
