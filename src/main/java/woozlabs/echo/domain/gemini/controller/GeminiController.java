@@ -44,19 +44,34 @@ public class GeminiController {
 
     @PostMapping("/writer/change-tone")
     public ResponseEntity<String> changeTone(@RequestBody ChangeToneRequest request) {
-        String changedText = geminiService.changeTone(request.getText(), request.getTone());
-        return ResponseEntity.ok(changedText);
+        try {
+            String changedText = geminiService.changeTone(request.getText(), request.getTone());
+            return ResponseEntity.ok(changedText);
+        } catch (Exception e) {
+            log.error("Error changing tone: ", e);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_CHANGE_TONE, e.getMessage());
+        }
     }
 
     @PostMapping("/writer/check-grammar")
     public ResponseEntity<String> checkGrammar(@RequestBody String text) {
-        String correctedText = geminiService.checkGrammar(text);
-        return ResponseEntity.ok(correctedText);
+        try {
+            String correctedText = geminiService.checkGrammar(text);
+            return ResponseEntity.ok(correctedText);
+        } catch (Exception e) {
+            log.error("Error checking grammar: ", e);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_CHECK_GRAMMAR, e.getMessage());
+        }
     }
 
     @PostMapping("/writer/summarize")
     public ResponseEntity<String> summarize(@RequestBody String text) {
-        String summary = geminiService.summarize(text);
-        return ResponseEntity.ok(summary);
+        try {
+            String summary = geminiService.summarize(text);
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            log.error("Error summarizing text: ", e);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_SUMMARIZE_TEXT, e.getMessage());
+        }
     }
 }
