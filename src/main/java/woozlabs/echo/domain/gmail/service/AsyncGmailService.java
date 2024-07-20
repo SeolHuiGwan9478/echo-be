@@ -14,17 +14,20 @@ import woozlabs.echo.domain.gmail.exception.GmailException;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
 import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Service
 public class AsyncGmailService {
+    private final String CONTENT_DISPOSITION_KEY = "Content-Disposition";
+    private final String CONTENT_DISPOSITION_INLINE_VALUE = "inline";
+
     @Async
     public CompletableFuture<GmailThreadListThreads> asyncRequestGmailThreadGetForList(Thread thread, Gmail gmailService){
         try {
@@ -54,8 +57,13 @@ public class AsyncGmailService {
                 if(idxForLambda == messages.size()-1){
                     Long rawInternalDate = message.getInternalDate();
                     LocalDateTime internalDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(rawInternalDate), ZoneId.systemDefault());
+                    ZonedDateTime zonedDateTime = internalDate.atZone(ZoneId.systemDefault());
+                    // Convert the ZonedDateTime to UTC
+                    ZonedDateTime utcDateTime = zonedDateTime.withZoneSameInstant(ZoneOffset.UTC);
+                    // Convert back to LocalDateTime if necessary
+                    LocalDateTime utcLocalDateTime = utcDateTime.toLocalDateTime();
                     gmailThreadListThreads.setSnippet(message.getSnippet());
-                    gmailThreadListThreads.setInternalDate(internalDate);
+                    gmailThreadListThreads.setInternalDate(utcLocalDateTime);
                 }
                 // get attachments
                 getThreadsAttachments(payload, attachments);
@@ -138,7 +146,7 @@ public class AsyncGmailService {
 
     private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments){
         if(part.getParts() == null){ // base condition
-            if(part.getFilename() != null && !part.getFilename().isBlank()){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 attachments.add(GmailThreadListAttachments.builder()
                         .mimeType(part.getMimeType())
@@ -151,7 +159,7 @@ public class AsyncGmailService {
             for(MessagePart subPart : part.getParts()){
                 getThreadsAttachments(subPart, attachments);
             }
-            if(part.getFilename() != null && !part.getFilename().isBlank()){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 attachments.add(GmailThreadListAttachments.builder()
                         .mimeType(part.getMimeType())
@@ -163,9 +171,22 @@ public class AsyncGmailService {
         }
     }
 
+    private Boolean isInlineFile(MessagePart part){
+        List<MessagePartHeader> headers = part.getHeaders();
+        for(MessagePartHeader header : headers){
+            if(header.getName().equals(CONTENT_DISPOSITION_KEY)){
+                String[] parts = header.getValue().split(";");
+                String inlinePart = parts[0].trim();
+                if(inlinePart.equals(CONTENT_DISPOSITION_INLINE_VALUE)) return Boolean.TRUE;
+                return Boolean.FALSE;
+            }
+        }
+        return Boolean.FALSE;
+    }
+
     private void getDraftsAttachments(MessagePart part, List<GmailDraftListAttachments> attachments){
         if(part.getParts() == null){ // base condition
-            if(part.getFilename() != null && !part.getFilename().isBlank()){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 attachments.add(GmailDraftListAttachments.builder()
                         .mimeType(part.getMimeType())
@@ -178,7 +199,7 @@ public class AsyncGmailService {
             for(MessagePart subPart : part.getParts()){
                 getDraftsAttachments(subPart, attachments);
             }
-            if(part.getFilename() != null && !part.getFilename().isBlank()){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 attachments.add(GmailDraftListAttachments.builder()
                         .mimeType(part.getMimeType())
