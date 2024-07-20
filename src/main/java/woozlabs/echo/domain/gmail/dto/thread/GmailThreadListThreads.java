@@ -20,7 +20,7 @@ public class GmailThreadListThreads implements Comparable<GmailThreadListThreads
     private List<String> fromEmail;
     private String subject;
     private String snippet;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime internalDate;
     private int threadSize;
 
