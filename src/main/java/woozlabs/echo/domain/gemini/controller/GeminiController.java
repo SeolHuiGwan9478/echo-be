@@ -74,4 +74,15 @@ public class GeminiController {
             throw new CustomErrorException(ErrorCode.FAILED_TO_SUMMARIZE_TEXT, e.getMessage());
         }
     }
+
+    @PostMapping("/writer/keypoint")
+    public ResponseEntity<String> keypoint(@RequestBody String text) {
+        try {
+            String keyPoint = geminiService.keypoint(text);
+            return ResponseEntity.ok(keyPoint);
+        } catch (Exception e) {
+            log.error("Error extracting keypoint: ", e);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_EXTRACT_KEYPOINT, e.getMessage());
+        }
+    }
 }

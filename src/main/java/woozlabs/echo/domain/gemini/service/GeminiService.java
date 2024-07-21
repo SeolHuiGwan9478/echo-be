@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gemini.GeminiInterface;
 import woozlabs.echo.domain.gemini.dto.GeminiRequest;
 import woozlabs.echo.domain.gemini.dto.GeminiResponse;
+import woozlabs.echo.domain.gemini.prompt.ThreadKeypointPrompt;
 import woozlabs.echo.domain.gemini.prompt.ThreadSummaryPrompt;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.global.exception.CustomErrorException;
@@ -115,6 +116,11 @@ public class GeminiService {
 
     public String summarize(String text) {
         String prompt = ThreadSummaryPrompt.getGmailSummarizeGuidelinesPrompt(text);
+        return getCompletion(prompt);
+    }
+
+    public String keypoint(String text) {
+        String prompt = ThreadKeypointPrompt.getPrompt(text);
         return getCompletion(prompt);
     }
 }
