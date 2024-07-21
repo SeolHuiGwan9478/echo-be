@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 public final class GlobalConstant {
     // Auth
     public static final String AUTH_UNAUTHORIZED_ERR_MSG = "인증되지 않은 사용자입니다.";
+    public static final String AUTH_SIGN_IN_DOMAIN = "https://echo-homepage.vercel.app/sign-in";
     // End Points
     public static final String FE_HOST_ADDRESS = "http://127.0.0.1:3000";
     // Basic Char
