@@ -14,6 +14,7 @@ import woozlabs.echo.domain.member.entity.SuperAccount;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.domain.member.repository.SubAccountRepository;
 import woozlabs.echo.domain.member.repository.SuperAccountRepository;
+import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 import woozlabs.echo.global.utils.FirebaseTokenVerifier;
@@ -95,7 +96,7 @@ public class AuthService {
     }
 
     private void constructAndRedirect(HttpServletResponse response, String customToken, String displayName, String profileImageUrl, String email) {
-        String url = UriComponentsBuilder.fromHttpUrl("https://echo-homepage.vercel.app/sign-in")
+        String url = UriComponentsBuilder.fromHttpUrl(GlobalConstant.AUTH_SIGN_IN_DOMAIN)
                 .queryParam("customToken", customToken)
                 .queryParam("displayName", displayName)
                 .queryParam("profileImageUrl", profileImageUrl)
@@ -118,6 +119,15 @@ public class AuthService {
         Member member = createOrUpdateMember(userInfo);
 
         SuperAccount superAccount = superAccountRepository.findByMember(member)
+                .map(existingAccount -> {
+                    existingAccount.setDisplayName(member.getDisplayName());
+                    existingAccount.setEmail(member.getEmail());
+                    existingAccount.setProfileImageUrl(member.getProfileImageUrl());
+                    existingAccount.setAccessToken(member.getAccessToken());
+                    existingAccount.setRefreshToken(member.getRefreshToken());
+                    existingAccount.setAccessTokenFetchedAt(member.getAccessTokenFetchedAt());
+                    return existingAccount;
+                })
                 .orElse(SuperAccount.builder()
                         .uid(providerId)
                         .googleProviderId(providerId)
@@ -126,7 +136,7 @@ public class AuthService {
                         .profileImageUrl(member.getProfileImageUrl())
                         .accessToken(member.getAccessToken())
                         .refreshToken(member.getRefreshToken())
-                        .accessTokenFetchedAt(LocalDateTime.now())
+                        .accessTokenFetchedAt(member.getAccessTokenFetchedAt())
                         .role(Role.ROLE_USER)
                         .member(member)
                         .build());

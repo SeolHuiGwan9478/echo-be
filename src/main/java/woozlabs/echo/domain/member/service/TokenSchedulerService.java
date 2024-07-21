@@ -70,6 +70,12 @@ public class TokenSchedulerService {
             member.setAccessToken(newAccessToken);
             member.setAccessTokenFetchedAt(LocalDateTime.now());
             memberRepository.save(member);
+
+            SuperAccount superAccount = superAccountRepository.findByMember(member)
+                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SUPER_ACCOUNT));
+            superAccount.setAccessToken(newAccessToken);
+            superAccount.setAccessTokenFetchedAt(LocalDateTime.now());
+            superAccountRepository.save(superAccount);
         } catch (Exception e) {
             throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN);
         }
