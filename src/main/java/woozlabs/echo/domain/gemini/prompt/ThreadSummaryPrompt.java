@@ -13,7 +13,9 @@ public class ThreadSummaryPrompt {
             4. Present the summary as a single, cohesive sentence.
             5. Do not mention names or email addresses unless absolutely crucial to the context.
             6. Use extremely concise and direct language.
-            7. If the thread is mostly irrelevant, state this briefly in no more than 10 words.
+            7. Respond in the same language as the input text
+            8. Don't forget to translate your answer into the language of the text entered.
+            9. If the thread is mostly irrelevant, state this briefly in no more than 10 words.
 
             Analyze and summarize the following Gmail thread content:
     
@@ -22,7 +24,28 @@ public class ThreadSummaryPrompt {
             Concise, natural summary (10 words or fewer):
             """;
 
+    private static final String GMAIL_SUMMARIZE_GUIDELINES = """
+            Summarize and refine the following text in a natural way. The output should:
+            
+            1. Capture the main points and essential information
+            2. Maintain the original tone and style of the writer
+            3. Be concise but preserve important details
+            4. Improve clarity and coherence if needed
+            5. Respond in the same language as the input text
+            6. Don't forget to translate your answer into the language of the text entered.
+   
+            Original text:
+            
+            %s
+   
+            Please provide the summarized and refined version:
+            """;
+
     public static String getPrompt(String threadContent) {
         return String.format(THREAD_SUMMARY_GUIDELINES, threadContent);
+    }
+
+    public static String getGmailSummarizeGuidelinesPrompt(String threadContent) {
+        return String.format(GMAIL_SUMMARIZE_GUIDELINES, threadContent);
     }
 }

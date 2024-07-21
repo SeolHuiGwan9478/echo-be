@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gemini.GeminiInterface;
 import woozlabs.echo.domain.gemini.dto.GeminiRequest;
 import woozlabs.echo.domain.gemini.dto.GeminiResponse;
+import woozlabs.echo.domain.gemini.prompt.ThreadKeypointPrompt;
 import woozlabs.echo.domain.gemini.prompt.ThreadSummaryPrompt;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.global.exception.CustomErrorException;
@@ -101,5 +102,25 @@ public class GeminiService {
             }
             threadContent.append(decodedBody).append("\n\n");
         }
+    }
+
+    public String changeTone(String text, String tone) {
+        String prompt = "Change the tone of the following text to " + tone + ": " + text;
+        return getCompletion(prompt);
+    }
+
+    public String checkGrammar(String text) {
+        String prompt = "Check and correct the grammar of the following text: " + text;
+        return getCompletion(prompt);
+    }
+
+    public String summarize(String text) {
+        String prompt = ThreadSummaryPrompt.getGmailSummarizeGuidelinesPrompt(text);
+        return getCompletion(prompt);
+    }
+
+    public String keypoint(String text) {
+        String prompt = ThreadKeypointPrompt.getPrompt(text);
+        return getCompletion(prompt);
     }
 }
