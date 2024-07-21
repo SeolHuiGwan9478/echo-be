@@ -50,7 +50,8 @@ public enum ErrorCode {
     FAILED_TO_SUMMARIZE_GEMINI(500, "Error summarizing Gmail thread from Gemini"),
     FAILED_TO_CHANGE_TONE(500, "Error changing tone from Gemini"),
     FAILED_TO_CHECK_GRAMMAR(500, "Error checking grammar from Gemini"),
-    FAILED_TO_SUMMARIZE_TEXT(500, "Error summarizing text from Gemini");
+    FAILED_TO_SUMMARIZE_TEXT(500, "Error summarizing text from Gemini"),
+    FAILED_TO_EXTRACT_KEYPOINT(500, "Error extracting keypoint from Gemini");
 
     private final int status;
     private final String message;
