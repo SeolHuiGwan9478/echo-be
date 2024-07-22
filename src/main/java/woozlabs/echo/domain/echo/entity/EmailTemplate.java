@@ -19,8 +19,8 @@ public class EmailTemplate {
     private String templateName;
     private String subject;
 
-    @ElementCollection
-    private List<String> to = new ArrayList<>();
+    @OneToMany(mappedBy = "emailTemplate", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EmailRecipient> recipients = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
     private String body;
