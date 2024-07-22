@@ -1,5 +1,6 @@
 package woozlabs.echo.domain.gmail.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
@@ -11,9 +12,16 @@ import com.google.api.services.gmail.model.Thread;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.pubsub.v1.AckReplyConsumer;
+import com.google.cloud.pubsub.v1.MessageReceiver;
+import com.google.cloud.pubsub.v1.Subscriber;
+import com.google.firebase.messaging.Notification;
+import com.google.pubsub.v1.ProjectSubscriptionName;
+import com.google.pubsub.v1.PubsubMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
@@ -21,6 +29,10 @@ import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
+import woozlabs.echo.domain.gmail.dto.pubsub.PubSubMessage;
+import woozlabs.echo.domain.gmail.dto.pubsub.PubSubNotification;
+import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
+import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.domain.member.entity.Member;
@@ -54,7 +66,6 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 @Slf4j
 @RequiredArgsConstructor
 public class GmailService {
-    private final MemberRepository memberRepository;
     // constants
     private final String MULTI_PART_TEXT_PLAIN = "text/plain";
     private final String TEMP_FILE_PREFIX = "echo";
@@ -66,9 +77,13 @@ public class GmailService {
             "https://mail.google.com/"
 
     );
+    @Value("${gmail.topic.name")
+    private String topicName;
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private final AsyncGmailService asyncGmailService;
+    private final MemberRepository memberRepository;
+    private final ObjectMapper om;
 
     public GmailThreadListResponse getQueryUserEmailThreads(String uid, String pageToken, String q) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
@@ -230,12 +245,24 @@ public class GmailService {
         modifyThreadRequest.setAddLabelIds(request.getAddLabelIds());
         modifyThreadRequest.setRemoveLabelIds(request.getRemoveLabelIds());
         Thread thread = gmailService.users().threads().modify(USER_ID, id, modifyThreadRequest).execute();
-        System.out.println("hihihi");
-        System.out.println(thread);
         return GmailThreadUpdateResponse.builder()
                 .addLabelIds(request.getAddLabelIds())
                 .removeLabelIds(request.getRemoveLabelIds())
                 .build();
+    }
+
+    public PubSubWatchResponse subscribePubSub(String uid, PubSubWatchRequest dto) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        WatchRequest watchRequest = new WatchRequest()
+                .setLabelIds(dto.getLabelIds())
+                .setTopicName("projects/echo-email-app/topics/gmail");
+        WatchResponse watchResponse = gmailService.users().watch(USER_ID, watchRequest).execute();
+        return PubSubWatchResponse.builder()
+                .historyId(watchResponse.getHistoryId())
+                .expiration(watchResponse.getExpiration()).build();
     }
 
     // Methods : get something
