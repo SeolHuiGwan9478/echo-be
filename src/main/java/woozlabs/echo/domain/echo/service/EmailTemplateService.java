@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.echo.dto.emailTemplate.CreateEmailTemplateRequest;
 import woozlabs.echo.domain.echo.dto.emailTemplate.EmailTemplateResponse;
 import woozlabs.echo.domain.echo.dto.emailTemplate.UpdateEmailTemplateRequest;
+import woozlabs.echo.domain.echo.entity.EmailRecipient;
 import woozlabs.echo.domain.echo.entity.EmailTemplate;
 import woozlabs.echo.domain.echo.repository.EmailTemplateRepository;
 import woozlabs.echo.domain.member.entity.Member;
@@ -41,9 +42,18 @@ public class EmailTemplateService {
         EmailTemplate emailTemplate = new EmailTemplate();
         emailTemplate.setTemplateName(createEmailTemplateRequest.getTemplateName());
         emailTemplate.setSubject(createEmailTemplateRequest.getSubject());
-        emailTemplate.setTo(createEmailTemplateRequest.getTo());
         emailTemplate.setBody(createEmailTemplateRequest.getBody());
         emailTemplate.setMember(member);
+
+        List<EmailRecipient> recipients = createEmailTemplateRequest.getTo().stream()
+                        .map(email -> {
+                            EmailRecipient recipient = new EmailRecipient();
+                            recipient.setEmail(email);
+                            recipient.setEmailTemplate(emailTemplate);
+                            return recipient;
+                        })
+                        .collect(Collectors.toList());
+        emailTemplate.setRecipients(recipients);
 
         emailTemplateRepository.save(emailTemplate);
     }
@@ -62,8 +72,19 @@ public class EmailTemplateService {
 
         emailTemplate.setTemplateName(updateEmailTemplateRequest.getTemplateName());
         emailTemplate.setSubject(updateEmailTemplateRequest.getSubject());
-        emailTemplate.setTo(updateEmailTemplateRequest.getTo());
         emailTemplate.setBody(updateEmailTemplateRequest.getBody());
+
+        // Clear existing recipients and update with new ones
+        emailTemplate.getRecipients().clear();
+        List<EmailRecipient> recipients = updateEmailTemplateRequest.getTo().stream()
+                .map(email -> {
+                    EmailRecipient recipient = new EmailRecipient();
+                    recipient.setEmail(email);
+                    recipient.setEmailTemplate(emailTemplate);
+                    return recipient;
+                })
+                .collect(Collectors.toList());
+        emailTemplate.getRecipients().addAll(recipients);
 
         emailTemplateRepository.save(emailTemplate);
     }
@@ -80,6 +101,7 @@ public class EmailTemplateService {
             throw new CustomErrorException(ErrorCode.UNAUTHORIZED_ACCESS_TO_TEMPLATE);
         }
 
+        emailTemplate.getRecipients().clear();
         emailTemplateRepository.delete(emailTemplate);
     }
 }
