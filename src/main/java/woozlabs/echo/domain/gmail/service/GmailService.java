@@ -77,8 +77,6 @@ public class GmailService {
             "https://mail.google.com/"
 
     );
-    @Value("${gmail.topic.name")
-    private String topicName;
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private final AsyncGmailService asyncGmailService;
