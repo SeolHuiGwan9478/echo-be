@@ -13,15 +13,14 @@ public class ThreadSummaryPrompt {
             4. Present the summary as a single, cohesive sentence.
             5. Do not mention names or email addresses unless absolutely crucial to the context.
             6. Use extremely concise and direct language.
-            7. Respond in the same language as the input text
-            8. Don't forget to translate your answer into the language of the text entered.
-            9. If the thread is mostly irrelevant, state this briefly in no more than 10 words.
+            7. IMPORTANT: Respond in English by default. Only if the input is clearly and predominantly in Korean, respond in Korean.
+            8. If the thread is mostly irrelevant, state this briefly in no more than 10 words.
 
             Analyze and summarize the following Gmail thread content:
     
             %s
     
-            Concise, natural summary (10 words or fewer):
+            Concise, natural summary (10 words or fewer) in the SAME LANGUAGE as the input:
             """;
 
     private static final String GMAIL_SUMMARIZE_GUIDELINES = """
