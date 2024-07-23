@@ -1,6 +1,5 @@
 package woozlabs.echo.domain.gmail.controller;
 
-import com.google.pubsub.v1.PubsubMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
