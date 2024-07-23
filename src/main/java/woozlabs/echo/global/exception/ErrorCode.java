@@ -16,6 +16,7 @@ public enum ErrorCode {
 
     // firebase
     NOT_FOUND_FIREBASE_SERVICE_ACCOUNT_KEY(404, "Not found Firebase SDK file"),
+    FIREBASE_CLOUD_MESSAGING_SEND_ERR(500, "FCM(Firebase Cloud Messaging) Send Error"),
 
     // member
     NOT_FOUND_MEMBER_ERROR_MESSAGE(404, "Not found: Member"),

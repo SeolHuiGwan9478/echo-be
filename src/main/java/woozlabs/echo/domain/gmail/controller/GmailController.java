@@ -1,5 +1,6 @@
 package woozlabs.echo.domain.gmail.controller;
 
+import com.google.pubsub.v1.PubsubMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,8 @@ import woozlabs.echo.domain.gmail.dto.draft.GmailDraftSendResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
+import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
+import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.global.constant.GlobalConstant;
@@ -218,6 +221,17 @@ public class GmailController {
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
         }
     }
+    @PostMapping("/api/v1/gmail/watch")
+    public ResponseEntity<ResponseDto> getWatch(HttpServletRequest httpServletRequest, @RequestBody PubSubWatchRequest request){
+        log.info("Request to watch pub/sub");
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            PubSubWatchResponse response = gmailService.subscribePubSub(uid, request);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
+        }
+    }
 }
-
-// message pub & sub
