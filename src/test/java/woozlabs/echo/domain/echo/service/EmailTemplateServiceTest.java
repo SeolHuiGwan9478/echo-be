@@ -84,37 +84,14 @@ class EmailTemplateServiceTest {
         CreateEmailTemplateRequest request = new CreateEmailTemplateRequest();
         request.setTemplateName("New Template");
         request.setSubject("New Subject");
-        List<String> recipients = Arrays.asList("test1@example.com", "test2@example.com");
-        request.setTo(recipients);
+        request.setTo(Arrays.asList("to1@example.com", "to2@example.com"));
+        request.setCc(Arrays.asList("cc1@example.com", "cc2@example.com"));
+        request.setBcc(Arrays.asList("bcc1@example.com", "bcc2@example.com"));
         request.setBody("New Body");
 
         when(memberRepository.findByUid("1234567891")).thenReturn(Optional.of(member));
 
-        EmailTemplate newTemplate = new EmailTemplate();
-        newTemplate.setId(2L);
-        newTemplate.setTemplateName(request.getTemplateName());
-        newTemplate.setSubject(request.getSubject());
-        newTemplate.setBody(request.getBody());
-        newTemplate.setMember(member);
-        newTemplate.setRecipients(recipients.stream()
-                .map(email -> {
-                    EmailRecipient recipient = new EmailRecipient();
-                    recipient.setEmail(email);
-                    return recipient;
-                }).collect(Collectors.toList()));
-
         // when
-        when(emailTemplateRepository.save(argThat(template ->
-                template.getTemplateName().equals("New Template") &&
-                template.getSubject().equals("New Subject") &&
-                template.getBody().equals("New Body") &&
-                template.getMember().equals(member) &&
-                template.getRecipients().size() == 2 &&
-                template.getRecipients().get(0).getEmail().equals("test1@example.com") &&
-                template.getRecipients().get(1).getEmail().equals("test2@example.com")
-        ))).thenReturn(newTemplate);
-
-
         emailTemplateService.createTemplate("1234567891", request);
 
         // then
@@ -123,9 +100,16 @@ class EmailTemplateServiceTest {
                 template.getSubject().equals("New Subject") &&
                 template.getBody().equals("New Body") &&
                 template.getMember().equals(member) &&
-                template.getRecipients().size() == 2 &&
-                template.getRecipients().get(0).getEmail().equals("test1@example.com") &&
-                template.getRecipients().get(1).getEmail().equals("test2@example.com")
+                template.getRecipients().size() == 6 &&
+                template.getToRecipients().size() == 2 &&
+                template.getCcRecipients().size() == 2 &&
+                template.getBccRecipients().size() == 2 &&
+                template.getToRecipients().stream().anyMatch(r -> r.getEmail().equals("to1@example.com")) &&
+                template.getToRecipients().stream().anyMatch(r -> r.getEmail().equals("to2@example.com")) &&
+                template.getCcRecipients().stream().anyMatch(r -> r.getEmail().equals("cc1@example.com")) &&
+                template.getCcRecipients().stream().anyMatch(r -> r.getEmail().equals("cc2@example.com")) &&
+                template.getBccRecipients().stream().anyMatch(r -> r.getEmail().equals("bcc1@example.com")) &&
+                template.getBccRecipients().stream().anyMatch(r -> r.getEmail().equals("bcc2@example.com"))
         ));
     }
 
@@ -135,8 +119,9 @@ class EmailTemplateServiceTest {
         UpdateEmailTemplateRequest request = new UpdateEmailTemplateRequest();
         request.setTemplateName("Updated Template");
         request.setSubject("Updated Subject");
-        List<String> recipients = Arrays.asList("test1@example.com");
-        request.setTo(recipients);
+        request.setTo(Arrays.asList("to1@example.com", "to2@example.com"));
+        request.setCc(Arrays.asList("cc1@example.com", "cc2@example.com"));
+        request.setBcc(Arrays.asList("bcc1@example.com", "bcc2@example.com"));
         request.setBody("Updated Body");
 
         EmailTemplate existingTemplate = new EmailTemplate();
@@ -146,30 +131,9 @@ class EmailTemplateServiceTest {
         existingTemplate.setBody("Old Body");
         existingTemplate.setMember(member);
 
-        EmailTemplate updatedTemplate = new EmailTemplate();
-        updatedTemplate.setId(3L);
-        updatedTemplate.setTemplateName(request.getTemplateName());
-        updatedTemplate.setSubject(request.getSubject());
-        updatedTemplate.setBody(request.getBody());
-        updatedTemplate.setMember(member);
-        updatedTemplate.setRecipients(recipients.stream()
-                .map(email -> {
-                    EmailRecipient recipient = new EmailRecipient();
-                    recipient.setEmail(email);
-                    return recipient;
-                }).collect(Collectors.toList()));
-
         // when
         when(memberRepository.findByUid("1234567891")).thenReturn(Optional.of(member));
         when(emailTemplateRepository.findById(3L)).thenReturn(Optional.of(existingTemplate));
-        when(emailTemplateRepository.save(argThat(template ->
-                template.getTemplateName().equals("Updated Template") &&
-                        template.getSubject().equals("Updated Subject") &&
-                        template.getBody().equals("Updated Body") &&
-                        template.getMember().equals(member) &&
-                        template.getRecipients().size() == 1 &&
-                        template.getRecipients().get(0).getEmail().equals("test1@example.com")
-        ))).thenReturn(updatedTemplate);
 
         emailTemplateService.updateTemplate("1234567891", 3L, request);
 
@@ -179,8 +143,16 @@ class EmailTemplateServiceTest {
                 template.getSubject().equals("Updated Subject") &&
                 template.getBody().equals("Updated Body") &&
                 template.getMember().equals(member) &&
-                template.getRecipients().size() == 1 &&
-                template.getRecipients().get(0).getEmail().equals("test1@example.com")
+                template.getRecipients().size() == 6 &&
+                template.getToRecipients().size() == 2 &&
+                template.getCcRecipients().size() == 2 &&
+                template.getBccRecipients().size() == 2 &&
+                template.getToRecipients().stream().anyMatch(r -> r.getEmail().equals("to1@example.com")) &&
+                template.getToRecipients().stream().anyMatch(r -> r.getEmail().equals("to2@example.com")) &&
+                template.getCcRecipients().stream().anyMatch(r -> r.getEmail().equals("cc1@example.com")) &&
+                template.getCcRecipients().stream().anyMatch(r -> r.getEmail().equals("cc2@example.com")) &&
+                template.getBccRecipients().stream().anyMatch(r -> r.getEmail().equals("bcc1@example.com")) &&
+                template.getBccRecipients().stream().anyMatch(r -> r.getEmail().equals("bcc2@example.com"))
         ));
     }
 
