@@ -225,6 +225,14 @@ public class GmailService {
                 .build();
     }
 
+//    public GmailDraftUpdateResponse updateUserEmailDraft(String uid, String id) throws Exception{
+//        Member member = memberRepository.findByUid(uid).orElseThrow(
+//                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+//        String accessToken = member.getAccessToken();
+//        Gmail gmailService = createGmailService(accessToken);
+//        gmailService.users().drafts().update()
+//    }
+
     public GmailThreadUpdateResponse updateUserEmailThread(String uid, String id, GmailThreadUpdateRequest request) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));

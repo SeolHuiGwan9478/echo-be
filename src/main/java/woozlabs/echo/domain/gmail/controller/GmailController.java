@@ -198,6 +198,20 @@ public class GmailController {
         }
     }
 
+//    @PutMapping("/api/v1/gmail/drafts/{id}/modify")
+//    public ResponseEntity<ResponseDto> modifyDraft(HttpServletRequest httpServletRequest, @PathVariable("id") String id){
+//        log.info("Request to modify draft");
+//        try{
+//            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+//            GmailDraftGetResponse response = gmailService.getUserEmailDraft(uid, id);
+//            return new ResponseEntity<>(response, HttpStatus.OK);
+//        }catch (IOException e){
+//            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
+//        }catch (Exception e){
+//            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
+//        }
+//    }
+
     @PostMapping(value = "/api/v1/gmail/drafts/send", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseDto> sendDraft(HttpServletRequest httpServletRequest,
                                                    @RequestPart("toEmailAddress") String toEmailAddress,
