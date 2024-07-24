@@ -1,5 +1,6 @@
 package woozlabs.echo.domain.gmail.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
@@ -21,6 +22,8 @@ import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
+import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
+import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.domain.member.entity.Member;
@@ -54,7 +57,6 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 @Slf4j
 @RequiredArgsConstructor
 public class GmailService {
-    private final MemberRepository memberRepository;
     // constants
     private final String MULTI_PART_TEXT_PLAIN = "text/plain";
     private final String TEMP_FILE_PREFIX = "echo";
@@ -69,6 +71,8 @@ public class GmailService {
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private final AsyncGmailService asyncGmailService;
+    private final MemberRepository memberRepository;
+    private final ObjectMapper om;
 
     public GmailThreadListResponse getQueryUserEmailThreads(String uid, String pageToken, String q) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
@@ -221,6 +225,14 @@ public class GmailService {
                 .build();
     }
 
+//    public GmailDraftUpdateResponse updateUserEmailDraft(String uid, String id) throws Exception{
+//        Member member = memberRepository.findByUid(uid).orElseThrow(
+//                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+//        String accessToken = member.getAccessToken();
+//        Gmail gmailService = createGmailService(accessToken);
+//        gmailService.users().drafts().update()
+//    }
+
     public GmailThreadUpdateResponse updateUserEmailThread(String uid, String id, GmailThreadUpdateRequest request) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
@@ -230,12 +242,24 @@ public class GmailService {
         modifyThreadRequest.setAddLabelIds(request.getAddLabelIds());
         modifyThreadRequest.setRemoveLabelIds(request.getRemoveLabelIds());
         Thread thread = gmailService.users().threads().modify(USER_ID, id, modifyThreadRequest).execute();
-        System.out.println("hihihi");
-        System.out.println(thread);
         return GmailThreadUpdateResponse.builder()
                 .addLabelIds(request.getAddLabelIds())
                 .removeLabelIds(request.getRemoveLabelIds())
                 .build();
+    }
+
+    public PubSubWatchResponse subscribePubSub(String uid, PubSubWatchRequest dto) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        WatchRequest watchRequest = new WatchRequest()
+                .setLabelIds(dto.getLabelIds())
+                .setTopicName("projects/echo-email-app/topics/gmail");
+        WatchResponse watchResponse = gmailService.users().watch(USER_ID, watchRequest).execute();
+        return PubSubWatchResponse.builder()
+                .historyId(watchResponse.getHistoryId())
+                .expiration(watchResponse.getExpiration()).build();
     }
 
     // Methods : get something
@@ -252,10 +276,12 @@ public class GmailService {
         return futures.stream().map((future) -> {
             try{
                 Optional<GmailThreadListThreads> result = future.get();
-                if(result.isEmpty())throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
+                if(result.isEmpty()){
+                    throw new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
+                }
                 return result.get();
             }catch (InterruptedException | CancellationException | ExecutionException e){
-                throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
+                throw new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
         }).collect(Collectors.toList());
     }
