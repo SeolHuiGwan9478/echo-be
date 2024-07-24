@@ -19,13 +19,21 @@ public class EmailTemplateResponse {
     private String templateName;
     private String subject;
     private List<String> to = new ArrayList<>();
+    private List<String> cc = new ArrayList<>();
+    private List<String> bcc = new ArrayList<>();
     private String body;
 
     public EmailTemplateResponse(EmailTemplate emailTemplate) {
         this.key = emailTemplate.getId();
         this.templateName = emailTemplate.getTemplateName();
         this.subject = emailTemplate.getSubject();
-        this.to = emailTemplate.getRecipients().stream()
+        this.to = emailTemplate.getToRecipients().stream()
+                .map(EmailRecipient::getEmail)
+                .collect(Collectors.toList());
+        this.cc = emailTemplate.getCcRecipients().stream()
+                .map(EmailRecipient::getEmail)
+                .collect(Collectors.toList());
+        this.bcc = emailTemplate.getBccRecipients().stream()
                 .map(EmailRecipient::getEmail)
                 .collect(Collectors.toList());
         this.body = emailTemplate.getBody();
