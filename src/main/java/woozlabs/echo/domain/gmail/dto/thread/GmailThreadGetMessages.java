@@ -20,6 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
+import static woozlabs.echo.global.utils.GlobalUtility.splitCcAndBcc;
 import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Data
@@ -29,12 +30,9 @@ public class GmailThreadGetMessages {
     private String timezone; // timezone
     private String fromName;
     private String fromEmail;
-    private List<String> ccNames;
-    private List<String> ccEmails;
-    private List<String> bccNames;
-    private List<String> bccEmails;
-    private List<String> toNames;
-    private List<String> toEmails;
+    private List<GmailThreadGetMessagesCc> cc = new ArrayList<>();
+    private List<GmailThreadGetMessagesBcc> bcc = new ArrayList<>();
+    private List<GmailThreadGetMessagesTo> to = new ArrayList<>();
     private String threadId; // thread id
     private List<String> labelIds;
     private String snippet;
@@ -46,12 +44,6 @@ public class GmailThreadGetMessages {
         MessagePart payload = message.getPayload();
         GmailThreadGetPayload convertedPayload = new GmailThreadGetPayload(payload);
         List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
-        List<String> ccNames = new ArrayList<>();
-        List<String> ccEmails = new ArrayList<>();
-        List<String> bccNames = new ArrayList<>();
-        List<String> bccEmails = new ArrayList<>();
-        List<String> toNames = new ArrayList<>();
-        List<String> toEmails = new ArrayList<>();
         for(MessagePartHeader header: headers) {
             switch (header.getName()) {
                 case THREAD_PAYLOAD_HEADER_FROM_KEY -> {
@@ -64,34 +56,39 @@ public class GmailThreadGetMessages {
                     else{
                         gmailThreadGetMessages.setFromEmail(splitSender.get(0));
                     }
-                }
-                case THREAD_PAYLOAD_HEADER_DATE_KEY -> {
+                }case THREAD_PAYLOAD_HEADER_DATE_KEY -> {
                     String originDate = header.getValue();
                     changeDateFormat(originDate, gmailThreadGetMessages);
-                }
-                case THREAD_PAYLOAD_HEADER_CC_KEY -> {
+                }case THREAD_PAYLOAD_HEADER_CC_KEY -> {
                     String oneCc = header.getValue();
-                    List<String> splitSender = splitSenderData(oneCc);
-                    if(!ccNames.contains(splitSender.get(0))){
-                        ccNames.add(splitSender.get(0));
-                        ccEmails.add(splitSender.get(1));
-                    }
-                }
-                case THREAD_PAYLOAD_HEADER_BCC_KEY -> {
+                    List<List<String>> splitSender = splitCcAndBcc(oneCc);
+                    List<GmailThreadGetMessagesCc> data = splitSender.stream().map((ss) -> {
+                        GmailThreadGetMessagesCc gmailThreadGetMessagesCc = new GmailThreadGetMessagesCc();
+                        gmailThreadGetMessagesCc.setCcName(ss.get(0));
+                        gmailThreadGetMessagesCc.setCcEmail(ss.get(1));
+                        return gmailThreadGetMessagesCc;
+                    }).toList();
+                    gmailThreadGetMessages.setCc(data);
+                }case THREAD_PAYLOAD_HEADER_BCC_KEY -> {
                     String oneBcc = header.getValue();
-                    List<String> splitSender = splitSenderData(oneBcc);
-                    if(!bccNames.contains(splitSender.get(0))){
-                        bccNames.add(splitSender.get(0));
-                        bccEmails.add(splitSender.get(1));
-                    }
-                }
-                case THREAD_PAYLOAD_HEADER_TO_KEY -> {
+                    List<List<String>> splitSender = splitCcAndBcc(oneBcc);
+                    List<GmailThreadGetMessagesBcc> data = splitSender.stream().map((ss) -> {
+                        GmailThreadGetMessagesBcc gmailThreadGetMessagesBcc = new GmailThreadGetMessagesBcc();
+                        gmailThreadGetMessagesBcc.setBccName(ss.get(0));
+                        gmailThreadGetMessagesBcc.setBccEmail(ss.get(1));
+                        return gmailThreadGetMessagesBcc;
+                    }).toList();
+                    gmailThreadGetMessages.setBcc(data);
+                }case THREAD_PAYLOAD_HEADER_TO_KEY -> {
                     String oneTo = header.getValue();
-                    List<String> splitSender = splitSenderData(oneTo);
-                    if(!toNames.contains(splitSender.get(0))){
-                        toNames.add(splitSender.get(0));
-                        toEmails.add(splitSender.get(1));
-                    }
+                    List<List<String>> splitSender = splitCcAndBcc(oneTo);
+                    List<GmailThreadGetMessagesTo> data = splitSender.stream().map((ss) -> {
+                        GmailThreadGetMessagesTo gmailThreadGetMessagesTo = new GmailThreadGetMessagesTo();
+                        gmailThreadGetMessagesTo.setToName(ss.get(0));
+                        gmailThreadGetMessagesTo.setToEmail(ss.get(1));
+                        return gmailThreadGetMessagesTo;
+                    }).toList();
+                    gmailThreadGetMessages.setTo(data);
                 }
             }
         }
@@ -99,12 +96,6 @@ public class GmailThreadGetMessages {
         gmailThreadGetMessages.setThreadId(message.getThreadId());
         gmailThreadGetMessages.setLabelIds(message.getLabelIds());
         gmailThreadGetMessages.setPayload(convertedPayload);
-        gmailThreadGetMessages.setCcNames(ccNames);
-        gmailThreadGetMessages.setCcEmails(ccEmails);
-        gmailThreadGetMessages.setBccNames(bccNames);
-        gmailThreadGetMessages.setBccEmails(bccEmails);
-        gmailThreadGetMessages.setToNames(toNames);
-        gmailThreadGetMessages.setToEmails(toEmails);
         return gmailThreadGetMessages;
     }
 
@@ -114,9 +105,9 @@ public class GmailThreadGetMessages {
         );
         Matcher matcher = pattern.matcher(originDate);
         if (matcher.matches()) {
-            String datePart = matcher.group("date");
-            String timezonePart = matcher.group("timezone");
-
+            String datePart = matcher.group(1);
+            String timezonePart = matcher.group(2);
+            datePart = datePart.replaceAll("\\s+", " ");
             DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern(
                     INPUT_GMAIL_DATE_FORMAT, Locale.ENGLISH
             );
@@ -124,7 +115,6 @@ public class GmailThreadGetMessages {
             if (timezonePart.matches(EXTRA_TIMEZONE_PATTERN)) {
                 timezonePart = timezonePart.substring(0, 5);
             } // separate parts
-
             ZoneId losAngelesZone = ZoneId.of("America/Los_Angeles");
             // 원본 시간대 처리
             ZoneId originalZone;

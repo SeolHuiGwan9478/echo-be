@@ -40,10 +40,6 @@ public class AsyncGmailService {
             List<Message> messages = detailedThread.getMessages();
             List<String> names = new ArrayList<>();
             List<String> emails = new ArrayList<>();
-            List<String> ccNames = new ArrayList<>();
-            List<String> ccEmails = new ArrayList<>();
-            List<String> bccNames = new ArrayList<>();
-            List<String> bccEmails = new ArrayList<>();
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
             List<GmailThreadGetMessages> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
@@ -73,25 +69,11 @@ public class AsyncGmailService {
                     if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)){
                         gmailThreadListThreads.setSubject(header.getValue());
                     } else if(headerName.equals(THREAD_PAYLOAD_HEADER_FROM_KEY)){ // all messages -> extraction emails & names
-                            String sender = header.getValue();
-                            List<String> splitSender = splitSenderData(sender);
-                            if(!names.contains(splitSender.get(0))){
-                                names.add(splitSender.get(0));
-                                emails.add(splitSender.get(1));
-                            }
-                    } else if(headerName.equals(THREAD_PAYLOAD_HEADER_CC_KEY)) {
-                        String oneCc = header.getValue();
-                        List<String> splitSender = splitSenderData(oneCc);
-                        if(!ccNames.contains(splitSender.get(0))){
-                            ccNames.add(splitSender.get(0));
-                            ccEmails.add(splitSender.get(1));
-                        }
-                    } else if (headerName.equals(THREAD_PAYLOAD_HEADER_BCC_KEY)) {
-                        String oneBcc = header.getValue();
-                        List<String> splitSender = splitSenderData(oneBcc);
-                        if(!bccNames.contains(splitSender.get(0))){
-                            bccNames.add(splitSender.get(0));
-                            bccEmails.add(splitSender.get(1));
+                        String sender = header.getValue();
+                        List<String> splitSender = splitSenderData(sender);
+                        if(!names.contains(splitSender.get(0))){
+                            names.add(splitSender.get(0));
+                            emails.add(splitSender.get(1));
                         }
                     }
                 });
@@ -105,10 +87,6 @@ public class AsyncGmailService {
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());
             gmailThreadListThreads.setMessages(convertedMessages);
-            gmailThreadListThreads.setCcName(ccNames);
-            gmailThreadListThreads.setCcEmail(ccEmails);
-            gmailThreadListThreads.setBccName(bccNames);
-            gmailThreadListThreads.setBccEmail(bccEmails);
             return CompletableFuture.completedFuture(gmailThreadListThreads);
         } catch (IOException e) {
             throw new GmailException(e.getMessage());

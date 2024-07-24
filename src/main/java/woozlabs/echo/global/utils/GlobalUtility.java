@@ -21,4 +21,34 @@ public class GlobalUtility {
         }
         return splitSender;
     }
+
+    public static List<List<String>> splitCcAndBcc(String ccAndBcc){
+        List<List<String>> result = new ArrayList<>();
+        String replaceSender = ccAndBcc.replace("\"", "");
+        String[] senders = replaceSender.split(",");
+        for(String sender : senders){
+            List<String> splitSender = new ArrayList<>();
+            String regex = "(.*)\\s*<(.*)>";
+            Pattern pattern = Pattern.compile(regex);
+            Matcher matcher = pattern.matcher(sender);
+            if (matcher.find()) {
+                splitSender.add(matcher.group(1).trim());
+                splitSender.add(matcher.group(2).trim());
+            } else {
+                String emailRegex = "^[\\w.!#$%&'*+/=?^_`{|}~-]+@[\\w.-]+\\.[a-zA-Z]{2,}$";
+                Pattern emailPattern = Pattern.compile(emailRegex);
+                Matcher emailMatcher = emailPattern.matcher(ccAndBcc);
+                if(emailMatcher.find()){
+                    splitSender.add(sender.substring(0, sender.indexOf("@")).trim());
+                    splitSender.add(sender.trim());
+                }
+                else{
+                    splitSender.add(ccAndBcc);
+                    splitSender.add(ccAndBcc);
+                }
+            }
+            result.add(splitSender);
+        }
+        return result;
+    }
 }
