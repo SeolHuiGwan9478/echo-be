@@ -143,7 +143,7 @@ public class GmailThreadGetMessages {
             gmailThreadGetMessages.setDate(finalDate);
 
             // Los Angeles 시간대 이름 설정
-            String timezoneName = losAngelesZone.getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+            String timezoneName = losAngelesZone.getDisplayName(TextStyle.FULL, Locale.ENGLISH);
             gmailThreadGetMessages.setTimezone(timezoneName);
         } else {
             throw new CustomErrorException(ErrorCode.FAILED_TO_CHANGE_DATE_FORMAT);
