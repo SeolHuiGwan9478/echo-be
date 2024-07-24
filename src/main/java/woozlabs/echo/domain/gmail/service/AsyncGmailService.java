@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
 import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
@@ -41,8 +42,13 @@ public class AsyncGmailService {
             List<Message> messages = detailedThread.getMessages();
             List<String> names = new ArrayList<>();
             List<String> emails = new ArrayList<>();
+            List<String> ccNames = new ArrayList<>();
+            List<String> ccEmails = new ArrayList<>();
+            List<String> bccNames = new ArrayList<>();
+            List<String> bccEmails = new ArrayList<>();
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
             List<GmailThreadGetMessages> convertedMessages = new ArrayList<>();
+            List<String> labelIds = new ArrayList<>();
 
             for(int idx = 0;idx < messages.size();idx++){
                 int idxForLambda = idx;
@@ -50,10 +56,7 @@ public class AsyncGmailService {
                 MessagePart payload = message.getPayload();
                 convertedMessages.add(GmailThreadGetMessages.toGmailThreadGetMessages(message));
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
-                if(idxForLambda == 0){
-                    gmailThreadListThreads.setLabelIds(message.getLabelIds());
-                    gmailThreadListThreads.setMimeType(payload.getMimeType());
-                }
+                labelIds.addAll(message.getLabelIds());
                 if(idxForLambda == messages.size()-1){
                     Long rawInternalDate = message.getInternalDate();
                     LocalDateTime internalDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(rawInternalDate), ZoneId.systemDefault());
@@ -72,18 +75,31 @@ public class AsyncGmailService {
                     // first message -> extraction subject
                     if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)){
                         gmailThreadListThreads.setSubject(header.getValue());
-                    }
-                    // all messages -> extraction emails & names
-                    else if(headerName.equals(THREAD_PAYLOAD_HEADER_FROM_KEY)){
+                    } else if(headerName.equals(THREAD_PAYLOAD_HEADER_FROM_KEY)){ // all messages -> extraction emails & names
                             String sender = header.getValue();
                             List<String> splitSender = splitSenderData(sender);
                             if(!names.contains(splitSender.get(0))){
                                 names.add(splitSender.get(0));
                                 emails.add(splitSender.get(1));
                             }
+                    } else if(headerName.equals(THREAD_PAYLOAD_HEADER_CC_KEY)) {
+                        String oneCc = header.getValue();
+                        List<String> splitSender = splitSenderData(oneCc);
+                        if(!ccNames.contains(splitSender.get(0))){
+                            ccNames.add(splitSender.get(0));
+                            ccEmails.add(splitSender.get(1));
+                        }
+                    } else if (headerName.equals(THREAD_PAYLOAD_HEADER_BCC_KEY)) {
+                        String oneBcc = header.getValue();
+                        List<String> splitSender = splitSenderData(oneBcc);
+                        if(!bccNames.contains(splitSender.get(0))){
+                            bccNames.add(splitSender.get(0));
+                            bccEmails.add(splitSender.get(1));
+                        }
                     }
                 });
             }
+            gmailThreadListThreads.setLabelIds(labelIds.stream().distinct().collect(Collectors.toList()));
             gmailThreadListThreads.setId(id);
             gmailThreadListThreads.setHistoryId(historyId);
             gmailThreadListThreads.setFromEmail(emails);
@@ -92,6 +108,10 @@ public class AsyncGmailService {
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());
             gmailThreadListThreads.setMessages(convertedMessages);
+            gmailThreadListThreads.setCcName(ccNames);
+            gmailThreadListThreads.setCcEmail(ccEmails);
+            gmailThreadListThreads.setBccName(bccNames);
+            gmailThreadListThreads.setBccEmail(bccEmails);
             return CompletableFuture.completedFuture(gmailThreadListThreads);
         } catch (IOException e) {
             throw new GmailException(e.getMessage());

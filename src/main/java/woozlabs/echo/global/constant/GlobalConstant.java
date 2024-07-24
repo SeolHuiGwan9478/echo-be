@@ -18,6 +18,9 @@ public final class GlobalConstant {
     public static final String THREAD_PAYLOAD_HEADER_SUBJECT_KEY = "Subject";
     public static final String THREAD_PAYLOAD_HEADER_FROM_KEY = "From";
     public static final String THREAD_PAYLOAD_HEADER_DATE_KEY = "Date";
+    public static final String THREAD_PAYLOAD_HEADER_CC_KEY = "Cc";
+    public static final String THREAD_PAYLOAD_HEADER_BCC_KEY = "Bcc";
+    public static final String THREAD_PAYLOAD_HEADER_TO_KEY = "To";
     public static final String THREADS_GET_METADATA_FORMAT = "metadata";
     public static final String THREADS_GET_FULL_FORMAT = "full";
     public static final Long THREADS_LIST_MAX_LENGTH = 50L;
@@ -34,4 +37,10 @@ public final class GlobalConstant {
     public static final String REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG = "Internal Server Error: Request gmail messages get one api";
     // firebase
     public static final String FIREBASE_UID_KEY = "uid";
+
+    // Date Format
+    public static final String DATE_TIMEZONE_PATTERN = "^(?<date>\\w{3}, \\d{2} \\w{3} \\d{4} \\d{2}:\\d{2}:\\d{2})\\s(?<timezone>.*)$";
+    public static final String EXTRA_TIMEZONE_PATTERN = "[+-]\\d{4} \\(\\w+\\)";
+    public static final String INPUT_GMAIL_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss";
+    public static final String GMT = "GMT";
 }

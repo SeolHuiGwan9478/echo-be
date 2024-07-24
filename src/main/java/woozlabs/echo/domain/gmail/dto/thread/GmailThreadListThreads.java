@@ -12,12 +12,16 @@ public class GmailThreadListThreads implements Comparable<GmailThreadListThreads
     private String id;
     private BigInteger historyId;
     private List<String> labelIds;
-    private String mimeType;
+//    private String mimeType;
     private int attachmentSize;
     private List<GmailThreadListAttachments> attachments;
     private List<GmailThreadGetMessages> messages;
     private List<String> fromName;
     private List<String> fromEmail;
+    private List<String> ccName;
+    private List<String> ccEmail;
+    private List<String> bccName;
+    private List<String> bccEmail;
     private String subject;
     private String snippet;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
