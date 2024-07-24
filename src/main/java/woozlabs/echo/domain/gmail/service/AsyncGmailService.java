@@ -17,8 +17,6 @@ import java.math.BigInteger;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
@@ -49,7 +47,6 @@ public class AsyncGmailService {
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
             List<GmailThreadGetMessages> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
-
             for(int idx = 0;idx < messages.size();idx++){
                 int idxForLambda = idx;
                 Message message = messages.get(idx);

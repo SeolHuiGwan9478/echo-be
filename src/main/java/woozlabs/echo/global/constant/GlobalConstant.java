@@ -39,8 +39,8 @@ public final class GlobalConstant {
     public static final String FIREBASE_UID_KEY = "uid";
 
     // Date Format
-    public static final String DATE_TIMEZONE_PATTERN = "^(?<date>\\w{3}, \\d{2} \\w{3} \\d{4} \\d{2}:\\d{2}:\\d{2})\\s(?<timezone>.*)$";
+    public static final String DATE_TIMEZONE_PATTERN = "^(?<date>\\w{3}, \\d{1,2} \\w{3} \\d{4} \\d{2}:\\d{2}:\\d{2})\\s(?<timezone>.*)$";
     public static final String EXTRA_TIMEZONE_PATTERN = "[+-]\\d{4} \\(\\w+\\)";
-    public static final String INPUT_GMAIL_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss";
+    public static final String INPUT_GMAIL_DATE_FORMAT = "EEE, d MMM yyyy HH:mm:ss";
     public static final String GMT = "GMT";
 }

@@ -276,10 +276,12 @@ public class GmailService {
         return futures.stream().map((future) -> {
             try{
                 Optional<GmailThreadListThreads> result = future.get();
-                if(result.isEmpty())throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
+                if(result.isEmpty()){
+                    throw new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
+                }
                 return result.get();
             }catch (InterruptedException | CancellationException | ExecutionException e){
-                throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
+                throw new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
         }).collect(Collectors.toList());
     }
