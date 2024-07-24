@@ -2,10 +2,12 @@ package woozlabs.echo.domain.member.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
+import woozlabs.echo.domain.echo.entity.EmailTemplate;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -35,4 +37,9 @@ public class Member extends BaseEntity {
 
     @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private SubAccount subAccount;
+
+    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<EmailTemplate> emailTemplates = new ArrayList<>();
+
+
 }

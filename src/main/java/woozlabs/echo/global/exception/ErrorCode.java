@@ -54,7 +54,15 @@ public enum ErrorCode {
     FAILED_TO_CHANGE_TONE(500, "Error changing tone from Gemini"),
     FAILED_TO_CHECK_GRAMMAR(500, "Error checking grammar from Gemini"),
     FAILED_TO_SUMMARIZE_TEXT(500, "Error summarizing text from Gemini"),
-    FAILED_TO_EXTRACT_KEYPOINT(500, "Error extracting keypoint from Gemini");
+    FAILED_TO_EXTRACT_KEYPOINT(500, "Error extracting keypoint from Gemini"),
+
+    // Email Template
+    FAILED_TO_FETCHING_EMAIL_TEMPLATE(500, "Error occurred while fetching email templates for user"),
+    FAILED_TO_CREATE_EMAIL_TEMPLATE(500, "Error occurred while creating email templates for user"),
+    FAILED_TO_UPDATE_EMAIL_TEMPLATE(500, "Error occurred while updating email templates for user"),
+    FAILED_TO_DELETE_EMAIL_TEMPLATE(500, "Error occurred while deleting email templates for user"),
+    NOT_FOUND_EMAIL_TEMPLATE(404, "Not Found: EmailTemplate"),
+    UNAUTHORIZED_ACCESS_TO_TEMPLATE(401, "Unauthorized access to template");
 
     private final int status;
     private final String message;
