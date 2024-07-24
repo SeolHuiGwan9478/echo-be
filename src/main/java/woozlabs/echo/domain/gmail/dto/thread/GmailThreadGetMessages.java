@@ -13,6 +13,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.time.zone.ZoneRulesException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -28,6 +29,12 @@ public class GmailThreadGetMessages {
     private String timezone; // timezone
     private String fromName;
     private String fromEmail;
+    private List<String> ccNames;
+    private List<String> ccEmails;
+    private List<String> bccNames;
+    private List<String> bccEmails;
+    private List<String> toNames;
+    private List<String> toEmails;
     private String threadId; // thread id
     private List<String> labelIds;
     private String snippet;
@@ -39,6 +46,12 @@ public class GmailThreadGetMessages {
         MessagePart payload = message.getPayload();
         GmailThreadGetPayload convertedPayload = new GmailThreadGetPayload(payload);
         List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
+        List<String> ccNames = new ArrayList<>();
+        List<String> ccEmails = new ArrayList<>();
+        List<String> bccNames = new ArrayList<>();
+        List<String> bccEmails = new ArrayList<>();
+        List<String> toNames = new ArrayList<>();
+        List<String> toEmails = new ArrayList<>();
         for(MessagePartHeader header: headers) {
             switch (header.getName()) {
                 case THREAD_PAYLOAD_HEADER_FROM_KEY -> {
@@ -56,12 +69,42 @@ public class GmailThreadGetMessages {
                     String originDate = header.getValue();
                     changeDateFormat(originDate, gmailThreadGetMessages);
                 }
+                case THREAD_PAYLOAD_HEADER_CC_KEY -> {
+                    String oneCc = header.getValue();
+                    List<String> splitSender = splitSenderData(oneCc);
+                    if(!ccNames.contains(splitSender.get(0))){
+                        ccNames.add(splitSender.get(0));
+                        ccEmails.add(splitSender.get(1));
+                    }
+                }
+                case THREAD_PAYLOAD_HEADER_BCC_KEY -> {
+                    String oneBcc = header.getValue();
+                    List<String> splitSender = splitSenderData(oneBcc);
+                    if(!bccNames.contains(splitSender.get(0))){
+                        bccNames.add(splitSender.get(0));
+                        bccEmails.add(splitSender.get(1));
+                    }
+                }
+                case THREAD_PAYLOAD_HEADER_TO_KEY -> {
+                    String oneTo = header.getValue();
+                    List<String> splitSender = splitSenderData(oneTo);
+                    if(!toNames.contains(splitSender.get(0))){
+                        toNames.add(splitSender.get(0));
+                        toEmails.add(splitSender.get(1));
+                    }
+                }
             }
         }
         gmailThreadGetMessages.setId(message.getId());
         gmailThreadGetMessages.setThreadId(message.getThreadId());
         gmailThreadGetMessages.setLabelIds(message.getLabelIds());
         gmailThreadGetMessages.setPayload(convertedPayload);
+        gmailThreadGetMessages.setCcNames(ccNames);
+        gmailThreadGetMessages.setCcEmails(ccEmails);
+        gmailThreadGetMessages.setBccNames(bccNames);
+        gmailThreadGetMessages.setBccEmails(bccEmails);
+        gmailThreadGetMessages.setToNames(toNames);
+        gmailThreadGetMessages.setToEmails(toEmails);
         return gmailThreadGetMessages;
     }
 
