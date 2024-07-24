@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
 import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
@@ -43,6 +44,7 @@ public class AsyncGmailService {
             List<String> emails = new ArrayList<>();
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
             List<GmailThreadGetMessages> convertedMessages = new ArrayList<>();
+            List<String> labelIds = new ArrayList<>();
 
             for(int idx = 0;idx < messages.size();idx++){
                 int idxForLambda = idx;
@@ -50,10 +52,7 @@ public class AsyncGmailService {
                 MessagePart payload = message.getPayload();
                 convertedMessages.add(GmailThreadGetMessages.toGmailThreadGetMessages(message));
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
-                if(idxForLambda == 0){
-                    gmailThreadListThreads.setLabelIds(message.getLabelIds());
-                    gmailThreadListThreads.setMimeType(payload.getMimeType());
-                }
+                labelIds.addAll(message.getLabelIds());
                 if(idxForLambda == messages.size()-1){
                     Long rawInternalDate = message.getInternalDate();
                     LocalDateTime internalDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(rawInternalDate), ZoneId.systemDefault());
@@ -84,6 +83,7 @@ public class AsyncGmailService {
                     }
                 });
             }
+            gmailThreadListThreads.setLabelIds(labelIds.stream().distinct().collect(Collectors.toList()));
             gmailThreadListThreads.setId(id);
             gmailThreadListThreads.setHistoryId(historyId);
             gmailThreadListThreads.setFromEmail(emails);
