@@ -45,15 +45,12 @@ public class EmailTemplateService {
         emailTemplate.setBody(createEmailTemplateRequest.getBody());
         emailTemplate.setMember(member);
 
-        List<EmailRecipient> recipients = createEmailTemplateRequest.getTo().stream()
-                        .map(email -> {
-                            EmailRecipient recipient = new EmailRecipient();
-                            recipient.setEmail(email);
-                            recipient.setEmailTemplate(emailTemplate);
-                            return recipient;
-                        })
-                        .collect(Collectors.toList());
-        emailTemplate.setRecipients(recipients);
+        createEmailTemplateRequest.getTo().forEach(email ->
+                emailTemplate.addRecipient(email, EmailRecipient.RecipientType.TO));
+        createEmailTemplateRequest.getCc().forEach(email ->
+                emailTemplate.addRecipient(email, EmailRecipient.RecipientType.CC));
+        createEmailTemplateRequest.getBcc().forEach(email ->
+                emailTemplate.addRecipient(email, EmailRecipient.RecipientType.BCC));
 
         emailTemplateRepository.save(emailTemplate);
     }
@@ -74,17 +71,14 @@ public class EmailTemplateService {
         emailTemplate.setSubject(updateEmailTemplateRequest.getSubject());
         emailTemplate.setBody(updateEmailTemplateRequest.getBody());
 
-        // Clear existing recipients and update with new ones
         emailTemplate.getRecipients().clear();
-        List<EmailRecipient> recipients = updateEmailTemplateRequest.getTo().stream()
-                .map(email -> {
-                    EmailRecipient recipient = new EmailRecipient();
-                    recipient.setEmail(email);
-                    recipient.setEmailTemplate(emailTemplate);
-                    return recipient;
-                })
-                .collect(Collectors.toList());
-        emailTemplate.getRecipients().addAll(recipients);
+
+        updateEmailTemplateRequest.getTo().forEach(email ->
+                emailTemplate.addRecipient(email, EmailRecipient.RecipientType.TO));
+        updateEmailTemplateRequest.getCc().forEach(email ->
+                emailTemplate.addRecipient(email, EmailRecipient.RecipientType.CC));
+        updateEmailTemplateRequest.getBcc().forEach(email ->
+                emailTemplate.addRecipient(email, EmailRecipient.RecipientType.BCC));
 
         emailTemplateRepository.save(emailTemplate);
     }
