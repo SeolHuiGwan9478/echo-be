@@ -14,6 +14,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     Optional<Member> findByGoogleProviderId(String googleProviderId);
 
+    Optional<Member> findByEmail(String email);
+
     @Query("SELECT DISTINCT m FROM Member m " +
             "LEFT JOIN FETCH m.superAccount sa " +
             "LEFT JOIN FETCH sa.subAccounts " +
