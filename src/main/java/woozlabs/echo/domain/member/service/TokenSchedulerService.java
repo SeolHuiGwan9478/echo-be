@@ -61,7 +61,7 @@ public class TokenSchedulerService {
         LocalDateTime now = LocalDateTime.now();
         long minutesElapsed = ChronoUnit.MINUTES.between(tokenFetchedAt, now);
 
-        return minutesElapsed >= 55;
+        return minutesElapsed >= 50;
     }
 
     public void refreshToken(Member member) {
