@@ -27,6 +27,7 @@ public enum ErrorCode {
     FAILED_TO_FETCH_GOOGLE_USER_INFO_UTILS(500, "Failed to fetch Google user info (GoogleOAuthUtils)"),
     FAILED_TO_REDIRECT_GOOGLE_USER_INFO(500, "Failed to redirect Google user info"),
     FAILED_TO_REFRESH_GOOGLE_TOKEN(500, "Failed to refresh google token"),
+    FAILED_TO_FETCH_GOOGLE_TOKENS(500, "Failed to get Google access tokens"),
 
     // token
     NOT_FOUND_ACCESS_TOKEN(404, "Not found: Access Token"),
