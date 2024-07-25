@@ -20,6 +20,8 @@ import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PubSubService {
@@ -32,24 +34,28 @@ public class PubSubService {
         String decodedData = new String(java.util.Base64.getDecoder().decode(messageData));
         PubSubNotification notification = om.readValue(decodedData, PubSubNotification.class);
         String email = notification.getEmailAddress();
-        FcmToken fcmTokenEntity = fcmTokenRepository.findByEmail(email).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_FIREBASE_CLOUD_MESSAGING_TOKEN_ERR)
+        Member member = memberRepository.findByEmail(email).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE)
         );
-        String fcmToken = fcmTokenEntity.getFcmToken();
-        // handle fcm
-        com.google.firebase.messaging.Message message = com.google.firebase.messaging.Message.builder()
-                .setNotification(Notification.builder()
-                        .setTitle(notification.getEmailAddress())
-                        .setBody(notification.getHistoryId())
-                        .build())
-                .setToken(fcmToken)
-                .build();
-        try{
-            String response = FirebaseMessaging.getInstance().send(message);
-            System.out.println(response);
-        } catch (FirebaseMessagingException e) {
-            throw new CustomErrorException(ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR);
-        }
+        List<FcmToken> fcmTokens = fcmTokenRepository.findByMember(member);
+        fcmTokens.forEach((fcmToken) -> {
+            String token = fcmToken.getFcmToken();
+            // handle fcm
+            com.google.firebase.messaging.Message message = com.google.firebase.messaging.Message.builder()
+                    .setNotification(Notification.builder()
+                            .setTitle(notification.getEmailAddress())
+                            .setBody(notification.getHistoryId())
+                            .build())
+                    .setToken(token)
+                    .build();
+            try{
+                String response = FirebaseMessaging.getInstance().send(message);
+                System.out.println(response);
+            } catch (FirebaseMessagingException e) {
+                throw new CustomErrorException(ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR);
+            }
+        });
+
     }
 
     @Transactional

@@ -143,12 +143,20 @@ public class AsyncGmailService {
         if(part.getParts() == null){ // base condition
             if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
                 MessagePartBody body = part.getBody();
-                attachments.add(GmailThreadListAttachments.builder()
-                        .mimeType(part.getMimeType())
-                        .fileName(part.getFilename())
-                        .attachmentId(body.getAttachmentId())
-                        .size(body.getSize()).build()
-                );
+                List<MessagePartHeader> headers = part.getHeaders();
+                GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
+                for(MessagePartHeader header : headers){
+                    if(header.getName().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
+                        attachment.setXAttachmentId(header.getValue());
+                    }
+                }
+                attachment.setMimeType(part.getMimeType());
+                attachment.setAttachmentId(body.getAttachmentId());
+                attachment.setSize(body.getSize());
+                attachment.setFileName(part.getFilename());
+                if(!attachments.contains(attachment)){
+                    attachments.add(attachment);
+                }
             }
         }else{ // recursion
             for(MessagePart subPart : part.getParts()){
@@ -156,12 +164,20 @@ public class AsyncGmailService {
             }
             if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
                 MessagePartBody body = part.getBody();
-                attachments.add(GmailThreadListAttachments.builder()
-                        .mimeType(part.getMimeType())
-                        .fileName(part.getFilename())
-                        .attachmentId(body.getAttachmentId())
-                        .size(body.getSize()).build()
-                );
+                List<MessagePartHeader> headers = part.getHeaders();
+                GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
+                for(MessagePartHeader header : headers){
+                    if(header.getName().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
+                        attachment.setXAttachmentId(header.getValue());
+                    }
+                }
+                attachment.setMimeType(part.getMimeType());
+                attachment.setAttachmentId(body.getAttachmentId());
+                attachment.setSize(body.getSize());
+                attachment.setFileName(part.getFilename());
+                if(!attachments.contains(attachment)){
+                    attachments.add(attachment);
+                }
             }
         }
     }
