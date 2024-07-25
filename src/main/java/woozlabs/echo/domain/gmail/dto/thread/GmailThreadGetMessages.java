@@ -49,11 +49,10 @@ public class GmailThreadGetMessages {
                 case THREAD_PAYLOAD_HEADER_FROM_KEY -> {
                     String sender = header.getValue();
                     List<String> splitSender = splitSenderData(sender);
-                    if (splitSender.size() != 1){
+                    if (splitSender.size() != 1) {
                         gmailThreadGetMessages.setFromName(splitSender.get(0));
                         gmailThreadGetMessages.setFromEmail(splitSender.get(1));
-                    }
-                    else{
+                    } else {
                         gmailThreadGetMessages.setFromEmail(splitSender.get(0));
                     }
                 }case THREAD_PAYLOAD_HEADER_DATE_KEY -> {
@@ -62,33 +61,39 @@ public class GmailThreadGetMessages {
                 }case THREAD_PAYLOAD_HEADER_CC_KEY -> {
                     String oneCc = header.getValue();
                     List<List<String>> splitSender = splitCcAndBcc(oneCc);
-                    List<GmailThreadGetMessagesCc> data = splitSender.stream().map((ss) -> {
-                        GmailThreadGetMessagesCc gmailThreadGetMessagesCc = new GmailThreadGetMessagesCc();
-                        gmailThreadGetMessagesCc.setCcName(ss.get(0));
-                        gmailThreadGetMessagesCc.setCcEmail(ss.get(1));
-                        return gmailThreadGetMessagesCc;
-                    }).toList();
-                    gmailThreadGetMessages.setCc(data);
+                    if (!splitSender.isEmpty()){
+                        List<GmailThreadGetMessagesCc> data = splitSender.stream().map((ss) -> {
+                            GmailThreadGetMessagesCc gmailThreadGetMessagesCc = new GmailThreadGetMessagesCc();
+                            gmailThreadGetMessagesCc.setCcName(ss.get(0));
+                            gmailThreadGetMessagesCc.setCcEmail(ss.get(1));
+                            return gmailThreadGetMessagesCc;
+                        }).toList();
+                        gmailThreadGetMessages.setCc(data);
+                    }
                 }case THREAD_PAYLOAD_HEADER_BCC_KEY -> {
                     String oneBcc = header.getValue();
                     List<List<String>> splitSender = splitCcAndBcc(oneBcc);
-                    List<GmailThreadGetMessagesBcc> data = splitSender.stream().map((ss) -> {
-                        GmailThreadGetMessagesBcc gmailThreadGetMessagesBcc = new GmailThreadGetMessagesBcc();
-                        gmailThreadGetMessagesBcc.setBccName(ss.get(0));
-                        gmailThreadGetMessagesBcc.setBccEmail(ss.get(1));
-                        return gmailThreadGetMessagesBcc;
-                    }).toList();
-                    gmailThreadGetMessages.setBcc(data);
+                    if(!splitSender.isEmpty()){
+                        List<GmailThreadGetMessagesBcc> data = splitSender.stream().map((ss) -> {
+                            GmailThreadGetMessagesBcc gmailThreadGetMessagesBcc = new GmailThreadGetMessagesBcc();
+                            gmailThreadGetMessagesBcc.setBccName(ss.get(0));
+                            gmailThreadGetMessagesBcc.setBccEmail(ss.get(1));
+                            return gmailThreadGetMessagesBcc;
+                        }).toList();
+                        gmailThreadGetMessages.setBcc(data);
+                    }
                 }case THREAD_PAYLOAD_HEADER_TO_KEY -> {
                     String oneTo = header.getValue();
                     List<List<String>> splitSender = splitCcAndBcc(oneTo);
-                    List<GmailThreadGetMessagesTo> data = splitSender.stream().map((ss) -> {
-                        GmailThreadGetMessagesTo gmailThreadGetMessagesTo = new GmailThreadGetMessagesTo();
-                        gmailThreadGetMessagesTo.setToName(ss.get(0));
-                        gmailThreadGetMessagesTo.setToEmail(ss.get(1));
-                        return gmailThreadGetMessagesTo;
-                    }).toList();
-                    gmailThreadGetMessages.setTo(data);
+                    if(!splitSender.isEmpty()){
+                        List<GmailThreadGetMessagesTo> data = splitSender.stream().map((ss) -> {
+                            GmailThreadGetMessagesTo gmailThreadGetMessagesTo = new GmailThreadGetMessagesTo();
+                            gmailThreadGetMessagesTo.setToName(ss.get(0));
+                            gmailThreadGetMessagesTo.setToEmail(ss.get(1));
+                            return gmailThreadGetMessagesTo;
+                        }).toList();
+                        gmailThreadGetMessages.setTo(data);
+                    }
                 }
             }
         }
@@ -136,7 +141,8 @@ public class GmailThreadGetMessages {
             String timezoneName = losAngelesZone.getDisplayName(TextStyle.FULL, Locale.ENGLISH);
             gmailThreadGetMessages.setTimezone(timezoneName);
         } else {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_CHANGE_DATE_FORMAT);
+            gmailThreadGetMessages.setDate(originDate);
+            //throw new CustomErrorException(ErrorCode.FAILED_TO_CHANGE_DATE_FORMAT);
         }
     }
 }
