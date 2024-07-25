@@ -64,7 +64,10 @@ public enum ErrorCode {
     FAILED_TO_UPDATE_EMAIL_TEMPLATE(500, "Error occurred while updating email templates for user"),
     FAILED_TO_DELETE_EMAIL_TEMPLATE(500, "Error occurred while deleting email templates for user"),
     NOT_FOUND_EMAIL_TEMPLATE(404, "Not Found: EmailTemplate"),
-    UNAUTHORIZED_ACCESS_TO_TEMPLATE(401, "Unauthorized access to template");
+    UNAUTHORIZED_ACCESS_TO_TEMPLATE(401, "Unauthorized access to template"),
+
+    // Side Bar
+    NOT_FOUND_SIDE_BAR_CONFIG(404, "Not Found: SideBar Config");
 
     private final int status;
     private final String message;
