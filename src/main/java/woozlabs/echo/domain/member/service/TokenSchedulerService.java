@@ -1,6 +1,7 @@
 package woozlabs.echo.domain.member.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -59,25 +61,26 @@ public class TokenSchedulerService {
         LocalDateTime now = LocalDateTime.now();
         long minutesElapsed = ChronoUnit.MINUTES.between(tokenFetchedAt, now);
 
-        return minutesElapsed >= 57;
+        return minutesElapsed >= 55;
     }
 
     public void refreshToken(Member member) {
         try {
-            Map<String, String> newtokens = googleOAuthUtils.refreshAccessToken(member.getRefreshToken());
-            String newAccessToken = newtokens.get("access_token");
+            Map<String, String> newTokens = googleOAuthUtils.refreshAccessToken(member.getRefreshToken());
+            String newAccessToken = newTokens.get("access_token");
 
             member.setAccessToken(newAccessToken);
             member.setAccessTokenFetchedAt(LocalDateTime.now());
             memberRepository.save(member);
 
             SuperAccount superAccount = superAccountRepository.findByMember(member)
-                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SUPER_ACCOUNT));
+                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SUPER_ACCOUNT, "Super account not found for member: " + member.getId()));
             superAccount.setAccessToken(newAccessToken);
             superAccount.setAccessTokenFetchedAt(LocalDateTime.now());
             superAccountRepository.save(superAccount);
         } catch (Exception e) {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN);
+            log.error("Failed to refresh token for Member: {}", member.getId(), e);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN, "Failed to refresh token for Member: " + member.getId(), e);
         }
     }
 
@@ -88,10 +91,10 @@ public class TokenSchedulerService {
 
             superAccount.setAccessToken(newAccessToken);
             superAccount.setAccessTokenFetchedAt(LocalDateTime.now());
-
             superAccountRepository.save(superAccount);
         } catch (Exception e) {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN);
+            log.error("Failed to refresh token for SuperAccount: {}", superAccount.getId(), e);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN, "Failed to refresh token for SuperAccount: " + superAccount.getId(), e);
         }
     }
 
@@ -102,11 +105,10 @@ public class TokenSchedulerService {
 
             subAccount.setAccessToken(newAccessToken);
             subAccount.setAccessTokenFetchedAt(LocalDateTime.now());
-
             subAccountRepository.save(subAccount);
         } catch (Exception e) {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN);
+            log.error("Failed to refresh token for SubAccount: {}", subAccount.getId(), e);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN, "Failed to refresh token for SubAccount: " + subAccount.getId(), e);
         }
     }
-
 }
