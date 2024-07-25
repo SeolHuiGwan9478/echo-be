@@ -7,7 +7,6 @@ import java.util.List;
 @Data
 public class SidebarNavAccountDto {
 
-    private Long id;
-    private String accountName;
+    private String accountUid;
     private List<SpaceDto> spaces;
 }
