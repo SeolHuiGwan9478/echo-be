@@ -136,7 +136,7 @@ public class GmailThreadGetMessages {
             DateTimeFormatter outputFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
             String finalDate = losAngelesTime.format(outputFormatter);
             gmailThreadGetMessages.setDate(finalDate);
-
+            System.out.println("originDate: " + originDate + " finalDate: " + finalDate);
             // Los Angeles 시간대 이름 설정
             String timezoneName = losAngelesZone.getDisplayName(TextStyle.FULL, Locale.ENGLISH);
             gmailThreadGetMessages.setTimezone(timezoneName);

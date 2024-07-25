@@ -19,6 +19,7 @@ public class GmailThreadListThreads implements Comparable<GmailThreadListThreads
     private List<String> fromEmail;
     private String subject;
     private String snippet;
+    private Boolean verification = Boolean.FALSE;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime internalDate;
     private int threadSize;
@@ -28,5 +29,9 @@ public class GmailThreadListThreads implements Comparable<GmailThreadListThreads
         if (internalDate.isBefore(o.getInternalDate())) return 1;
         else if (internalDate.isAfter(o.getInternalDate())) return -1;
         else return 0;
+    }
+
+    public void updateVerification(){
+        this.verification = Boolean.TRUE;
     }
 }
