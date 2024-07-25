@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.SuperAccount;
 
 @Entity
 @Getter
@@ -15,13 +16,10 @@ public class UserSidebarConfig {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String accountName;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", unique = true)
+    private Member member;
 
     @Column(columnDefinition = "TEXT")
     private String sidebarConfig;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;
 }
