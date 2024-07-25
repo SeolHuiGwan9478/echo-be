@@ -1,5 +1,6 @@
 package woozlabs.echo.global.utils;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -15,6 +16,7 @@ import woozlabs.echo.global.exception.ErrorCode;
 
 import java.util.Map;
 
+@Slf4j
 @Component
 public class GoogleOAuthUtils {
 
@@ -37,7 +39,8 @@ public class GoogleOAuthUtils {
         if (userInfoResponse.getStatusCode().is2xxSuccessful()) {
             return userInfoResponse.getBody();
         } else {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_USER_INFO_UTILS);
+            log.error("Failed to fetch Google user info. Status code: {}", userInfoResponse.getStatusCode());
+            throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_USER_INFO_UTILS, "Failed to fetch Google user info");
         }
     }
 
@@ -56,9 +59,13 @@ public class GoogleOAuthUtils {
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(requestBody, headers);
 
-        ResponseEntity<Map> responseEntity = restTemplate.postForEntity(tokenUrl, request, Map.class);
-
-        return responseEntity.getBody();
+        try {
+            ResponseEntity<Map> responseEntity = restTemplate.postForEntity(tokenUrl, request, Map.class);
+            return responseEntity.getBody();
+        } catch (Exception e) {
+            log.error("Failed to get Google tokens. Code: {}", code, e);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_TOKENS, "Failed to get Google tokens", e);
+        }
     }
 
     public Map<String, String> refreshAccessToken(String refreshToken) {
@@ -75,8 +82,12 @@ public class GoogleOAuthUtils {
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(requestBody, headers);
 
-        ResponseEntity<Map> responseEntity = restTemplate.postForEntity(tokenUrl, request, Map.class);
-
-        return responseEntity.getBody();
+        try {
+            ResponseEntity<Map> responseEntity = restTemplate.postForEntity(tokenUrl, request, Map.class);
+            return responseEntity.getBody();
+        } catch (Exception e) {
+            log.error("Failed to refresh Google OAuth token. Refresh token: {}", refreshToken, e);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN, "Failed to refresh Google OAuth token", e);
+        }
     }
 }
