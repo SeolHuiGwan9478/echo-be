@@ -38,18 +38,8 @@ public class TokenSchedulerService {
 
         List<Member> members = memberRepository.findMembersWithAccountsByCutoffTime(cutoffTime);
         for (Member member : members) {
-            refreshToken(member);
-
-            SuperAccount superAccount = member.getSuperAccount();
-            if (superAccount != null && shouldRefreshToken(superAccount.getAccessTokenFetchedAt())) {
-                refreshToken(superAccount);
-
-                List<SubAccount> subAccounts = superAccount.getSubAccounts();
-                for (SubAccount subAccount : subAccounts) {
-                    if (shouldRefreshToken(subAccount.getAccessTokenFetchedAt())) {
-                        refreshToken(subAccount);
-                    }
-                }
+            if (shouldRefreshToken(member.getAccessTokenFetchedAt())) {
+                refreshToken(member);
             }
         }
     }
@@ -73,42 +63,22 @@ public class TokenSchedulerService {
             member.setAccessTokenFetchedAt(LocalDateTime.now());
             memberRepository.save(member);
 
-            SuperAccount superAccount = superAccountRepository.findByMember(member)
-                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SUPER_ACCOUNT, "Super account not found for member: " + member.getId()));
-            superAccount.setAccessToken(newAccessToken);
-            superAccount.setAccessTokenFetchedAt(LocalDateTime.now());
-            superAccountRepository.save(superAccount);
+            SuperAccount superAccount = member.getSuperAccount();
+            if (superAccount != null) {
+                superAccount.setAccessToken(newAccessToken);
+                superAccount.setAccessTokenFetchedAt(LocalDateTime.now());
+                superAccountRepository.save(superAccount);
+
+                List<SubAccount> subAccounts = superAccount.getSubAccounts();
+                for (SubAccount subAccount : subAccounts) {
+                    subAccount.setAccessToken(newAccessToken);
+                    subAccount.setAccessTokenFetchedAt(LocalDateTime.now());
+                    subAccountRepository.save(subAccount);
+                }
+            }
         } catch (Exception e) {
             log.error("Failed to refresh token for Member: {}", member.getId(), e);
             throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN, "Failed to refresh token for Member: " + member.getId(), e);
-        }
-    }
-
-    private void refreshToken(SuperAccount superAccount) {
-        try {
-            Map<String, String> newTokens = googleOAuthUtils.refreshAccessToken(superAccount.getRefreshToken());
-            String newAccessToken = newTokens.get("access_token");
-
-            superAccount.setAccessToken(newAccessToken);
-            superAccount.setAccessTokenFetchedAt(LocalDateTime.now());
-            superAccountRepository.save(superAccount);
-        } catch (Exception e) {
-            log.error("Failed to refresh token for SuperAccount: {}", superAccount.getId(), e);
-            throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN, "Failed to refresh token for SuperAccount: " + superAccount.getId(), e);
-        }
-    }
-
-    private void refreshToken(SubAccount subAccount) {
-        try {
-            Map<String, String> newTokens = googleOAuthUtils.refreshAccessToken(subAccount.getRefreshToken());
-            String newAccessToken = newTokens.get("access_token");
-
-            subAccount.setAccessToken(newAccessToken);
-            subAccount.setAccessTokenFetchedAt(LocalDateTime.now());
-            subAccountRepository.save(subAccount);
-        } catch (Exception e) {
-            log.error("Failed to refresh token for SubAccount: {}", subAccount.getId(), e);
-            throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN, "Failed to refresh token for SubAccount: " + subAccount.getId(), e);
         }
     }
 }
