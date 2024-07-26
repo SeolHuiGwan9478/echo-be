@@ -7,13 +7,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
+import woozlabs.echo.domain.member.entity.SuperAccount;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.entity.Role;
-import woozlabs.echo.domain.member.entity.SubAccount;
-import woozlabs.echo.domain.member.entity.SuperAccount;
-import woozlabs.echo.domain.member.repository.MemberRepository;
-import woozlabs.echo.domain.member.repository.SubAccountRepository;
 import woozlabs.echo.domain.member.repository.SuperAccountRepository;
+import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
@@ -30,7 +28,6 @@ public class AuthService {
 
     private final MemberRepository memberRepository;
     private final SuperAccountRepository superAccountRepository;
-    private final SubAccountRepository subAccountRepository;
     private final FirebaseTokenVerifier firebaseTokenVerifier;
     private final GoogleOAuthUtils googleOAuthUtils;
 
@@ -60,7 +57,7 @@ public class AuthService {
         }
     }
 
-    private Member createOrUpdateMember(Map<String, Object> userInfo) {
+    private Member createOrUpdateMember(Map<String, Object> userInfo, boolean isPrimary) {
         String providerId = (String) userInfo.get("id");
         String displayName = (String) userInfo.get("name");
         String email = (String) userInfo.get("email");
@@ -90,6 +87,7 @@ public class AuthService {
                         .refreshToken(refreshToken)
                         .accessTokenFetchedAt(LocalDateTime.now())
                         .role(Role.ROLE_USER)
+                        .isPrimary(isPrimary)
                         .build());
 
         return memberRepository.save(member);
@@ -116,32 +114,18 @@ public class AuthService {
         String providerId = (String) userInfo.get("id");
         String customToken = createCustomToken(providerId);
 
-        Member member = createOrUpdateMember(userInfo);
+        Member member = createOrUpdateMember(userInfo, true);
 
-        SuperAccount superAccount = superAccountRepository.findByMember(member)
-                .map(existingAccount -> {
-                    existingAccount.setDisplayName(member.getDisplayName());
-                    existingAccount.setEmail(member.getEmail());
-                    existingAccount.setProfileImageUrl(member.getProfileImageUrl());
-                    existingAccount.setAccessToken(member.getAccessToken());
-                    existingAccount.setRefreshToken(member.getRefreshToken());
-                    existingAccount.setAccessTokenFetchedAt(member.getAccessTokenFetchedAt());
-                    return existingAccount;
-                })
-                .orElse(SuperAccount.builder()
-                        .uid(providerId)
-                        .googleProviderId(providerId)
-                        .displayName(member.getDisplayName())
-                        .email(member.getEmail())
-                        .profileImageUrl(member.getProfileImageUrl())
-                        .accessToken(member.getAccessToken())
-                        .refreshToken(member.getRefreshToken())
-                        .accessTokenFetchedAt(member.getAccessTokenFetchedAt())
-                        .role(Role.ROLE_USER)
-                        .member(member)
-                        .build());
+        SuperAccount superAccount = superAccountRepository.findByMemberUids(member.getUid())
+                .orElseGet(() -> {
+                    SuperAccount newSuperAccount = new SuperAccount();
+                    newSuperAccount.getMembers().add(member);
+                    newSuperAccount.getMemberUids().add(member.getUid());
+                    return superAccountRepository.save(newSuperAccount);
+                });
 
-        superAccountRepository.save(superAccount);
+        member.setSuperAccount(superAccount);
+        memberRepository.save(member);
 
         constructAndRedirect(response, customToken, member.getDisplayName(), member.getProfileImageUrl(), member.getEmail());
     }
@@ -149,31 +133,21 @@ public class AuthService {
     @Transactional
     public void addAccount(String idToken, String code, HttpServletResponse response) throws FirebaseAuthException {
         String superAccountUid = firebaseTokenVerifier.verifyTokenAndGetUid(idToken);
-        SuperAccount superAccount = superAccountRepository.findByUid(superAccountUid)
+        SuperAccount superAccount = superAccountRepository.findByMemberUids(superAccountUid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SUPER_ACCOUNT));
 
         Map<String, Object> userInfo = getGoogleUserInfoAndTokens(code);
         String providerId = (String) userInfo.get("id");
         String customToken = createCustomToken(providerId);
 
-        Member member = createOrUpdateMember(userInfo);
+        Member newMember = createOrUpdateMember(userInfo, false);
+        newMember.setSuperAccount(superAccount);
+        memberRepository.save(newMember);
 
-        SubAccount subAccount = SubAccount.builder()
-                .uid(providerId)
-                .googleProviderId(providerId)
-                .displayName(member.getDisplayName())
-                .email(member.getEmail())
-                .profileImageUrl(member.getProfileImageUrl())
-                .accessToken(member.getAccessToken())
-                .refreshToken(member.getRefreshToken())
-                .accessTokenFetchedAt(LocalDateTime.now())
-                .role(Role.ROLE_USER)
-                .member(member)
-                .superAccount(superAccount)
-                .build();
+        superAccount.getMembers().add(newMember);
+        superAccount.getMemberUids().add(newMember.getUid());
+        superAccountRepository.save(superAccount);
 
-        subAccountRepository.save(subAccount);
-
-        constructAndRedirect(response, customToken, member.getDisplayName(), member.getProfileImageUrl(), member.getEmail());
+        constructAndRedirect(response, customToken, newMember.getDisplayName(), newMember.getProfileImageUrl(), newMember.getEmail());
     }
 }
