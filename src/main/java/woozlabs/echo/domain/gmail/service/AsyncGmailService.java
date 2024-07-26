@@ -3,6 +3,7 @@ package woozlabs.echo.domain.gmail.service;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.*;
 import com.google.api.services.gmail.model.Thread;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListAttachments;
@@ -11,6 +12,7 @@ import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessages;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListAttachments;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListThreads;
 import woozlabs.echo.domain.gmail.exception.GmailException;
+import woozlabs.echo.domain.gmail.util.GmailUtility;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -23,9 +25,11 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Service
+@RequiredArgsConstructor
 public class AsyncGmailService {
     private final String CONTENT_DISPOSITION_KEY = "Content-Disposition";
     private final String CONTENT_DISPOSITION_INLINE_VALUE = "inline";
+    private final GmailUtility gmailUtility;
 
     @Async
     public CompletableFuture<GmailThreadListThreads> asyncRequestGmailThreadGetForList(Thread thread, Gmail gmailService){
@@ -40,10 +44,6 @@ public class AsyncGmailService {
             List<Message> messages = detailedThread.getMessages();
             List<String> names = new ArrayList<>();
             List<String> emails = new ArrayList<>();
-            List<String> ccNames = new ArrayList<>();
-            List<String> ccEmails = new ArrayList<>();
-            List<String> bccNames = new ArrayList<>();
-            List<String> bccEmails = new ArrayList<>();
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
             List<GmailThreadGetMessages> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
@@ -51,7 +51,7 @@ public class AsyncGmailService {
                 int idxForLambda = idx;
                 Message message = messages.get(idx);
                 MessagePart payload = message.getPayload();
-                convertedMessages.add(GmailThreadGetMessages.toGmailThreadGetMessages(message));
+                convertedMessages.add(GmailThreadGetMessages.toGmailThreadGetMessages(message, gmailUtility));
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
                 labelIds.addAll(message.getLabelIds());
                 if(idxForLambda == messages.size()-1){
@@ -73,25 +73,11 @@ public class AsyncGmailService {
                     if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)){
                         gmailThreadListThreads.setSubject(header.getValue());
                     } else if(headerName.equals(THREAD_PAYLOAD_HEADER_FROM_KEY)){ // all messages -> extraction emails & names
-                            String sender = header.getValue();
-                            List<String> splitSender = splitSenderData(sender);
-                            if(!names.contains(splitSender.get(0))){
-                                names.add(splitSender.get(0));
-                                emails.add(splitSender.get(1));
-                            }
-                    } else if(headerName.equals(THREAD_PAYLOAD_HEADER_CC_KEY)) {
-                        String oneCc = header.getValue();
-                        List<String> splitSender = splitSenderData(oneCc);
-                        if(!ccNames.contains(splitSender.get(0))){
-                            ccNames.add(splitSender.get(0));
-                            ccEmails.add(splitSender.get(1));
-                        }
-                    } else if (headerName.equals(THREAD_PAYLOAD_HEADER_BCC_KEY)) {
-                        String oneBcc = header.getValue();
-                        List<String> splitSender = splitSenderData(oneBcc);
-                        if(!bccNames.contains(splitSender.get(0))){
-                            bccNames.add(splitSender.get(0));
-                            bccEmails.add(splitSender.get(1));
+                        String sender = header.getValue();
+                        List<String> splitSender = splitSenderData(sender);
+                        if(!names.contains(splitSender.get(0))){
+                            names.add(splitSender.get(0));
+                            emails.add(splitSender.get(1));
                         }
                     }
                 });
@@ -105,10 +91,6 @@ public class AsyncGmailService {
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());
             gmailThreadListThreads.setMessages(convertedMessages);
-            gmailThreadListThreads.setCcName(ccNames);
-            gmailThreadListThreads.setCcEmail(ccEmails);
-            gmailThreadListThreads.setBccName(bccNames);
-            gmailThreadListThreads.setBccEmail(bccEmails);
             return CompletableFuture.completedFuture(gmailThreadListThreads);
         } catch (IOException e) {
             throw new GmailException(e.getMessage());
@@ -165,12 +147,20 @@ public class AsyncGmailService {
         if(part.getParts() == null){ // base condition
             if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
                 MessagePartBody body = part.getBody();
-                attachments.add(GmailThreadListAttachments.builder()
-                        .mimeType(part.getMimeType())
-                        .fileName(part.getFilename())
-                        .attachmentId(body.getAttachmentId())
-                        .size(body.getSize()).build()
-                );
+                List<MessagePartHeader> headers = part.getHeaders();
+                GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
+                for(MessagePartHeader header : headers){
+                    if(header.getName().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
+                        attachment.setXAttachmentId(header.getValue());
+                    }
+                }
+                attachment.setMimeType(part.getMimeType());
+                attachment.setAttachmentId(body.getAttachmentId());
+                attachment.setSize(body.getSize());
+                attachment.setFileName(part.getFilename());
+                if(!attachments.contains(attachment)){
+                    attachments.add(attachment);
+                }
             }
         }else{ // recursion
             for(MessagePart subPart : part.getParts()){
@@ -178,12 +168,20 @@ public class AsyncGmailService {
             }
             if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
                 MessagePartBody body = part.getBody();
-                attachments.add(GmailThreadListAttachments.builder()
-                        .mimeType(part.getMimeType())
-                        .fileName(part.getFilename())
-                        .attachmentId(body.getAttachmentId())
-                        .size(body.getSize()).build()
-                );
+                List<MessagePartHeader> headers = part.getHeaders();
+                GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
+                for(MessagePartHeader header : headers){
+                    if(header.getName().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
+                        attachment.setXAttachmentId(header.getValue());
+                    }
+                }
+                attachment.setMimeType(part.getMimeType());
+                attachment.setAttachmentId(body.getAttachmentId());
+                attachment.setSize(body.getSize());
+                attachment.setFileName(part.getFilename());
+                if(!attachments.contains(attachment)){
+                    attachments.add(attachment);
+                }
             }
         }
     }
