@@ -3,6 +3,7 @@ package woozlabs.echo.domain.gmail.service;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.*;
 import com.google.api.services.gmail.model.Thread;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListAttachments;
@@ -11,6 +12,7 @@ import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessages;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListAttachments;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListThreads;
 import woozlabs.echo.domain.gmail.exception.GmailException;
+import woozlabs.echo.domain.gmail.util.GmailUtility;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -23,9 +25,11 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Service
+@RequiredArgsConstructor
 public class AsyncGmailService {
     private final String CONTENT_DISPOSITION_KEY = "Content-Disposition";
     private final String CONTENT_DISPOSITION_INLINE_VALUE = "inline";
+    private final GmailUtility gmailUtility;
 
     @Async
     public CompletableFuture<GmailThreadListThreads> asyncRequestGmailThreadGetForList(Thread thread, Gmail gmailService){
@@ -47,7 +51,7 @@ public class AsyncGmailService {
                 int idxForLambda = idx;
                 Message message = messages.get(idx);
                 MessagePart payload = message.getPayload();
-                convertedMessages.add(GmailThreadGetMessages.toGmailThreadGetMessages(message));
+                convertedMessages.add(GmailThreadGetMessages.toGmailThreadGetMessages(message, gmailUtility));
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
                 labelIds.addAll(message.getLabelIds());
                 if(idxForLambda == messages.size()-1){

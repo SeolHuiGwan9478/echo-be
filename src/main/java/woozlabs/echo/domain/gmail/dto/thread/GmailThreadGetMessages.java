@@ -4,6 +4,8 @@ import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
+import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
@@ -38,8 +40,10 @@ public class GmailThreadGetMessages {
     private String snippet;
     private BigInteger historyId;
     private GmailThreadGetPayload payload;
+    private Boolean verification = Boolean.FALSE;
+    private List<String> codes;
 
-    public static GmailThreadGetMessages toGmailThreadGetMessages(Message message){
+    public static GmailThreadGetMessages toGmailThreadGetMessages(Message message, GmailUtility gmailUtility){
         GmailThreadGetMessages gmailThreadGetMessages = new GmailThreadGetMessages();
         MessagePart payload = message.getPayload();
         GmailThreadGetPayload convertedPayload = new GmailThreadGetPayload(payload);
@@ -101,7 +105,38 @@ public class GmailThreadGetMessages {
         gmailThreadGetMessages.setThreadId(message.getThreadId());
         gmailThreadGetMessages.setLabelIds(message.getLabelIds());
         gmailThreadGetMessages.setPayload(convertedPayload);
+        // verification code
+//        List<String> codes = findVerificationEmail(convertedPayload, gmailUtility);
+//        if(!codes.isEmpty()){
+//            gmailThreadGetMessages.setVerification(Boolean.TRUE);
+//            gmailThreadGetMessages.setCodes(codes);
+//        }
         return gmailThreadGetMessages;
+    }
+
+    private static List<String> findVerificationEmail(GmailThreadGetPayload payload, GmailUtility gmailUtility){
+        // payload body check
+        String payloadBody = payload.getBody().getData();
+        List<String> codes = gmailUtility.extractVerification(payloadBody);
+        List<GmailThreadGetPart> parts = payload.getParts();
+        for(GmailThreadGetPart part : parts){
+            findVerificationCode(part, codes, gmailUtility);
+        }
+        return codes.stream().distinct().toList();
+    }
+
+    private static void findVerificationCode(GmailThreadGetPart inputPart, List<String> codes, GmailUtility gmailUtility){
+        List<GmailThreadGetPart> parts = inputPart.getParts();
+        if(parts.isEmpty()){
+            String partBody = inputPart.getBody().getData();
+            codes.addAll(gmailUtility.extractVerification(partBody));
+            return;
+        }
+        for(GmailThreadGetPart part : parts){
+            findVerificationCode(part, codes, gmailUtility);
+        }
+        String partBody = inputPart.getBody().getData();
+        codes.addAll(gmailUtility.extractVerification(partBody));
     }
 
     private static void changeDateFormat(String originDate, GmailThreadGetMessages gmailThreadGetMessages) {
@@ -136,7 +171,6 @@ public class GmailThreadGetMessages {
             DateTimeFormatter outputFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
             String finalDate = losAngelesTime.format(outputFormatter);
             gmailThreadGetMessages.setDate(finalDate);
-            System.out.println("originDate: " + originDate + " finalDate: " + finalDate);
             // Los Angeles 시간대 이름 설정
             String timezoneName = losAngelesZone.getDisplayName(TextStyle.FULL, Locale.ENGLISH);
             gmailThreadGetMessages.setTimezone(timezoneName);
