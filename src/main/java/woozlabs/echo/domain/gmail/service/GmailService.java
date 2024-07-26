@@ -26,6 +26,7 @@ import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
+import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.global.constant.GlobalConstant;
@@ -72,7 +73,7 @@ public class GmailService {
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private final AsyncGmailService asyncGmailService;
     private final MemberRepository memberRepository;
-    private final ObjectMapper om;
+    private final GmailUtility gmailUtility;
 
     public GmailThreadListResponse getQueryUserEmailThreads(String uid, String pageToken, String q) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
@@ -308,7 +309,7 @@ public class GmailService {
     }
 
     private List<GmailThreadGetMessages> getConvertedMessages(List<Message> messages){
-        return messages.stream().map(GmailThreadGetMessages::toGmailThreadGetMessages).toList();
+        return messages.stream().map((message) -> GmailThreadGetMessages.toGmailThreadGetMessages(message, gmailUtility)).toList();
     }
 
     private ListThreadsResponse getQueryListThreadsResponse(String pageToken, String q, Gmail gmailService) throws IOException {
