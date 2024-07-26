@@ -87,12 +87,16 @@ public class UserSideBarConfigService {
 
     @Transactional
     public void saveConfig(String uid, List<SidebarNavAccountDto> dtos) {
-        Member member = memberRepository.findByUid(uid)
+        Member primaryMember = memberRepository.findByUid(uid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
 
         for (SidebarNavAccountDto dto : dtos) {
             Member dtoMember = memberRepository.findByUid(dto.getAccountUid())
                     .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE, "Member not found for accountUid: " + dto.getAccountUid()));
+
+            if (!dtoMember.getSuperAccount().equals(primaryMember.getSuperAccount())) {
+                throw new CustomErrorException(ErrorCode.INVALID_ACCOUNT_UID, "Account UID " + dto.getAccountUid() + " is not linked to the primary account's super account.");
+            }
 
             UserSidebarConfig existingConfig = userSideBarConfigRepository.findByMember(dtoMember)
                     .orElse(new UserSidebarConfig());
