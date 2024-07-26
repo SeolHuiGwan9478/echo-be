@@ -11,12 +11,14 @@ import woozlabs.echo.domain.echo.dto.userSideBar.SpaceDto;
 import woozlabs.echo.domain.echo.entity.UserSidebarConfig;
 import woozlabs.echo.domain.echo.repository.UserSideBarConfigRepository;
 import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.SuperAccount;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -68,6 +70,19 @@ public class UserSideBarConfigService {
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SIDE_BAR_CONFIG));
 
         return convertToDto(userSidebarConfig);
+    }
+
+    public List<SidebarNavAccountDto> getAllAccountsNavSpace(String uid) {
+        Member primaryMember = memberRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+
+        List<Member> linkedMembers = memberRepository.findAllBySuperAccount(primaryMember.getSuperAccount());
+        return linkedMembers.stream()
+                .map(member -> userSideBarConfigRepository.findByMember(member)
+                        .map(this::convertToDto)
+                        .orElse(null))
+                .filter(dto -> dto != null)
+                .collect(Collectors.toList());
     }
 
     @Transactional
