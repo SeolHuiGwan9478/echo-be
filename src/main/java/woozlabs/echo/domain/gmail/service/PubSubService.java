@@ -59,13 +59,13 @@ public class PubSubService {
     }
 
     @Transactional
-    public FcmTokenResponse saveFcmToken(String uid, FcmTokenRequest dto){
+    public FcmTokenResponse saveFcmToken(String uid, String fcmToken){
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
-        FcmToken fcmToken = FcmToken.builder()
-                .fcmToken(dto.getFcmToken())
+        FcmToken newFcmToken = FcmToken.builder()
+                .fcmToken(fcmToken)
                 .member(member).build();
-        fcmTokenRepository.save(fcmToken);
-        return new FcmTokenResponse(fcmToken.getId());
+        fcmTokenRepository.save(newFcmToken);
+        return new FcmTokenResponse(newFcmToken.getId());
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import woozlabs.echo.domain.gmail.dto.pubsub.FcmTokenRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.FcmTokenResponse;
@@ -32,10 +33,10 @@ public class PubSubController {
     }
 
     @PostMapping("/api/v1/fcm")
-    public ResponseEntity<ResponseDto> postFcmToken(HttpServletRequest httpServletRequest, @RequestBody FcmTokenRequest fcmTokenRequest){
+    public ResponseEntity<ResponseDto> postFcmToken(HttpServletRequest httpServletRequest, @RequestParam("fcmToken") String fcmToken){
         log.info("Request to post fcmToken");
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-        FcmTokenResponse response = pubSubService.saveFcmToken(uid, fcmTokenRequest);
+        FcmTokenResponse response = pubSubService.saveFcmToken(uid, fcmToken);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 }
