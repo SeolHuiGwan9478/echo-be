@@ -16,50 +16,57 @@ import java.util.regex.Pattern;
 
 @Component
 public class GmailUtility {
-    public Optional<String> extractVerification(String rawContent){
+    public List<String> extractVerification(String rawContent){
         byte[] decodedBinaryContent = Base64.getDecoder().decode(rawContent);
         String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
-        if(!isVerificationEmail(decodedContent)) return Optional.empty(); // check verification email
-        // Decoding by using base64
-        String code = "test";
-        return Optional.of(code);
+        List<String> codes = new ArrayList<>();
+        if(!isVerificationEmail(decodedContent)) return codes; // check verification email
+        codes.addAll(getVerificationCode(decodedContent));
+        return codes;
     }
 
-//    private List<String> extractVerificationCode(String decodedContent){
-//        Document doc = Jsoup.parse(decodedContent);
-//        List<String> codes = new ArrayList<>();
-//        List<String> englishKeywords = readKeywords("src/main/resources/keywords_en.txt");
-//        List<String> koreanKeywords = readKeywords("src/main/resources/keywords_ko.txt");
-//        for(String englishKeyword : englishKeywords){
-//            Elements elements = doc.getElementsContainingText(englishKeyword);
-//            for(Element element : elements){
-//                Element previousElement = element.previousElementSibling();
-//                Element nextElement = element.nextElementSibling();
-//                Element parentElement = element.parent();
-//                if(previousElement != null){
-//
-//                }
-//                if(nextElement != null){
-//
-//                }
-//                if(parentElement != null){
-//
-//                }
-//            }
-//        }
-//        for(String koreanKeyword : koreanKeywords){
-//
-//        }
-//    }
+    private List<String> getVerificationCode(String decodedContent){
+        Document doc = Jsoup.parse(decodedContent);
+        List<String> codes = new ArrayList<>();
+        List<String> keywords = readKeywords("src/main/resources/keywords_en.txt");
+        keywords.addAll(readKeywords("src/main/resources/keywords_ko.txt"));
+        for(String keyword : keywords){
+            Elements elements = doc.getElementsContainingText(keyword);
+            for(Element element : elements){
+                Element previousElement = element.previousElementSibling(); // 이전 태그
+                Element nextElement = element.nextElementSibling();
+                Element parentElement = element.parent();
+                if(previousElement != null){
+                    codes.addAll(extractVerificationCode(previousElement.text()));
+                }
+                if(nextElement != null){
+                    codes.addAll(extractVerificationCode(nextElement.text()));
+                }
+                if(parentElement != null){
+                    codes.addAll(extractVerificationCode(parentElement.text()));
+                }
+            }
+        }
+        codes = codes.stream().distinct().toList();
+        return codes;
+    }
 
-//    private String extractVerificationCode(String text){
-//        List<String> patterns = List.of("\\b\\d{6}\\b", "\\b[A-Z0-9]{6,}\\b");
-//        for(String pattern : patterns){
-//            Pattern regexPattern = Pattern.compile(pattern);
-//            Matcher matcher = regexPattern.matcher(text);
-//
-//        }
-//    }
+    private List<String> extractVerificationCode(String text){
+        List<String> patterns = List.of(
+                "\\b\\d{6}\\b",
+                "\\b[A-Z0-9]{6,}\\b"
+        );
+        List<String> codes = new ArrayList<>();
+        for(String pattern : patterns){
+            Pattern regexPattern = Pattern.compile(pattern);
+            Matcher matcher = regexPattern.matcher(text);
+            while(matcher.find()){
+                codes.add(matcher.group());
+            }
+        }
+        codes = codes.stream().distinct().toList();
+        return codes;
+    }
 
     private boolean isVerificationEmail(String decodedContent){
         Document doc = Jsoup.parse(decodedContent);
