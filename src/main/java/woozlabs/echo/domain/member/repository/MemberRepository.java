@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.SuperAccount;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,6 +17,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByGoogleProviderId(String googleProviderId);
 
     Optional<Member> findByEmail(String email);
+
+    List<Member> findAllBySuperAccount(SuperAccount superAccount);
 
     @Query("SELECT m FROM Member m WHERE m.accessTokenFetchedAt <= :cutoffTime")
     List<Member> findMembersByCutoffTime(@Param("cutoffTime") LocalDateTime cutoffTime);
