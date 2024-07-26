@@ -28,15 +28,14 @@ public class Member extends BaseEntity {
     private String accessToken;
     private String refreshToken;
     private LocalDateTime accessTokenFetchedAt;
+    private boolean isPrimary;
 
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "super_account_id")
     private SuperAccount superAccount;
-
-    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private SubAccount subAccount;
 
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<EmailTemplate> emailTemplates = new ArrayList<>();
