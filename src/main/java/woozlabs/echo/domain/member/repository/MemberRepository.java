@@ -10,15 +10,13 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
+
     Optional<Member> findByUid(String uid);
 
     Optional<Member> findByGoogleProviderId(String googleProviderId);
 
     Optional<Member> findByEmail(String email);
 
-    @Query("SELECT DISTINCT m FROM Member m " +
-            "LEFT JOIN FETCH m.superAccount sa " +
-            "LEFT JOIN FETCH sa.subAccounts " +
-            "WHERE m.accessTokenFetchedAt <= :cutoffTime")
-    List<Member> findMembersWithAccountsByCutoffTime(@Param("cutoffTime")LocalDateTime cutoffTime);
+    @Query("SELECT m FROM Member m WHERE m.accessTokenFetchedAt <= :cutoffTime")
+    List<Member> findMembersByCutoffTime(@Param("cutoffTime") LocalDateTime cutoffTime);
 }

@@ -6,11 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.member.entity.Member;
-import woozlabs.echo.domain.member.entity.SubAccount;
-import woozlabs.echo.domain.member.entity.SuperAccount;
 import woozlabs.echo.domain.member.repository.MemberRepository;
-import woozlabs.echo.domain.member.repository.SubAccountRepository;
-import woozlabs.echo.domain.member.repository.SuperAccountRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 import woozlabs.echo.global.utils.GoogleOAuthUtils;
@@ -27,16 +23,13 @@ import java.util.Map;
 public class TokenSchedulerService {
 
     private final MemberRepository memberRepository;
-    private final SuperAccountRepository superAccountRepository;
-    private final SubAccountRepository subAccountRepository;
     private final GoogleOAuthUtils googleOAuthUtils;
 
     @Scheduled(fixedRate = 5 * 60 * 1000)
     @Transactional
     public void checkAndRefreshTokens() {
         LocalDateTime cutoffTime = LocalDateTime.now().minus(57, ChronoUnit.MINUTES);
-
-        List<Member> members = memberRepository.findMembersWithAccountsByCutoffTime(cutoffTime);
+        List<Member> members = memberRepository.findMembersByCutoffTime(cutoffTime);
         for (Member member : members) {
             if (shouldRefreshToken(member.getAccessTokenFetchedAt())) {
                 refreshToken(member);
@@ -62,20 +55,6 @@ public class TokenSchedulerService {
             member.setAccessToken(newAccessToken);
             member.setAccessTokenFetchedAt(LocalDateTime.now());
             memberRepository.save(member);
-
-            SuperAccount superAccount = member.getSuperAccount();
-            if (superAccount != null) {
-                superAccount.setAccessToken(newAccessToken);
-                superAccount.setAccessTokenFetchedAt(LocalDateTime.now());
-                superAccountRepository.save(superAccount);
-
-                List<SubAccount> subAccounts = superAccount.getSubAccounts();
-                for (SubAccount subAccount : subAccounts) {
-                    subAccount.setAccessToken(newAccessToken);
-                    subAccount.setAccessTokenFetchedAt(LocalDateTime.now());
-                    subAccountRepository.save(subAccount);
-                }
-            }
         } catch (Exception e) {
             log.error("Failed to refresh token for Member: {}", member.getId(), e);
             throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN, "Failed to refresh token for Member: " + member.getId(), e);
