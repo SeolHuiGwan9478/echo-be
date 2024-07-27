@@ -3,6 +3,7 @@ package woozlabs.echo.domain.member.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import woozlabs.echo.domain.echo.entity.EmailTemplate;
+import woozlabs.echo.domain.echo.entity.UserSidebarConfig;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
@@ -40,5 +41,6 @@ public class Member extends BaseEntity {
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<EmailTemplate> emailTemplates = new ArrayList<>();
 
-
+    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private UserSidebarConfig sidebarConfig;
 }
