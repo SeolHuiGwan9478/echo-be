@@ -3,6 +3,7 @@ package woozlabs.echo.domain.member.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import woozlabs.echo.domain.echo.entity.EmailTemplate;
+import woozlabs.echo.domain.organization.entity.MemberOrganization;
 import woozlabs.echo.domain.echo.entity.UserSidebarConfig;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
@@ -38,9 +39,12 @@ public class Member extends BaseEntity {
     @JoinColumn(name = "super_account_id")
     private SuperAccount superAccount;
 
-    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     private List<EmailTemplate> emailTemplates = new ArrayList<>();
 
     @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private UserSidebarConfig sidebarConfig;
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    private List<MemberOrganization> memberOrganizations = new ArrayList<>();
 }
