@@ -9,6 +9,6 @@ public class ItemDto {
     private String id;
     private String title;
     private String icon;
-    private String metadata;
+    private String query;
     private String hotkey;
 }
