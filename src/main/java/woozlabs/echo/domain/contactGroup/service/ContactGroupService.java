@@ -40,7 +40,7 @@ public class ContactGroupService {
     @Transactional
     public void addMembersToContactGroup(Long contactGroupId, List<String> memberEmails) {
         ContactGroup contactGroup = contactGroupRepository.findById(contactGroupId)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ORGANIZATION));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_CONTACT_GROUP));
 
         for (String memberEmail : memberEmails) {
             contactGroup.addEmail(memberEmail);
