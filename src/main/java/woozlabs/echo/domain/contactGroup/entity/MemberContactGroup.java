@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.organization.entity;
+package woozlabs.echo.domain.contactGroup.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -10,7 +10,7 @@ import woozlabs.echo.domain.member.entity.Member;
 @Getter
 @Setter
 @NoArgsConstructor
-public class MemberOrganization {
+public class MemberContactGroup {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -20,6 +20,6 @@ public class MemberOrganization {
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organization_id")
-    private Organization organization;
+    @JoinColumn(name = "contactGroup_id")
+    private ContactGroup contactGroup;
 }

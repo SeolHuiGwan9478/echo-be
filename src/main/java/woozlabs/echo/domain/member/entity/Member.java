@@ -3,7 +3,7 @@ package woozlabs.echo.domain.member.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import woozlabs.echo.domain.echo.entity.EmailTemplate;
-import woozlabs.echo.domain.organization.entity.MemberOrganization;
+import woozlabs.echo.domain.contactGroup.entity.MemberContactGroup;
 import woozlabs.echo.domain.echo.entity.UserSidebarConfig;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
@@ -46,5 +46,5 @@ public class Member extends BaseEntity {
     private UserSidebarConfig sidebarConfig;
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
-    private List<MemberOrganization> memberOrganizations = new ArrayList<>();
+    private List<MemberContactGroup> memberContactGroups = new ArrayList<>();
 }

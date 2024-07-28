@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.organization.dto;
+package woozlabs.echo.domain.contactGroup.dto;
 
 import lombok.*;
 import woozlabs.echo.domain.member.entity.Member;
@@ -8,14 +8,14 @@ import woozlabs.echo.domain.member.entity.Member;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrganizationToMemberDto {
+public class ContactGroupToMemberDto {
 
     private String uid;
     private String displayName;
     private String email;
     private String profileImageUrl;
 
-    public OrganizationToMemberDto(Member member) {
+    public ContactGroupToMemberDto(Member member) {
         this.uid = member.getUid();
         this.displayName = member.getDisplayName();
         this.email = member.getEmail();

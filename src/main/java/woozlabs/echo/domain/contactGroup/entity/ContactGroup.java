@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.organization.entity;
+package woozlabs.echo.domain.contactGroup.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -14,7 +14,7 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Organization extends BaseEntity {
+public class ContactGroup extends BaseEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,20 +25,20 @@ public class Organization extends BaseEntity {
     @JoinColumn(name = "owner_id")
     private Member owner;
 
-    @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL)
-    private List<MemberOrganization> memberOrganizations = new ArrayList<>();
+    @OneToMany(mappedBy = "contactGroup", cascade = CascadeType.ALL)
+    private List<MemberContactGroup> memberContactGroups = new ArrayList<>();
 
     @ElementCollection
-    @CollectionTable(name = "organization_emails", joinColumns = @JoinColumn(name = "organization_id"))
+    @CollectionTable(name = "contactGroup_emails", joinColumns = @JoinColumn(name = "contactGroup_id"))
     @Column(name = "email")
     private List<String> emails = new ArrayList<>();
 
     public void addMember(Member member) {
-        MemberOrganization memberOrganization = new MemberOrganization();
-        memberOrganization.setOrganization(this);
-        memberOrganization.setMember(member);
-        this.memberOrganizations.add(memberOrganization);
-        member.getMemberOrganizations().add(memberOrganization);
+        MemberContactGroup memberContactGroup = new MemberContactGroup();
+        memberContactGroup.setContactGroup(this);
+        memberContactGroup.setMember(member);
+        this.memberContactGroups.add(memberContactGroup);
+        member.getMemberContactGroups().add(memberContactGroup);
     }
 
     public void addEmail(String email) {

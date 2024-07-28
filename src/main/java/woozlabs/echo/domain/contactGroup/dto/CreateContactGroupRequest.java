@@ -1,11 +1,11 @@
-package woozlabs.echo.domain.organization.dto;
+package woozlabs.echo.domain.contactGroup.dto;
 
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class CreateOrganizationRequest {
+public class CreateContactGroupRequest {
 
     private String name;
 }
