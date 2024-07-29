@@ -4,6 +4,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+.DS_STORE
 
 ### STS ###
 .apt_generated
@@ -43,3 +44,7 @@ application-prod.yml
 
 ### firebase
 serviceAccountKey.json
+
+### google
+credentials.json
+tokens

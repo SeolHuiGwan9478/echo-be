@@ -68,7 +68,11 @@ public enum ErrorCode {
 
     // Side Bar
     NOT_FOUND_SIDE_BAR_CONFIG(404, "Not Found: SideBar Config"),
-    INVALID_ACCOUNT_UID(400, "Is not linked to the primary account's super account");
+    INVALID_ACCOUNT_UID(400, "Is not linked to the primary account's super account"),
+
+    // Organization
+    NOT_FOUND_ORGANIZATION(404, "Not Found: Organization"),
+    NOT_FOUND_CONTACT_GROUP(404, "Not Found: Contact Group");
 
     private final int status;
     private final String message;
