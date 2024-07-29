@@ -8,14 +8,14 @@ import woozlabs.echo.domain.member.entity.Member;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ContactGroupToMemberDto {
+public class ContactGroupToMember {
 
     private String uid;
     private String displayName;
     private String email;
     private String profileImageUrl;
 
-    public ContactGroupToMemberDto(Member member) {
+    public ContactGroupToMember(Member member) {
         this.uid = member.getUid();
         this.displayName = member.getDisplayName();
         this.email = member.getEmail();
