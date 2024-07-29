@@ -5,6 +5,7 @@ import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
+import woozlabs.echo.domain.gmail.dto.verification.ExtractVerificationInfo;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
@@ -30,8 +31,7 @@ public class GmailThreadGetMessages {
     private String id; // message id
     private String date;
     private String timezone; // timezone
-    private String fromName;
-    private String fromEmail;
+    private GmailThreadGetMessagesFrom from;
     private List<GmailThreadGetMessagesCc> cc = new ArrayList<>();
     private List<GmailThreadGetMessagesBcc> bcc = new ArrayList<>();
     private List<GmailThreadGetMessagesTo> to = new ArrayList<>();
@@ -40,8 +40,7 @@ public class GmailThreadGetMessages {
     private String snippet;
     private BigInteger historyId;
     private GmailThreadGetPayload payload;
-    private Boolean verification = Boolean.FALSE;
-    private List<String> codes;
+    private ExtractVerificationInfo verification;
 
     public static GmailThreadGetMessages toGmailThreadGetMessages(Message message, GmailUtility gmailUtility){
         GmailThreadGetMessages gmailThreadGetMessages = new GmailThreadGetMessages();
@@ -54,10 +53,16 @@ public class GmailThreadGetMessages {
                     String sender = header.getValue();
                     List<String> splitSender = splitSenderData(sender);
                     if (splitSender.size() != 1) {
-                        gmailThreadGetMessages.setFromName(splitSender.get(0));
-                        gmailThreadGetMessages.setFromEmail(splitSender.get(1));
+                        gmailThreadGetMessages.setFrom(GmailThreadGetMessagesFrom.builder()
+                                .fromName(splitSender.get(0))
+                                .fromEmail(splitSender.get(1))
+                                .build()
+                        );
                     } else {
-                        gmailThreadGetMessages.setFromEmail(splitSender.get(0));
+                        gmailThreadGetMessages.setFrom(GmailThreadGetMessagesFrom.builder()
+                                .fromEmail(splitSender.get(0))
+                                .build()
+                        );
                     }
                 }case THREAD_PAYLOAD_HEADER_DATE_KEY -> {
                     String originDate = header.getValue();
@@ -104,39 +109,45 @@ public class GmailThreadGetMessages {
         gmailThreadGetMessages.setId(message.getId());
         gmailThreadGetMessages.setThreadId(message.getThreadId());
         gmailThreadGetMessages.setLabelIds(message.getLabelIds());
+        gmailThreadGetMessages.setSnippet(message.getSnippet());
+        gmailThreadGetMessages.setHistoryId(message.getHistoryId());
         gmailThreadGetMessages.setPayload(convertedPayload);
         // verification code
-//        List<String> codes = findVerificationEmail(convertedPayload, gmailUtility);
-//        if(!codes.isEmpty()){
-//            gmailThreadGetMessages.setVerification(Boolean.TRUE);
-//            gmailThreadGetMessages.setCodes(codes);
-//        }
+        ExtractVerificationInfo verificationInfo = findVerificationEmail(convertedPayload, gmailUtility);
+        if(!verificationInfo.getCodes().isEmpty() || !verificationInfo.getLinks().isEmpty()){
+            verificationInfo.setVerification(Boolean.TRUE);
+        }
+        gmailThreadGetMessages.setVerification(verificationInfo);
         return gmailThreadGetMessages;
     }
 
-    private static List<String> findVerificationEmail(GmailThreadGetPayload payload, GmailUtility gmailUtility){
+    private static ExtractVerificationInfo findVerificationEmail(GmailThreadGetPayload payload, GmailUtility gmailUtility){
         // payload body check
         String payloadBody = payload.getBody().getData();
-        List<String> codes = gmailUtility.extractVerification(payloadBody);
+        ExtractVerificationInfo verificationInfo = gmailUtility.extractVerification(payloadBody);
         List<GmailThreadGetPart> parts = payload.getParts();
         for(GmailThreadGetPart part : parts){
-            findVerificationCode(part, codes, gmailUtility);
+            findVerificationInfoInParts(part, verificationInfo, gmailUtility);
         }
-        return codes.stream().distinct().toList();
+        return verificationInfo;
     }
 
-    private static void findVerificationCode(GmailThreadGetPart inputPart, List<String> codes, GmailUtility gmailUtility){
+    private static void findVerificationInfoInParts(GmailThreadGetPart inputPart, ExtractVerificationInfo info, GmailUtility gmailUtility){
         List<GmailThreadGetPart> parts = inputPart.getParts();
         if(parts.isEmpty()){
             String partBody = inputPart.getBody().getData();
-            codes.addAll(gmailUtility.extractVerification(partBody));
+            ExtractVerificationInfo newInfo = gmailUtility.extractVerification(partBody);
+            info.updateCodes(newInfo.getCodes());
+            info.updateLinks(newInfo.getLinks());
             return;
         }
-        for(GmailThreadGetPart part : parts){
-            findVerificationCode(part, codes, gmailUtility);
-        }
         String partBody = inputPart.getBody().getData();
-        codes.addAll(gmailUtility.extractVerification(partBody));
+        ExtractVerificationInfo newInfo = gmailUtility.extractVerification(partBody);
+        info.updateCodes(newInfo.getCodes());
+        info.updateLinks(newInfo.getLinks());
+        for(GmailThreadGetPart part : parts){
+            findVerificationInfoInParts(part, info, gmailUtility);
+        }
     }
 
     private static void changeDateFormat(String originDate, GmailThreadGetMessages gmailThreadGetMessages) {

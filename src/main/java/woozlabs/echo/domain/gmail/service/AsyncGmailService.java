@@ -11,6 +11,7 @@ import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListDrafts;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessages;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListAttachments;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListThreads;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListThreadsFrom;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 
@@ -29,6 +30,7 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 public class AsyncGmailService {
     private final String CONTENT_DISPOSITION_KEY = "Content-Disposition";
     private final String CONTENT_DISPOSITION_INLINE_VALUE = "inline";
+    private final String VERIFICATION_EMAIL_LABEL = "VERIFICATION";
     private final GmailUtility gmailUtility;
 
     @Async
@@ -85,15 +87,27 @@ public class AsyncGmailService {
             gmailThreadListThreads.setLabelIds(labelIds.stream().distinct().collect(Collectors.toList()));
             gmailThreadListThreads.setId(id);
             gmailThreadListThreads.setHistoryId(historyId);
-            gmailThreadListThreads.setFromEmail(emails);
-            gmailThreadListThreads.setFromName(names);
+            gmailThreadListThreads.setFrom(GmailThreadListThreadsFrom.builder()
+                    .fromNames(names)
+                    .fromEmails(emails).build()
+            );
             gmailThreadListThreads.setThreadSize(messages.size());
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());
             gmailThreadListThreads.setMessages(convertedMessages);
+            addVerificationLabel(convertedMessages, gmailThreadListThreads);
             return CompletableFuture.completedFuture(gmailThreadListThreads);
         } catch (IOException e) {
             throw new GmailException(e.getMessage());
+        }
+    }
+
+    private void addVerificationLabel(List<GmailThreadGetMessages> convertedMessages, GmailThreadListThreads gmailThreadListThreads) {
+        for(GmailThreadGetMessages convertedMessage : convertedMessages){
+            if(convertedMessage.getVerification().getVerification()){
+                gmailThreadListThreads.addLabel(VERIFICATION_EMAIL_LABEL);
+                break;
+            }
         }
     }
 

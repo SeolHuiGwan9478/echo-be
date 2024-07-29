@@ -5,6 +5,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetBody;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetPart;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetPayload;
+import woozlabs.echo.domain.gmail.dto.verification.ExtractVerificationInfo;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -16,13 +20,46 @@ import java.util.regex.Pattern;
 
 @Component
 public class GmailUtility {
-    public List<String> extractVerification(String rawContent){
-        byte[] decodedBinaryContent = Base64.getDecoder().decode(rawContent);
-        String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
+    public ExtractVerificationInfo extractVerification(String rawContent){
         List<String> codes = new ArrayList<>();
-        if(!isVerificationEmail(decodedContent)) return codes; // check verification email
+        List<String> links = new ArrayList<>();
+        ExtractVerificationInfo extractVerificationInfo = new ExtractVerificationInfo();
+        if(rawContent == null){
+            return extractVerificationInfo;
+        }
+        // Convert URL-safe Base64 to standard Base64
+        String standardBase64 = rawContent.replace('-', '+').replace('_', '/');
+        // Add padding if necessary
+        int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
+        for (int i = 0; i < paddingCount; i++) {
+            standardBase64 += "=";
+        }
+        byte[] decodedBinaryContent = Base64.getDecoder().decode(standardBase64);
+        String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
+        if(!isVerificationEmail(decodedContent)) return extractVerificationInfo; // check verification email
+        links.addAll(getVerificationLink(decodedContent));
         codes.addAll(getVerificationCode(decodedContent));
-        return codes;
+        if(!codes.isEmpty() || !links.isEmpty()){
+            extractVerificationInfo.setVerification(Boolean.TRUE);
+        }
+        extractVerificationInfo.setLinks(links);
+        extractVerificationInfo.setCodes(codes);
+        return extractVerificationInfo;
+    }
+
+    private List<String> getVerificationLink(String decodedContent){
+        Document doc = Jsoup.parse(decodedContent);
+        List<String> links = new ArrayList<>();
+        List<String> keywords = readKeywords("src/main/resources/keywords_en.txt");
+        keywords.addAll(readKeywords("src/main/resources/keywords_ko.txt"));
+        for(String keyword : keywords){
+            List<Element> elements = doc.getAllElements().stream().filter((element) -> element.ownText().toLowerCase().contains(keyword)).toList();
+            if(elements.isEmpty()) continue;
+            for(Element element : elements){
+                links.addAll(extractVerificationLink(element));
+            }
+        }
+        return links.stream().distinct().toList();
     }
 
     private List<String> getVerificationCode(String decodedContent){
@@ -31,7 +68,7 @@ public class GmailUtility {
         List<String> keywords = readKeywords("src/main/resources/keywords_en.txt");
         keywords.addAll(readKeywords("src/main/resources/keywords_ko.txt"));
         for(String keyword : keywords){
-            Elements elements = doc.getElementsContainingText(keyword);
+            List<Element> elements = doc.getAllElements().stream().filter((element) -> element.ownText().toLowerCase().contains(keyword)).toList();
             for(Element element : elements){
                 Element previousElement = element.previousElementSibling(); // 이전 태그
                 Element nextElement = element.nextElementSibling();
@@ -53,8 +90,8 @@ public class GmailUtility {
 
     private List<String> extractVerificationCode(String text){
         List<String> patterns = List.of(
-                "\\b\\d{6}\\b",
-                "\\b[A-Z0-9]{6,}\\b"
+                "\\b\\d{6}\\b", // common code
+                "\\b[a-z]{5}-[a-z]{4}-[a-z]{5}-[a-z]{5}\\b" // notion code
         );
         List<String> codes = new ArrayList<>();
         for(String pattern : patterns){
@@ -68,16 +105,30 @@ public class GmailUtility {
         return codes;
     }
 
+    private List<String> extractVerificationLink(Element element){
+        List<String> links = new ArrayList<>();
+        Elements anchorElements = element.getElementsByTag("a");
+        for(Element anchorElement : anchorElements){
+            String href = anchorElement.attr("href");
+            if(href.startsWith("https")) links.add(href);
+        }
+        return links;
+    }
+
     private boolean isVerificationEmail(String decodedContent){
         Document doc = Jsoup.parse(decodedContent);
         String bodyText = doc.body().text().toLowerCase();
         List<String> englishKeywords = readKeywords("src/main/resources/keywords_en.txt");
         List<String> koreanKeywords = readKeywords("src/main/resources/keywords_ko.txt");
         for(String englishKeyword : englishKeywords){
-            if(bodyText.contains(englishKeyword)) return true;
+            if(bodyText.contains(englishKeyword)){
+                return true;
+            }
         }
         for(String koreanKeyword : koreanKeywords){
-            if(bodyText.contains(koreanKeyword)) return true;
+            if(bodyText.contains(koreanKeyword)){
+                return true;
+            }
         }
         return false;
     }
@@ -87,7 +138,8 @@ public class GmailUtility {
         try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
             String line;
             while ((line = br.readLine()) != null) {
-                keywords.addAll(Arrays.asList(line.split(",")));
+                String[] newKeywords = line.split(",");
+                keywords.addAll(Arrays.stream(newKeywords).map(String::trim).toList());
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());

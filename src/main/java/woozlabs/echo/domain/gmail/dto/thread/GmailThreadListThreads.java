@@ -16,12 +16,9 @@ public class GmailThreadListThreads implements Comparable<GmailThreadListThreads
     private int attachmentSize;
     private List<GmailThreadListAttachments> attachments;
     private List<GmailThreadGetMessages> messages;
-    private List<String> fromName;
-    private List<String> fromEmail;
+    private GmailThreadListThreadsFrom from;
     private String subject;
     private String snippet;
-    private Boolean verification = Boolean.FALSE;
-    private List<String> codes;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime internalDate;
     private int threadSize;
@@ -33,7 +30,7 @@ public class GmailThreadListThreads implements Comparable<GmailThreadListThreads
         else return 0;
     }
 
-    public void updateVerification(){
-        this.verification = Boolean.TRUE;
+    public void addLabel(String newLabel){
+        this.labelIds.add(newLabel);
     }
 }
