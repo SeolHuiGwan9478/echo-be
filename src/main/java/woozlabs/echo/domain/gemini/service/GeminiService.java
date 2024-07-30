@@ -4,12 +4,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gemini.GeminiInterface;
 import woozlabs.echo.domain.gemini.dto.GeminiRequest;
 import woozlabs.echo.domain.gemini.dto.GeminiResponse;
 import woozlabs.echo.domain.gemini.prompt.ThreadKeypointPrompt;
 import woozlabs.echo.domain.gemini.prompt.ThreadSummaryPrompt;
+import woozlabs.echo.domain.gemini.prompt.VerificationMailPrompt;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
@@ -122,5 +125,20 @@ public class GeminiService {
     public String keypoint(String text) {
         String prompt = ThreadKeypointPrompt.getPrompt(text);
         return getCompletion(prompt);
+    }
+
+    public String analyzeVerificationEmail(String emailContent) {
+        String coreContent = extractCoreContent(emailContent);
+        String prompt = VerificationMailPrompt.getPrompt(coreContent);
+        return getCompletion(prompt);
+    }
+
+    private String extractCoreContent(String htmlContent) {
+        Document doc = Jsoup.parse(htmlContent);
+
+        doc.select("style, script, head, title, meta").remove();
+        Elements coreElements = doc.select("div, p, h1, h2, h3, a, pre, span, td");
+
+        return coreElements.toString();
     }
 }

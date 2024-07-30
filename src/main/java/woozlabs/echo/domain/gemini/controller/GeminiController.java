@@ -85,4 +85,10 @@ public class GeminiController {
             throw new CustomErrorException(ErrorCode.FAILED_TO_EXTRACT_KEYPOINT, e.getMessage());
         }
     }
+
+    @PostMapping("/gmail/verification")
+    public ResponseEntity<String> analyzeEmail(@RequestBody String emailContent) {
+        String result = geminiService.analyzeVerificationEmail(emailContent);
+        return ResponseEntity.ok(result);
+    }
 }
