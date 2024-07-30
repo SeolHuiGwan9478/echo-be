@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,13 +21,15 @@ public class GmailThreadListThreads implements Comparable<GmailThreadListThreads
     private String subject;
     private String snippet;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime internalDate;
+    private String date;
     private int threadSize;
 
     @Override
     public int compareTo(GmailThreadListThreads o) {
-        if (internalDate.isBefore(o.getInternalDate())) return 1;
-        else if (internalDate.isAfter(o.getInternalDate())) return -1;
+        OffsetDateTime offsetDateTime = OffsetDateTime.parse(this.date);
+        OffsetDateTime otherOffsetDateTime = OffsetDateTime.parse(o.getDate());
+        if (offsetDateTime.isBefore(otherOffsetDateTime)) return 1;
+        else if (offsetDateTime.isAfter(otherOffsetDateTime)) return -1;
         else return 0;
     }
 

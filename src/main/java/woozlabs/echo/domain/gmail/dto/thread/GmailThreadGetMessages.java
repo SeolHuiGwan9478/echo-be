@@ -159,35 +159,44 @@ public class GmailThreadGetMessages {
             String datePart = matcher.group(1);
             String timezonePart = matcher.group(2);
             datePart = datePart.replaceAll("\\s+", " ");
+            // parsing dateTime
             DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern(
                     INPUT_GMAIL_DATE_FORMAT, Locale.ENGLISH
             );
-            LocalDateTime convertDate = LocalDateTime.parse(datePart, inputFormatter);
-            if (timezonePart.matches(EXTRA_TIMEZONE_PATTERN)) {
+            LocalDateTime dateTime = LocalDateTime.parse(datePart, inputFormatter);
+            // converting timezone format
+            if (timezonePart.matches(TIMEZONE_PATTERN_1)) {
                 timezonePart = timezonePart.substring(0, 5);
-            } // separate parts
-            ZoneId losAngelesZone = ZoneId.of("America/Los_Angeles");
-            // 원본 시간대 처리
-            ZoneId originalZone;
-            if (timezonePart.startsWith(GMT)) {
-                originalZone = ZoneId.of(timezonePart.replace(GMT, "Z"));
-            } else {
-                originalZone = ZoneId.of(timezonePart);
+                convertToIanaTimezone(gmailThreadGetMessages, timezonePart);
+            }else if(timezonePart.matches(TIMEZONE_PATTERN_2)){
+                convertToIanaTimezone(gmailThreadGetMessages, timezonePart);
+            }else{
+                ZoneId zone = ZoneId.of(timezonePart);
+                ZoneOffset offset = zone.getRules().getOffset(java.time.Instant.now());
+                timezonePart = offset.toString().replaceAll(":", "");
+                gmailThreadGetMessages.setTimezone(timezonePart);
             }
-
-            // 원본 시간을 Los Angeles 시간대로 변환
-            ZonedDateTime losAngelesTime = convertDate.atZone(originalZone)
-                    .withZoneSameInstant(losAngelesZone);
-
+            ZoneId zoneId = ZoneId.of(timezonePart);
+            ZonedDateTime zonedDateTime = dateTime.atZone(zoneId);
             DateTimeFormatter outputFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-            String finalDate = losAngelesTime.format(outputFormatter);
-            gmailThreadGetMessages.setDate(finalDate);
-            // Los Angeles 시간대 이름 설정
-            String timezoneName = losAngelesZone.getDisplayName(TextStyle.FULL, Locale.ENGLISH);
-            gmailThreadGetMessages.setTimezone(timezoneName);
+            gmailThreadGetMessages.setDate(zonedDateTime.format(outputFormatter));
         } else {
             gmailThreadGetMessages.setDate(originDate);
-            //throw new CustomErrorException(ErrorCode.FAILED_TO_CHANGE_DATE_FORMAT);
+        }
+    }
+
+    private static void convertToIanaTimezone(GmailThreadGetMessages gmailThreadGetMessages, String timezonePart) {
+        try{
+            ZoneOffset offset = ZoneOffset.of(timezonePart);
+            for (String zoneId : ZoneOffset.getAvailableZoneIds()){
+                ZoneId zone = ZoneId.of(zoneId);
+                if(zone.getRules().getOffset(Instant.now()).equals(offset)){
+                    gmailThreadGetMessages.setTimezone(zoneId);
+                    break;
+                }
+            }
+        }catch (Exception e){
+            gmailThreadGetMessages.setTimezone(null);
         }
     }
 }

@@ -57,15 +57,9 @@ public class AsyncGmailService {
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
                 labelIds.addAll(message.getLabelIds());
                 if(idxForLambda == messages.size()-1){
-                    Long rawInternalDate = message.getInternalDate();
-                    LocalDateTime internalDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(rawInternalDate), ZoneId.systemDefault());
-                    ZonedDateTime zonedDateTime = internalDate.atZone(ZoneId.systemDefault());
-                    // Convert the ZonedDateTime to UTC
-                    ZonedDateTime utcDateTime = zonedDateTime.withZoneSameInstant(ZoneOffset.UTC);
-                    // Convert back to LocalDateTime if necessary
-                    LocalDateTime utcLocalDateTime = utcDateTime.toLocalDateTime();
+                    String date = convertedMessages.get(convertedMessages.size()-1).getDate();
                     gmailThreadListThreads.setSnippet(message.getSnippet());
-                    gmailThreadListThreads.setInternalDate(utcLocalDateTime);
+                    gmailThreadListThreads.setDate(date);
                 }
                 // get attachments
                 getThreadsAttachments(payload, attachments);
