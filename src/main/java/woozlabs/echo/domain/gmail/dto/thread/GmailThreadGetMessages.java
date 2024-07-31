@@ -54,13 +54,13 @@ public class GmailThreadGetMessages {
                     List<String> splitSender = splitSenderData(sender);
                     if (splitSender.size() != 1) {
                         gmailThreadGetMessages.setFrom(GmailThreadGetMessagesFrom.builder()
-                                .fromName(splitSender.get(0))
-                                .fromEmail(splitSender.get(1))
+                                .name(splitSender.get(0))
+                                .email(splitSender.get(1))
                                 .build()
                         );
                     } else {
                         gmailThreadGetMessages.setFrom(GmailThreadGetMessagesFrom.builder()
-                                .fromEmail(splitSender.get(0))
+                                .email(splitSender.get(0))
                                 .build()
                         );
                     }
@@ -73,8 +73,8 @@ public class GmailThreadGetMessages {
                     if (!splitSender.isEmpty()){
                         List<GmailThreadGetMessagesCc> data = splitSender.stream().map((ss) -> {
                             GmailThreadGetMessagesCc gmailThreadGetMessagesCc = new GmailThreadGetMessagesCc();
-                            gmailThreadGetMessagesCc.setCcName(ss.get(0));
-                            gmailThreadGetMessagesCc.setCcEmail(ss.get(1));
+                            gmailThreadGetMessagesCc.setName(ss.get(0));
+                            gmailThreadGetMessagesCc.setEmail(ss.get(1));
                             return gmailThreadGetMessagesCc;
                         }).toList();
                         gmailThreadGetMessages.setCc(data);
@@ -85,8 +85,8 @@ public class GmailThreadGetMessages {
                     if(!splitSender.isEmpty()){
                         List<GmailThreadGetMessagesBcc> data = splitSender.stream().map((ss) -> {
                             GmailThreadGetMessagesBcc gmailThreadGetMessagesBcc = new GmailThreadGetMessagesBcc();
-                            gmailThreadGetMessagesBcc.setBccName(ss.get(0));
-                            gmailThreadGetMessagesBcc.setBccEmail(ss.get(1));
+                            gmailThreadGetMessagesBcc.setName(ss.get(0));
+                            gmailThreadGetMessagesBcc.setEmail(ss.get(1));
                             return gmailThreadGetMessagesBcc;
                         }).toList();
                         gmailThreadGetMessages.setBcc(data);
@@ -97,8 +97,8 @@ public class GmailThreadGetMessages {
                     if(!splitSender.isEmpty()){
                         List<GmailThreadGetMessagesTo> data = splitSender.stream().map((ss) -> {
                             GmailThreadGetMessagesTo gmailThreadGetMessagesTo = new GmailThreadGetMessagesTo();
-                            gmailThreadGetMessagesTo.setToName(ss.get(0));
-                            gmailThreadGetMessagesTo.setToEmail(ss.get(1));
+                            gmailThreadGetMessagesTo.setName(ss.get(0));
+                            gmailThreadGetMessagesTo.setEmail(ss.get(1));
                             return gmailThreadGetMessagesTo;
                         }).toList();
                         gmailThreadGetMessages.setTo(data);

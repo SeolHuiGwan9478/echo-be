@@ -25,6 +25,7 @@ public final class GlobalConstant {
     public static final String THREADS_GET_METADATA_FORMAT = "metadata";
     public static final String THREADS_GET_FULL_FORMAT = "full";
     public static final Long THREADS_LIST_MAX_LENGTH = 50L;
+    public static final Long THREADS_LIST_MAX_LENGTH_FOR_TOTAL_COUNT = 500L;
     public static final String THREADS_LIST_Q = "is:inbox";
 
     // Gmail drafts

@@ -17,7 +17,9 @@ public class GmailThreadListThreads implements Comparable<GmailThreadListThreads
     private int attachmentSize;
     private List<GmailThreadListAttachments> attachments;
     private List<GmailThreadGetMessages> messages;
-    private GmailThreadListThreadsFrom from;
+    private List<GmailThreadGetMessagesFrom> froms;
+    private List<GmailThreadGetMessagesCc> ccs;
+    private List<GmailThreadGetMessagesBcc> bccs;
     private String subject;
     private String snippet;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")

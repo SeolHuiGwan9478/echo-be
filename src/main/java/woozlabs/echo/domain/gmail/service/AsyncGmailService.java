@@ -8,10 +8,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListAttachments;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListDrafts;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessages;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListAttachments;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListThreads;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListThreadsFrom;
+import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 
@@ -44,8 +41,9 @@ public class AsyncGmailService {
                     .setFormat(THREADS_GET_FULL_FORMAT)
                     .execute();
             List<Message> messages = detailedThread.getMessages();
-            List<String> names = new ArrayList<>();
-            List<String> emails = new ArrayList<>();
+            List<GmailThreadGetMessagesFrom> froms = new ArrayList<>();
+            List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
+            List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
             List<GmailThreadGetMessages> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
@@ -66,25 +64,29 @@ public class AsyncGmailService {
                 headers.forEach((header) -> {
                     String headerName = header.getName();
                     // first message -> extraction subject
-                    if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)){
+                    if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)) {
                         gmailThreadListThreads.setSubject(header.getValue());
-                    } else if(headerName.equals(THREAD_PAYLOAD_HEADER_FROM_KEY)){ // all messages -> extraction emails & names
-                        String sender = header.getValue();
-                        List<String> splitSender = splitSenderData(sender);
-                        if(!names.contains(splitSender.get(0))){
-                            names.add(splitSender.get(0));
-                            emails.add(splitSender.get(1));
-                        }
                     }
+//                    } else if(headerName.equals(THREAD_PAYLOAD_HEADER_FROM_KEY)){ // all messages -> extraction emails & names
+//                        String sender = header.getValue();
+//                        List<String> splitSender = splitSenderData(sender);
+//                        if(!names.contains(splitSender.get(0))){
+//                            names.add(splitSender.get(0));
+//                            emails.add(splitSender.get(1));
+//                        }
+//                    }
                 });
+                GmailThreadGetMessages gmailThreadGetMessage = convertedMessages.get(convertedMessages.size()-1);
+                froms.add(gmailThreadGetMessage.getFrom());
+                ccs.addAll(gmailThreadGetMessage.getCc());
+                bccs.addAll(gmailThreadGetMessage.getBcc());
             }
             gmailThreadListThreads.setLabelIds(labelIds.stream().distinct().collect(Collectors.toList()));
             gmailThreadListThreads.setId(id);
             gmailThreadListThreads.setHistoryId(historyId);
-            gmailThreadListThreads.setFrom(GmailThreadListThreadsFrom.builder()
-                    .fromNames(names)
-                    .fromEmails(emails).build()
-            );
+            gmailThreadListThreads.setFroms(froms.stream().distinct().toList());
+            gmailThreadListThreads.setCcs(ccs.stream().distinct().toList());
+            gmailThreadListThreads.setBccs(bccs.stream().distinct().toList());
             gmailThreadListThreads.setThreadSize(messages.size());
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());

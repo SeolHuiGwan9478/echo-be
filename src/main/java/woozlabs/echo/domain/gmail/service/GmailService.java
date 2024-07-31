@@ -21,6 +21,7 @@ import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
+import woozlabs.echo.domain.gmail.dto.message.GmailMessageTotalCountResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
@@ -59,6 +60,8 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 public class GmailService {
     // constants
     private final String MULTI_PART_TEXT_PLAIN = "text/plain";
+    private final String INBOX_LABEL = "INBOX";
+    private final List<String> CATEGORY_PRIMARY_LABELS = List.of("CATEGORY_UPDATES", "CATEGORY_PERSONAL");
     private final String TEMP_FILE_PREFIX = "echo";
     private final List<String> SCOPES = Arrays.asList(
             "https://www.googleapis.com/auth/gmail.readonly",
@@ -188,6 +191,17 @@ public class GmailService {
                 .threadId(responseMessage.getThreadId())
                 .labelsId(responseMessage.getLabelIds())
                 .snippet(responseMessage.getSnippet()).build();
+    }
+
+    public GmailMessageTotalCountResponse getUserEmailMessagesTotalCount(String uid, String label) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        int totalCount = getTotalCountThreads(gmailService, label);
+        return GmailMessageTotalCountResponse.builder()
+                .totalCount(totalCount)
+                .build();
     }
 
     public GmailDraftSendResponse sendUserEmailDraft(String uid, GmailDraftSendRequest request) throws Exception{
@@ -459,5 +473,12 @@ public class GmailService {
     private <T> List<T> isEmptyResult(List<T> list){
         if(list == null) return new ArrayList<>();
         return list;
+    }
+
+    private int getTotalCountThreads(Gmail gmailService, String label) throws IOException {
+        Label result = gmailService.users().labels()
+                .get(USER_ID, label)
+                .execute();
+        return result.getThreadsUnread();
     }
 }

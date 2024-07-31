@@ -16,6 +16,7 @@ import woozlabs.echo.domain.gmail.dto.draft.GmailDraftSendResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
+import woozlabs.echo.domain.gmail.dto.message.GmailMessageTotalCountResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
@@ -163,6 +164,21 @@ public class GmailController {
             request.setFiles(files);
             GmailMessageSendResponse response = gmailService.sendUserEmailMessage(uid, request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    @GetMapping("/api/v1/gmail/messages/count")
+    public ResponseEntity<ResponseDto> getMessagesTotalCount(HttpServletRequest httpServletRequest,
+                                                             @RequestParam("label") String label){
+        log.info("Request to get total count of messages");
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailMessageTotalCountResponse response = gmailService.getUserEmailMessagesTotalCount(uid, label);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (IOException e){
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
