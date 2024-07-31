@@ -129,6 +129,8 @@ public class GeminiService {
 
     public String analyzeVerificationEmail(String emailContent) {
         String coreContent = extractCoreContent(emailContent);
+
+        System.out.println("coreContent = " + coreContent);
         String prompt = VerificationMailPrompt.getPrompt(coreContent);
         return getCompletion(prompt);
     }
@@ -136,8 +138,23 @@ public class GeminiService {
     private String extractCoreContent(String htmlContent) {
         Document doc = Jsoup.parse(htmlContent);
 
-        doc.select("style, script, head, title, meta").remove();
+        doc.select("style, script, head, title, meta, img").remove();
+        doc.select("table, tbody, tr, td, th, thead, tfoot").unwrap();
         Elements coreElements = doc.select("div, p, h1, h2, h3, a, pre, span, td");
+
+        for (Element coreElement : coreElements) {
+            coreElement.removeAttr("style");
+            coreElement.removeAttr("class");
+            coreElement.removeAttr("id");
+            coreElement.removeAttr("align");
+            coreElement.removeAttr("width");
+            coreElement.removeAttr("height");
+            coreElement.removeAttr("valign");
+            coreElement.removeAttr("bgcolor");
+            coreElement.removeAttr("cellpadding");
+            coreElement.removeAttr("cellspacing");
+            coreElement.removeAttr("border");
+        }
 
         return coreElements.toString();
     }
