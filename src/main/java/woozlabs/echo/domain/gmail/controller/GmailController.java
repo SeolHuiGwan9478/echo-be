@@ -63,7 +63,7 @@ public class GmailController {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             GmailSearchParams params = GmailSearchParams.builder()
                     .from(from).to(to).subject(subject).query(query).build();
-            GmailThreadListSearchResponse response = gmailService.searchUserEmailThreads(uid, params);
+            GmailThreadSearchListResponse response = gmailService.searchUserEmailThreads(uid, params);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (IOException e){
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());

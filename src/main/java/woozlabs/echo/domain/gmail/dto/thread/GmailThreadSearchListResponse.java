@@ -8,7 +8,7 @@ import java.util.List;
 
 @Getter
 @Builder
-public class GmailThreadListSearchResponse implements ResponseDto {
-    private List<GmailThreadListThreads> threads;
+public class GmailThreadSearchListResponse implements ResponseDto {
+    private List<GmailThreadSearchListThreads> threads;
     private String nextPageToken;
 }

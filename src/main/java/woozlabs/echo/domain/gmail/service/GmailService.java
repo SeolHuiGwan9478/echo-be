@@ -1,6 +1,5 @@
 package woozlabs.echo.domain.gmail.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
@@ -143,7 +142,7 @@ public class GmailService {
         return new GmailThreadDeleteResponse(id);
     }
 
-    public GmailThreadListSearchResponse searchUserEmailThreads(String uid, GmailSearchParams params) throws Exception{
+    public GmailThreadSearchListResponse searchUserEmailThreads(String uid, GmailSearchParams params) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
         String accessToken = member.getAccessToken();
@@ -151,10 +150,9 @@ public class GmailService {
         ListThreadsResponse response = getSearchListThreadsResponse(params, gmailService);
         List<Thread> threads = response.getThreads();
         threads = isEmptyResult(threads);
-        List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
-        Collections.sort(detailedThreads);
-        return GmailThreadListSearchResponse.builder()
-                .threads(detailedThreads)
+        List<GmailThreadSearchListThreads> searchedThreads = getSimpleThreads(threads, gmailService); // get detailed threads
+        return GmailThreadSearchListResponse.builder()
+                .threads(searchedThreads)
                 .nextPageToken(response.getNextPageToken())
                 .build();
     }
@@ -306,6 +304,16 @@ public class GmailService {
                 throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
         }).collect(Collectors.toList());
+    }
+
+    private List<GmailThreadSearchListThreads> getSimpleThreads(List<Thread> threads, Gmail gmailService){
+        List<GmailThreadSearchListThreads> gmailThreadSearchListThreads = new ArrayList<>();
+        threads.forEach((thread) ->{
+            GmailThreadSearchListThreads gmailThreadSearchListThread = new GmailThreadSearchListThreads();
+            gmailThreadSearchListThread.setId(thread.getId());
+            gmailThreadSearchListThreads.add(gmailThreadSearchListThread);
+        });
+        return gmailThreadSearchListThreads;
     }
 
     private List<GmailThreadGetMessages> getConvertedMessages(List<Message> messages){
