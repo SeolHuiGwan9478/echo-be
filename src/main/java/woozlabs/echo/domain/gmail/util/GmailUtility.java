@@ -28,7 +28,9 @@ public class GmailUtility {
             return extractVerificationInfo;
         }
         // Convert URL-safe Base64 to standard Base64
-        String standardBase64 = rawContent.replace('-', '+').replace('_', '/');
+        String standardBase64 = rawContent
+                .replace('-', '+')
+                .replace('_', '/');
         // Add padding if necessary
         int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
         for (int i = 0; i < paddingCount; i++) {
