@@ -20,6 +20,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
+import woozlabs.echo.domain.chatGPT.ChatGPTInterface;
 import woozlabs.echo.domain.gemini.GeminiInterface;
 
 import java.util.Arrays;
@@ -89,5 +90,22 @@ public class RestTemplateConfig {
         RestClientAdapter adapter = RestClientAdapter.create(client);
         HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(adapter).build();
         return factory.createClient(GeminiInterface.class);
+    }
+
+    @Bean
+    public RestClient chatGPTRestClient(@Value("${chatgpt.api.url}") String apiUrl,
+                                        @Value("${chatgpt.api.key}") String apiKey) {
+        return RestClient.builder()
+                .baseUrl(apiUrl)
+                .defaultHeader("Authorization", "Bearer " + apiKey)
+                .defaultHeader("Content-Type", "application/json")
+                .build();
+    }
+
+    @Bean
+    public ChatGPTInterface chatGPTInterface(@Qualifier("chatGPTRestClient") RestClient client) {
+        RestClientAdapter adapter = RestClientAdapter.create(client);
+        HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(adapter).build();
+        return factory.createClient(ChatGPTInterface.class);
     }
 }
