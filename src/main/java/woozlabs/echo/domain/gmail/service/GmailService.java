@@ -204,7 +204,7 @@ public class GmailService {
                 .build();
     }
 
-    public GmailDraftSendResponse sendUserEmailDraft(String uid, GmailDraftSendRequest request) throws Exception{
+    public GmailDraftSendResponse sendUserEmailDraft(String uid, GmailDraftCommonRequest request) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
         String accessToken = member.getAccessToken();
@@ -238,13 +238,45 @@ public class GmailService {
                 .build();
     }
 
-//    public GmailDraftUpdateResponse updateUserEmailDraft(String uid, String id) throws Exception{
-//        Member member = memberRepository.findByUid(uid).orElseThrow(
-//                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
-//        String accessToken = member.getAccessToken();
-//        Gmail gmailService = createGmailService(accessToken);
-//        gmailService.users().drafts().update()
-//    }
+    public GmailDraftUpdateResponse updateUserEmailDraft(String uid, String id, GmailDraftCommonRequest request) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        Profile profile = gmailService.users().getProfile(USER_ID).execute();
+        String fromEmailAddress = profile.getEmailAddress();
+        request.setFromEmailAddress(fromEmailAddress);
+        MimeMessage mimeMessage = createDraft(request);
+        Message message = createMessage(mimeMessage);
+        // create new draft
+        Draft draft = new Draft().setMessage(message);
+        draft = gmailService.users().drafts().update(USER_ID, id, draft).execute();
+        GmailDraftGetMessage changedMessage = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
+        return GmailDraftUpdateResponse.builder()
+                .id(draft.getId())
+                .message(changedMessage)
+                .build();
+    }
+
+    public GmailDraftCreateResponse createUserEmailDraft(String uid, GmailDraftCommonRequest request) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        Profile profile = gmailService.users().getProfile(USER_ID).execute();
+        String fromEmailAddress = profile.getEmailAddress();
+        request.setFromEmailAddress(fromEmailAddress);
+        MimeMessage mimeMessage = createDraft(request);
+        Message message = createMessage(mimeMessage);
+        // create new draft
+        Draft draft = new Draft().setMessage(message);
+        draft = gmailService.users().drafts().create(USER_ID, draft).execute();
+        GmailDraftGetMessage changedMessage = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
+        return GmailDraftCreateResponse.builder()
+                .id(draft.getId())
+                .message(changedMessage)
+                .build();
+    }
 
     public GmailThreadUpdateResponse updateUserEmailThread(String uid, String id, GmailThreadUpdateRequest request) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
@@ -429,7 +461,7 @@ public class GmailService {
         return email;
     }
 
-    private MimeMessage createDraft(GmailDraftSendRequest request) throws MessagingException, IOException {
+    private MimeMessage createDraft(GmailDraftCommonRequest request) throws MessagingException, IOException {
         Properties props = new Properties();
         Session session = Session.getDefaultInstance(props, null);
         MimeMessage email = new MimeMessage(session);

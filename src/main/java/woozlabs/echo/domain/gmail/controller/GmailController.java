@@ -9,10 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
-import woozlabs.echo.domain.gmail.dto.draft.GmailDraftGetResponse;
-import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListResponse;
-import woozlabs.echo.domain.gmail.dto.draft.GmailDraftSendRequest;
-import woozlabs.echo.domain.gmail.dto.draft.GmailDraftSendResponse;
+import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
@@ -214,19 +211,52 @@ public class GmailController {
         }
     }
 
-//    @PutMapping("/api/v1/gmail/drafts/{id}/modify")
-//    public ResponseEntity<ResponseDto> modifyDraft(HttpServletRequest httpServletRequest, @PathVariable("id") String id){
-//        log.info("Request to modify draft");
-//        try{
-//            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-//            GmailDraftGetResponse response = gmailService.getUserEmailDraft(uid, id);
-//            return new ResponseEntity<>(response, HttpStatus.OK);
-//        }catch (IOException e){
-//            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
-//        }catch (Exception e){
-//            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST);
-//        }
-//    }
+    @PostMapping("/api/v1/gmail/drafts/create")
+    public ResponseEntity<ResponseDto> createDraft(HttpServletRequest httpServletRequest,
+                                                   @RequestPart("toEmailAddress") String toEmailAddress,
+                                                   @RequestPart("subject") String subject,
+                                                   @RequestPart("bodyText") String bodyText,
+                                                   @RequestPart(value = "files", required = false) List<MultipartFile> files){
+        log.info("Request to create draft");
+        try{
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailDraftCommonRequest request = new GmailDraftCommonRequest();
+            request.setToEmailAddress(toEmailAddress);
+            request.setSubject(subject);
+            request.setBodyText(bodyText);
+            request.setFiles(files);
+            GmailDraftCreateResponse response = gmailService.createUserEmailDraft(uid, request);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    @PutMapping("/api/v1/gmail/drafts/{id}/modify")
+    public ResponseEntity<ResponseDto> modifyDraft(HttpServletRequest httpServletRequest,
+                                                   @PathVariable("id") String id,
+                                                   @RequestPart("toEmailAddress") String toEmailAddress,
+                                                   @RequestPart("subject") String subject,
+                                                   @RequestPart("bodyText") String bodyText,
+                                                   @RequestPart(value = "files", required = false) List<MultipartFile> files){
+        log.info("Request to modify draft");
+        try{
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailDraftCommonRequest request = new GmailDraftCommonRequest();
+            request.setToEmailAddress(toEmailAddress);
+            request.setSubject(subject);
+            request.setBodyText(bodyText);
+            request.setFiles(files);
+            GmailDraftUpdateResponse response = gmailService.updateUserEmailDraft(uid, id, request);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
 
     @PostMapping(value = "/api/v1/gmail/drafts/send", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseDto> sendDraft(HttpServletRequest httpServletRequest,
@@ -237,7 +267,7 @@ public class GmailController {
         log.info("Request to send draft");
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-            GmailDraftSendRequest request = new GmailDraftSendRequest();
+            GmailDraftCommonRequest request = new GmailDraftCommonRequest();
             request.setToEmailAddress(toEmailAddress);
             request.setSubject(subject);
             request.setBodyText(bodyText);
