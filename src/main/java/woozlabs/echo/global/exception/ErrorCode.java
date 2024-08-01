@@ -58,6 +58,9 @@ public enum ErrorCode {
     FAILED_TO_SUMMARIZE_TEXT(500, "Error summarizing text from Gemini"),
     FAILED_TO_EXTRACT_KEYPOINT(500, "Error extracting keypoint from Gemini"),
 
+    // chatGPT
+    FAILED_TO_CHATGPT_COMPLETION(500, "Error while getting completion from chatGPT"),
+
     // Email Template
     FAILED_TO_FETCHING_EMAIL_TEMPLATE(500, "Error occurred while fetching email templates for user"),
     FAILED_TO_CREATE_EMAIL_TEMPLATE(500, "Error occurred while creating email templates for user"),

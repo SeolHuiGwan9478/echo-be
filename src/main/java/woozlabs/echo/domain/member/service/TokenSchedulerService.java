@@ -28,7 +28,7 @@ public class TokenSchedulerService {
     @Scheduled(fixedRate = 5 * 60 * 1000)
     @Transactional
     public void checkAndRefreshTokens() {
-        LocalDateTime cutoffTime = LocalDateTime.now().minus(57, ChronoUnit.MINUTES);
+        LocalDateTime cutoffTime = LocalDateTime.now().minus(50, ChronoUnit.MINUTES);
         List<Member> members = memberRepository.findMembersByCutoffTime(cutoffTime);
         for (Member member : members) {
             if (shouldRefreshToken(member.getAccessTokenFetchedAt())) {
