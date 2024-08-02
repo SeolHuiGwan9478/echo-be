@@ -56,7 +56,6 @@ public class GmailUtility {
         keywords.addAll(readKeywords("src/main/resources/keywords_ko.txt"));
         for(String keyword : keywords){
             List<Element> elements = doc.getAllElements().stream().filter((element) -> element.ownText().toLowerCase().contains(keyword)).toList();
-            if(elements.isEmpty()) continue;
             for(Element element : elements){
                 links.addAll(extractVerificationLink(element));
             }

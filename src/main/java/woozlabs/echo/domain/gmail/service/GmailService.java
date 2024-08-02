@@ -511,6 +511,6 @@ public class GmailService {
         Label result = gmailService.users().labels()
                 .get(USER_ID, label)
                 .execute();
-        return result.getThreadsUnread();
+        return result.getThreadsTotal();
     }
 }
