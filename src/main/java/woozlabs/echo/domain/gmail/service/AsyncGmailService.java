@@ -84,9 +84,9 @@ public class AsyncGmailService {
             gmailThreadListThreads.setLabelIds(labelIds.stream().distinct().collect(Collectors.toList()));
             gmailThreadListThreads.setId(id);
             gmailThreadListThreads.setHistoryId(historyId);
-            gmailThreadListThreads.setFroms(froms.stream().distinct().toList());
-            gmailThreadListThreads.setCcs(ccs.stream().distinct().toList());
-            gmailThreadListThreads.setBccs(bccs.stream().distinct().toList());
+            gmailThreadListThreads.setFrom(froms.stream().distinct().toList());
+            gmailThreadListThreads.setCc(ccs.stream().distinct().toList());
+            gmailThreadListThreads.setBcc(bccs.stream().distinct().toList());
             gmailThreadListThreads.setThreadSize(messages.size());
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());

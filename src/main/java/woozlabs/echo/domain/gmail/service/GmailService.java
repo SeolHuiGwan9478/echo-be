@@ -21,7 +21,7 @@ import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageTotalCountResponse;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadTotalCountResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
@@ -193,13 +193,13 @@ public class GmailService {
                 .snippet(responseMessage.getSnippet()).build();
     }
 
-    public GmailMessageTotalCountResponse getUserEmailMessagesTotalCount(String uid, String label) throws Exception{
+    public GmailThreadTotalCountResponse getUserEmailThreadsTotalCount(String uid, String label) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
         String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         int totalCount = getTotalCountThreads(gmailService, label);
-        return GmailMessageTotalCountResponse.builder()
+        return GmailThreadTotalCountResponse.builder()
                 .totalCount(totalCount)
                 .build();
     }
@@ -511,6 +511,6 @@ public class GmailService {
         Label result = gmailService.users().labels()
                 .get(USER_ID, label)
                 .execute();
-        return result.getThreadsUnread();
+        return result.getThreadsTotal();
     }
 }

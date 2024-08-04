@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.gmail.dto.message;
+package woozlabs.echo.domain.gmail.dto.thread;
 
 import lombok.Builder;
 import lombok.Data;
@@ -6,6 +6,6 @@ import woozlabs.echo.global.dto.ResponseDto;
 
 @Data
 @Builder
-public class GmailMessageTotalCountResponse implements ResponseDto {
+public class GmailThreadTotalCountResponse implements ResponseDto {
     private int totalCount;
 }

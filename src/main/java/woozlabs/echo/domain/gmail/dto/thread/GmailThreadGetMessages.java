@@ -12,11 +12,13 @@ import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.time.zone.ZoneRulesException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -113,21 +115,26 @@ public class GmailThreadGetMessages {
         gmailThreadGetMessages.setHistoryId(message.getHistoryId());
         gmailThreadGetMessages.setPayload(convertedPayload);
         // verification code
-        ExtractVerificationInfo verificationInfo = findVerificationEmail(convertedPayload, gmailUtility);
-        if(!verificationInfo.getCodes().isEmpty() || !verificationInfo.getLinks().isEmpty()){
-            verificationInfo.setVerification(Boolean.TRUE);
-        }
-        gmailThreadGetMessages.setVerification(verificationInfo);
+//        ExtractVerificationInfo verificationInfo = findVerificationEmail(convertedPayload, gmailUtility);
+//        if(!verificationInfo.getCodes().isEmpty() || !verificationInfo.getLinks().isEmpty()){
+//            verificationInfo.setVerification(Boolean.TRUE);
+//        }
+//        gmailThreadGetMessages.setVerification(verificationInfo);
         return gmailThreadGetMessages;
     }
 
     private static ExtractVerificationInfo findVerificationEmail(GmailThreadGetPayload payload, GmailUtility gmailUtility){
         // payload body check
         String payloadBody = payload.getBody().getData();
-        ExtractVerificationInfo verificationInfo = gmailUtility.extractVerification(payloadBody);
+        ExtractVerificationInfo verificationInfo;
+        if(payload.getMimeType().equals("text/html")){
+            verificationInfo = gmailUtility.extractVerification(payloadBody);
+        }else{
+            verificationInfo = new ExtractVerificationInfo();
+        }
         List<GmailThreadGetPart> parts = payload.getParts();
         for(GmailThreadGetPart part : parts){
-            findVerificationInfoInParts(part, verificationInfo, gmailUtility);
+            if(part.getMimeType().equals("text/html")) findVerificationInfoInParts(part, verificationInfo, gmailUtility);
         }
         return verificationInfo;
     }
@@ -141,13 +148,13 @@ public class GmailThreadGetMessages {
             info.updateLinks(newInfo.getLinks());
             return;
         }
+        for(GmailThreadGetPart part : parts){
+            findVerificationInfoInParts(part, info, gmailUtility);
+        }
         String partBody = inputPart.getBody().getData();
         ExtractVerificationInfo newInfo = gmailUtility.extractVerification(partBody);
         info.updateCodes(newInfo.getCodes());
         info.updateLinks(newInfo.getLinks());
-        for(GmailThreadGetPart part : parts){
-            findVerificationInfoInParts(part, info, gmailUtility);
-        }
     }
 
     private static void changeDateFormat(String originDate, GmailThreadGetMessages gmailThreadGetMessages) {
