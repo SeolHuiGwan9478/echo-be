@@ -75,7 +75,10 @@ public enum ErrorCode {
 
     // Organization
     NOT_FOUND_ORGANIZATION(404, "Not Found: Organization"),
-    NOT_FOUND_CONTACT_GROUP(404, "Not Found: Contact Group");
+    NOT_FOUND_CONTACT_GROUP(404, "Not Found: Contact Group"),
+
+    // verification
+    KEYWORD_IO_EXCEPTION(500, "I/O Exception finding verification keywords");
 
     private final int status;
     private final String message;

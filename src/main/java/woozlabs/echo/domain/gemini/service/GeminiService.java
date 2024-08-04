@@ -100,7 +100,7 @@ public class GeminiService {
         if (bodyData != null) {
             String decodedBody = new String(Base64.getUrlDecoder().decode(bodyData));
             if ("text/html".equals(mimeType)) {
-                Document doc = Jsoup.parse(decodedBody);
+                Document doc = Jsoup.parse(decodedBody, "UTF-8");
                 decodedBody = doc.text();
             }
             threadContent.append(decodedBody).append("\n\n");
@@ -136,7 +136,7 @@ public class GeminiService {
     }
 
     private String extractCoreContent(String htmlContent) {
-        Document doc = Jsoup.parse(htmlContent);
+        Document doc = Jsoup.parse(htmlContent, "UTF-8");
 
         doc.select("style, script, head, title, meta, img").remove();
         doc.select("table, tbody, tr, td, th, thead, tfoot").unwrap();
