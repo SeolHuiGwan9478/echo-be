@@ -42,7 +42,7 @@ public class GmailThreadGetMessages {
     private String snippet;
     private BigInteger historyId;
     private GmailThreadGetPayload payload;
-    private ExtractVerificationInfo verification;
+    private ExtractVerificationInfo verification = new ExtractVerificationInfo();
 
     public static GmailThreadGetMessages toGmailThreadGetMessages(Message message, GmailUtility gmailUtility){
         GmailThreadGetMessages gmailThreadGetMessages = new GmailThreadGetMessages();
@@ -127,11 +127,8 @@ public class GmailThreadGetMessages {
         // payload body check
         String payloadBody = payload.getBody().getData();
         ExtractVerificationInfo verificationInfo;
-        if(payload.getMimeType().equals("text/html")){
-            verificationInfo = gmailUtility.extractVerification(payloadBody);
-        }else{
-            verificationInfo = new ExtractVerificationInfo();
-        }
+        if(payload.getMimeType().equals("text/html")) verificationInfo = gmailUtility.extractVerification(payloadBody);
+        else verificationInfo = new ExtractVerificationInfo();
         List<GmailThreadGetPart> parts = payload.getParts();
         for(GmailThreadGetPart part : parts){
             if(part.getMimeType().equals("text/html")) findVerificationInfoInParts(part, verificationInfo, gmailUtility);

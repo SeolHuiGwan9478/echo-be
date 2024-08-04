@@ -1,1 +1,1 @@
-verification, authentication, otp, one-time, security, verify, two-factor, multi-factor, reset, confirmation, verified, expiration, code
+verification, authentication, otp, one-time, verify, confirm
