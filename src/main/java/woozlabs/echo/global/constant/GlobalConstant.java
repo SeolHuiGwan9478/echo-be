@@ -25,6 +25,7 @@ public final class GlobalConstant {
     public static final String THREADS_GET_METADATA_FORMAT = "metadata";
     public static final String THREADS_GET_FULL_FORMAT = "full";
     public static final Long THREADS_LIST_MAX_LENGTH = 50L;
+    public static final Long THREADS_LIST_MAX_LENGTH_FOR_TOTAL_COUNT = 500L;
     public static final String THREADS_LIST_Q = "is:inbox";
 
     // Gmail drafts
@@ -41,7 +42,8 @@ public final class GlobalConstant {
 
     // Date Format
     public static final String DATE_TIMEZONE_PATTERN = "^(\\w{3},\\s*\\d{1,2}\\s*\\w{3}\\s*\\d{4}\\s*\\d{2}:\\d{2}:\\d{2})\\s*(.*)$";
-    public static final String EXTRA_TIMEZONE_PATTERN = "[+-]\\d{4} \\(\\w+\\)";
+    public static final String TIMEZONE_PATTERN_1 = "[+-]\\d{4} \\(\\w+\\)";
+    public static final String TIMEZONE_PATTERN_2 = "[+-]\\d{4}";
     public static final String INPUT_GMAIL_DATE_FORMAT = "EEE, d MMM yyyy HH:mm:ss";
     public static final String GMT = "GMT";
 }

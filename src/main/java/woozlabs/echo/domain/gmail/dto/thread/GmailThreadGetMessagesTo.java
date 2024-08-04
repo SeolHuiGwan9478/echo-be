@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class GmailThreadGetMessagesTo {
-    private String toName;
-    private String toEmail;
+    private String name;
+    private String email;
 }

@@ -1,6 +1,5 @@
 package woozlabs.echo.domain.gmail.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
@@ -22,6 +21,7 @@ import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
+import woozlabs.echo.domain.gmail.dto.message.GmailMessageTotalCountResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
@@ -60,6 +60,8 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 public class GmailService {
     // constants
     private final String MULTI_PART_TEXT_PLAIN = "text/plain";
+    private final String INBOX_LABEL = "INBOX";
+    private final List<String> CATEGORY_PRIMARY_LABELS = List.of("CATEGORY_UPDATES", "CATEGORY_PERSONAL");
     private final String TEMP_FILE_PREFIX = "echo";
     private final List<String> SCOPES = Arrays.asList(
             "https://www.googleapis.com/auth/gmail.readonly",
@@ -143,7 +145,7 @@ public class GmailService {
         return new GmailThreadDeleteResponse(id);
     }
 
-    public GmailThreadListSearchResponse searchUserEmailThreads(String uid, GmailSearchParams params) throws Exception{
+    public GmailThreadSearchListResponse searchUserEmailThreads(String uid, GmailSearchParams params) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
         String accessToken = member.getAccessToken();
@@ -151,10 +153,9 @@ public class GmailService {
         ListThreadsResponse response = getSearchListThreadsResponse(params, gmailService);
         List<Thread> threads = response.getThreads();
         threads = isEmptyResult(threads);
-        List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
-        Collections.sort(detailedThreads);
-        return GmailThreadListSearchResponse.builder()
-                .threads(detailedThreads)
+        List<GmailThreadSearchListThreads> searchedThreads = getSimpleThreads(threads, gmailService); // get detailed threads
+        return GmailThreadSearchListResponse.builder()
+                .threads(searchedThreads)
                 .nextPageToken(response.getNextPageToken())
                 .build();
     }
@@ -192,7 +193,18 @@ public class GmailService {
                 .snippet(responseMessage.getSnippet()).build();
     }
 
-    public GmailDraftSendResponse sendUserEmailDraft(String uid, GmailDraftSendRequest request) throws Exception{
+    public GmailMessageTotalCountResponse getUserEmailMessagesTotalCount(String uid, String label) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        int totalCount = getTotalCountThreads(gmailService, label);
+        return GmailMessageTotalCountResponse.builder()
+                .totalCount(totalCount)
+                .build();
+    }
+
+    public GmailDraftSendResponse sendUserEmailDraft(String uid, GmailDraftCommonRequest request) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
         String accessToken = member.getAccessToken();
@@ -226,13 +238,45 @@ public class GmailService {
                 .build();
     }
 
-//    public GmailDraftUpdateResponse updateUserEmailDraft(String uid, String id) throws Exception{
-//        Member member = memberRepository.findByUid(uid).orElseThrow(
-//                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
-//        String accessToken = member.getAccessToken();
-//        Gmail gmailService = createGmailService(accessToken);
-//        gmailService.users().drafts().update()
-//    }
+    public GmailDraftUpdateResponse updateUserEmailDraft(String uid, String id, GmailDraftCommonRequest request) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        Profile profile = gmailService.users().getProfile(USER_ID).execute();
+        String fromEmailAddress = profile.getEmailAddress();
+        request.setFromEmailAddress(fromEmailAddress);
+        MimeMessage mimeMessage = createDraft(request);
+        Message message = createMessage(mimeMessage);
+        // create new draft
+        Draft draft = new Draft().setMessage(message);
+        draft = gmailService.users().drafts().update(USER_ID, id, draft).execute();
+        GmailDraftGetMessage changedMessage = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
+        return GmailDraftUpdateResponse.builder()
+                .id(draft.getId())
+                .message(changedMessage)
+                .build();
+    }
+
+    public GmailDraftCreateResponse createUserEmailDraft(String uid, GmailDraftCommonRequest request) throws Exception{
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        Profile profile = gmailService.users().getProfile(USER_ID).execute();
+        String fromEmailAddress = profile.getEmailAddress();
+        request.setFromEmailAddress(fromEmailAddress);
+        MimeMessage mimeMessage = createDraft(request);
+        Message message = createMessage(mimeMessage);
+        // create new draft
+        Draft draft = new Draft().setMessage(message);
+        draft = gmailService.users().drafts().create(USER_ID, draft).execute();
+        GmailDraftGetMessage changedMessage = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
+        return GmailDraftCreateResponse.builder()
+                .id(draft.getId())
+                .message(changedMessage)
+                .build();
+    }
 
     public GmailThreadUpdateResponse updateUserEmailThread(String uid, String id, GmailThreadUpdateRequest request) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
@@ -306,6 +350,16 @@ public class GmailService {
                 throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
         }).collect(Collectors.toList());
+    }
+
+    private List<GmailThreadSearchListThreads> getSimpleThreads(List<Thread> threads, Gmail gmailService){
+        List<GmailThreadSearchListThreads> gmailThreadSearchListThreads = new ArrayList<>();
+        threads.forEach((thread) ->{
+            GmailThreadSearchListThreads gmailThreadSearchListThread = new GmailThreadSearchListThreads();
+            gmailThreadSearchListThread.setId(thread.getId());
+            gmailThreadSearchListThreads.add(gmailThreadSearchListThread);
+        });
+        return gmailThreadSearchListThreads;
     }
 
     private List<GmailThreadGetMessages> getConvertedMessages(List<Message> messages){
@@ -407,7 +461,7 @@ public class GmailService {
         return email;
     }
 
-    private MimeMessage createDraft(GmailDraftSendRequest request) throws MessagingException, IOException {
+    private MimeMessage createDraft(GmailDraftCommonRequest request) throws MessagingException, IOException {
         Properties props = new Properties();
         Session session = Session.getDefaultInstance(props, null);
         MimeMessage email = new MimeMessage(session);
@@ -451,5 +505,12 @@ public class GmailService {
     private <T> List<T> isEmptyResult(List<T> list){
         if(list == null) return new ArrayList<>();
         return list;
+    }
+
+    private int getTotalCountThreads(Gmail gmailService, String label) throws IOException {
+        Label result = gmailService.users().labels()
+                .get(USER_ID, label)
+                .execute();
+        return result.getThreadsUnread();
     }
 }

@@ -6,7 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @Data
-public class GmailDraftSendRequest {
+public class GmailDraftCommonRequest {
     private String toEmailAddress;
     private String fromEmailAddress;
     private String subject;

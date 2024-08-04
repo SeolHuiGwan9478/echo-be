@@ -8,9 +8,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListAttachments;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListDrafts;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessages;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListAttachments;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadListThreads;
+import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 
@@ -29,6 +27,7 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 public class AsyncGmailService {
     private final String CONTENT_DISPOSITION_KEY = "Content-Disposition";
     private final String CONTENT_DISPOSITION_INLINE_VALUE = "inline";
+    private final String VERIFICATION_EMAIL_LABEL = "VERIFICATION";
     private final GmailUtility gmailUtility;
 
     @Async
@@ -42,8 +41,9 @@ public class AsyncGmailService {
                     .setFormat(THREADS_GET_FULL_FORMAT)
                     .execute();
             List<Message> messages = detailedThread.getMessages();
-            List<String> names = new ArrayList<>();
-            List<String> emails = new ArrayList<>();
+            List<GmailThreadGetMessagesFrom> froms = new ArrayList<>();
+            List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
+            List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
             List<GmailThreadGetMessages> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
@@ -55,45 +55,55 @@ public class AsyncGmailService {
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
                 labelIds.addAll(message.getLabelIds());
                 if(idxForLambda == messages.size()-1){
-                    Long rawInternalDate = message.getInternalDate();
-                    LocalDateTime internalDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(rawInternalDate), ZoneId.systemDefault());
-                    ZonedDateTime zonedDateTime = internalDate.atZone(ZoneId.systemDefault());
-                    // Convert the ZonedDateTime to UTC
-                    ZonedDateTime utcDateTime = zonedDateTime.withZoneSameInstant(ZoneOffset.UTC);
-                    // Convert back to LocalDateTime if necessary
-                    LocalDateTime utcLocalDateTime = utcDateTime.toLocalDateTime();
+                    String date = convertedMessages.get(convertedMessages.size()-1).getDate();
                     gmailThreadListThreads.setSnippet(message.getSnippet());
-                    gmailThreadListThreads.setInternalDate(utcLocalDateTime);
+                    gmailThreadListThreads.setDate(date);
                 }
                 // get attachments
                 getThreadsAttachments(payload, attachments);
                 headers.forEach((header) -> {
                     String headerName = header.getName();
                     // first message -> extraction subject
-                    if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)){
+                    if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)) {
                         gmailThreadListThreads.setSubject(header.getValue());
-                    } else if(headerName.equals(THREAD_PAYLOAD_HEADER_FROM_KEY)){ // all messages -> extraction emails & names
-                        String sender = header.getValue();
-                        List<String> splitSender = splitSenderData(sender);
-                        if(!names.contains(splitSender.get(0))){
-                            names.add(splitSender.get(0));
-                            emails.add(splitSender.get(1));
-                        }
                     }
+//                    } else if(headerName.equals(THREAD_PAYLOAD_HEADER_FROM_KEY)){ // all messages -> extraction emails & names
+//                        String sender = header.getValue();
+//                        List<String> splitSender = splitSenderData(sender);
+//                        if(!names.contains(splitSender.get(0))){
+//                            names.add(splitSender.get(0));
+//                            emails.add(splitSender.get(1));
+//                        }
+//                    }
                 });
+                GmailThreadGetMessages gmailThreadGetMessage = convertedMessages.get(convertedMessages.size()-1);
+                froms.add(gmailThreadGetMessage.getFrom());
+                ccs.addAll(gmailThreadGetMessage.getCc());
+                bccs.addAll(gmailThreadGetMessage.getBcc());
             }
             gmailThreadListThreads.setLabelIds(labelIds.stream().distinct().collect(Collectors.toList()));
             gmailThreadListThreads.setId(id);
             gmailThreadListThreads.setHistoryId(historyId);
-            gmailThreadListThreads.setFromEmail(emails);
-            gmailThreadListThreads.setFromName(names);
+            gmailThreadListThreads.setFroms(froms.stream().distinct().toList());
+            gmailThreadListThreads.setCcs(ccs.stream().distinct().toList());
+            gmailThreadListThreads.setBccs(bccs.stream().distinct().toList());
             gmailThreadListThreads.setThreadSize(messages.size());
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());
             gmailThreadListThreads.setMessages(convertedMessages);
+            addVerificationLabel(convertedMessages, gmailThreadListThreads);
             return CompletableFuture.completedFuture(gmailThreadListThreads);
         } catch (IOException e) {
             throw new GmailException(e.getMessage());
+        }
+    }
+
+    private void addVerificationLabel(List<GmailThreadGetMessages> convertedMessages, GmailThreadListThreads gmailThreadListThreads) {
+        for(GmailThreadGetMessages convertedMessage : convertedMessages){
+            if(convertedMessage.getVerification().getVerification()){
+                gmailThreadListThreads.addLabel(VERIFICATION_EMAIL_LABEL);
+                break;
+            }
         }
     }
 

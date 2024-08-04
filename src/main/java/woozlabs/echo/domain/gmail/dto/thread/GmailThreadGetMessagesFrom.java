@@ -1,11 +1,13 @@
 package woozlabs.echo.domain.gmail.dto.thread;
 
-import lombok.Data;
+import lombok.Builder;
+import lombok.Getter;
 
 import java.util.Objects;
 
-@Data
-public class GmailThreadGetMessagesBcc {
+@Getter
+@Builder
+public class GmailThreadGetMessagesFrom {
     private String name;
     private String email;
 
@@ -13,7 +15,7 @@ public class GmailThreadGetMessagesBcc {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        GmailThreadGetMessagesBcc that = (GmailThreadGetMessagesBcc) o;
+        GmailThreadGetMessagesFrom that = (GmailThreadGetMessagesFrom) o;
         return this.name.equals(that.getName()) &&
                 this.email.equals(that.getEmail());
     }
