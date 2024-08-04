@@ -2,16 +2,11 @@ package woozlabs.echo.domain.gmail.util;
 
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Attributes;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
 import woozlabs.echo.domain.chatGPT.service.ChatGptService;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetBody;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetPart;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetPayload;
 import woozlabs.echo.domain.gmail.dto.verification.ExtractVerificationInfo;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
@@ -68,9 +63,8 @@ public class GmailUtility {
         for(String keyword : keywords){
             List<Element> elements = doc.getAllElements().stream().filter((element) -> element.ownText().toLowerCase().contains(keyword)).toList();
             if(elements.isEmpty()) continue;
-            Elements convertElements = new Elements(elements);
+            Elements convertElements = new Elements(elements);;
             links.addAll(extractVerificationLink(convertElements));
-            break;
         }
         return links.stream().distinct().toList();
     }
@@ -167,15 +161,11 @@ public class GmailUtility {
         List<Element> elementsToRemove = new ArrayList<>();
         List<String> verificationInfo = new ArrayList<>();
         Document doc = Jsoup.parse(htmlContent, "UTF-8");
-        doc.select("style, script, head, title, meta, img").remove();
+        doc.select("style, script, head, title, meta, img, br").remove();
         Elements coreElements = doc.getAllElements();
         // remove &nbsp tag
         for (Element corElement : coreElements){
-            if(corElement.html().contains("&nbsp")){
-                elementsToRemove.add(corElement);
-            }else if(corElement.text().isEmpty() && !corElement.is("a")){
-                elementsToRemove.add(corElement);
-            }else if(corElement.hasAttr("class") && corElement.attr("class").equals("gmail_attr")){
+            if(corElement.text().isEmpty() && !corElement.is("a")){
                 elementsToRemove.add(corElement);
             }
         }
@@ -184,12 +174,13 @@ public class GmailUtility {
         }
         // remove attributes
         for(Element coreElement : coreElements){
-            Attributes attributes = coreElement.attributes();
-            attributes.forEach((attr) -> {
-                if(!attr.getKey().equals("href")){
-                    coreElement.removeAttr(attr.getKey());
-                }
-            });
+            if(coreElement.hasAttr("href")){
+                String url = coreElement.attr("href");
+                coreElement.clearAttributes();
+                coreElement.attr("href", url);
+            }else{
+                coreElement.clearAttributes();
+            }
         }
 
         Elements beforeOptimizeElements = coreElements.clone();
@@ -199,24 +190,30 @@ public class GmailUtility {
                 String originUrl = coreElement.attr("href");
                 Pattern pattern = Pattern.compile(DOMAIN_PATTERN);
                 Matcher matcher = pattern.matcher(originUrl);
-                if(matcher.find()){
+                if(matcher.find()) {
                     coreElement.attr("href", matcher.group(1));
-                }else{
-                    coreElement.attr("href", "https://www.echoisbest.com");
                 }
             }
         };
         // numbering 4-digits
-        for (Element coreElement : coreElements) {
+        for (int idx = 0;idx < coreElements.size();idx++) {
+            Element coreElement = coreElements.get(idx);
+            Element beforeOptimizeElement = beforeOptimizeElements.get(idx);
             coreElement.attr("id", String.format("%04d", attrId));
-            beforeOptimizeElements.attr("id", String.format("%04d", attrId));
+            beforeOptimizeElement.attr("id", String.format("%04d", attrId));
             attrId += 1;
         }
 
-        System.out.println("----------start---------");
-        System.out.println(coreElements.toString().length());
-        System.out.println(coreElements.toString());
-        System.out.println("----------end----------");
+//        System.out.println("start");
+//        System.out.println(coreElements);
+//        System.out.println("end");
+//        System.out.println("----------start---------");
+//        System.out.println("size: "+coreElements.size());
+//        for (Element coreElement : coreElements) {
+//            System.out.println("+++++++++++");
+//            System.out.println(coreElement.toString());
+//        }
+//        System.out.println("----------end----------");
         // running gpt
         String resultGpt = chatGptService.analyzeVerificationEmail(coreElements.toString());
         if(resultGpt.equals("false")){
@@ -226,11 +223,11 @@ public class GmailUtility {
             Matcher matcher = pattern.matcher(resultGpt);
             if(matcher.find()){
                 String idValue = matcher.group(1);
-                for(Element element : beforeOptimizeElements){
+                String cssSelector = "a[id='" + idValue + "']";
+                Elements searchElements = beforeOptimizeElements.select(cssSelector);
+                for(Element element : searchElements){
                     if(element.attr("id").equals(idValue) && element.hasAttr("href")){
                         verificationInfo.add(element.attr("href"));
-                    }else{
-                        verificationInfo.add(element.text());
                     }
                 }
             }

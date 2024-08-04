@@ -67,14 +67,6 @@ public class AsyncGmailService {
                     if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)) {
                         gmailThreadListThreads.setSubject(header.getValue());
                     }
-//                    } else if(headerName.equals(THREAD_PAYLOAD_HEADER_FROM_KEY)){ // all messages -> extraction emails & names
-//                        String sender = header.getValue();
-//                        List<String> splitSender = splitSenderData(sender);
-//                        if(!names.contains(splitSender.get(0))){
-//                            names.add(splitSender.get(0));
-//                            emails.add(splitSender.get(1));
-//                        }
-//                    }
                 });
                 GmailThreadGetMessages gmailThreadGetMessage = convertedMessages.get(convertedMessages.size()-1);
                 froms.add(gmailThreadGetMessage.getFrom());
