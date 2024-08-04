@@ -31,20 +31,8 @@ public class TokenSchedulerService {
         LocalDateTime cutoffTime = LocalDateTime.now().minus(50, ChronoUnit.MINUTES);
         List<Member> members = memberRepository.findMembersByCutoffTime(cutoffTime);
         for (Member member : members) {
-            if (shouldRefreshToken(member.getAccessTokenFetchedAt())) {
-                refreshToken(member);
-            }
+            refreshToken(member);
         }
-    }
-
-    private boolean shouldRefreshToken(LocalDateTime tokenFetchedAt) {
-        if (tokenFetchedAt == null) {
-            return false;
-        }
-        LocalDateTime now = LocalDateTime.now();
-        long minutesElapsed = ChronoUnit.MINUTES.between(tokenFetchedAt, now);
-
-        return minutesElapsed >= 50;
     }
 
     public void refreshToken(Member member) {
