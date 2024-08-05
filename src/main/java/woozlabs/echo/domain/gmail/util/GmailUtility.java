@@ -1,5 +1,7 @@
 package woozlabs.echo.domain.gmail.util;
 
+import jakarta.annotation.PostConstruct;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,6 +27,13 @@ public class GmailUtility {
     private final String DOMAIN_PATTERN = "(?i)^(https?://(?:www\\.)?[^/]+)";
     private final String ID_PATTERN = "id=(\\d+)";
     private final ChatGptService chatGptService;
+    private List<String> keywords;
+
+    @PostConstruct
+    public void initKeywords(){
+        this.keywords = readKeywords("src/main/resources/keywords_en.txt");
+        this.keywords.addAll(readKeywords("src/main/resources/keywords_ko.txt"));
+    }
 
     public ExtractVerificationInfo extractVerification(String rawContent){
         List<String> codes = new ArrayList<>();
@@ -58,10 +67,12 @@ public class GmailUtility {
     private List<String> getVerificationLink(String decodedContent){
         Document doc = Jsoup.parse(decodedContent, "UTF-8");
         List<String> links = new ArrayList<>();
-        List<String> keywords = readKeywords("src/main/resources/keywords_en.txt");
-        keywords.addAll(readKeywords("src/main/resources/keywords_ko.txt"));
         for(String keyword : keywords){
-            List<Element> elements = doc.getAllElements().stream().filter((element) -> element.ownText().toLowerCase().contains(keyword)).toList();
+            List<Element> elements = doc.getAllElements().stream().filter(
+                    (element) ->
+                            (element.is("a") && element.text().toLowerCase().contains(keyword)) ||
+                            element.ownText().toLowerCase().contains(keyword)
+            ).toList();
             if(elements.isEmpty()) continue;
             Elements convertElements = new Elements(elements);;
             links.addAll(extractVerificationLink(convertElements));
@@ -72,20 +83,10 @@ public class GmailUtility {
     private List<String> getVerificationCode(String decodedContent){
         Document doc = Jsoup.parse(decodedContent);
         List<String> codes = new ArrayList<>();
-        List<String> keywords = readKeywords("src/main/resources/keywords_en.txt");
-        keywords.addAll(readKeywords("src/main/resources/keywords_ko.txt"));
         for(String keyword : keywords){
             List<Element> elements = doc.getAllElements().stream().filter((element) -> element.ownText().toLowerCase().contains(keyword)).toList();
             for(Element element : elements){
-                Element previousElement = element.previousElementSibling(); // 이전 태그
-                Element nextElement = element.nextElementSibling();
                 Element parentElement = element.parent();
-                if(previousElement != null){
-                    codes.addAll(extractVerificationCode(previousElement.text()));
-                }
-                if(nextElement != null){
-                    codes.addAll(extractVerificationCode(nextElement.text()));
-                }
                 if(parentElement != null){
                     codes.addAll(extractVerificationCode(parentElement.text()));
                 }
@@ -117,9 +118,7 @@ public class GmailUtility {
         try {
             links.addAll(extractCoreContent(elements.toString()));
         }catch (Exception e){
-            System.out.println(elements.toString());
-            System.out.println(e.getMessage());
-            System.out.println("here!!");
+            throw new CustomErrorException(ErrorCode.EXTRACT_VERIFICATION_LINK_ERR, e.getMessage());
         }
         return links;
     }
@@ -127,15 +126,8 @@ public class GmailUtility {
     private boolean isVerificationEmail(String decodedContent){
         Document doc = Jsoup.parse(decodedContent, "UTF-8");
         String bodyText = doc.body().text().toLowerCase();
-        List<String> englishKeywords = readKeywords("src/main/resources/keywords_en.txt");
-        List<String> koreanKeywords = readKeywords("src/main/resources/keywords_ko.txt");
-        for(String englishKeyword : englishKeywords){
-            if(bodyText.contains(englishKeyword)){
-                return true;
-            }
-        }
-        for(String koreanKeyword : koreanKeywords){
-            if(bodyText.contains(koreanKeyword)){
+        for(String keyword : keywords){
+            if(bodyText.contains(keyword)){
                 return true;
             }
         }
@@ -161,26 +153,25 @@ public class GmailUtility {
         List<Element> elementsToRemove = new ArrayList<>();
         List<String> verificationInfo = new ArrayList<>();
         Document doc = Jsoup.parse(htmlContent, "UTF-8");
-        doc.select("style, script, head, title, meta, img, br").remove();
         Elements coreElements = doc.getAllElements();
-        // remove &nbsp tag
-        for (Element corElement : coreElements){
-            if(corElement.text().isEmpty() && !corElement.is("a")){
-                elementsToRemove.add(corElement);
+        // remove tags & attributes
+        for (Element coreElement : coreElements){
+            if(coreElement.text().isEmpty() && !coreElement.is("a")){ // empty tag
+                elementsToRemove.add(coreElement);
+            }else if(coreElement.is("style, script, head, title, meta, img, br")){ // necessary removal tags
+                elementsToRemove.add(coreElement);
+            }else{
+                if(coreElement.hasAttr("href")){
+                    String url = coreElement.attr("href");
+                    coreElement.clearAttributes();
+                    coreElement.attr("href", url);
+                }else{
+                    coreElement.clearAttributes();
+                }
             }
         }
         for(Element element : elementsToRemove){
             coreElements.remove(element);
-        }
-        // remove attributes
-        for(Element coreElement : coreElements){
-            if(coreElement.hasAttr("href")){
-                String url = coreElement.attr("href");
-                coreElement.clearAttributes();
-                coreElement.attr("href", url);
-            }else{
-                coreElement.clearAttributes();
-            }
         }
 
         Elements beforeOptimizeElements = coreElements.clone();
@@ -204,16 +195,6 @@ public class GmailUtility {
             attrId += 1;
         }
 
-//        System.out.println("start");
-//        System.out.println(coreElements);
-//        System.out.println("end");
-//        System.out.println("----------start---------");
-//        System.out.println("size: "+coreElements.size());
-//        for (Element coreElement : coreElements) {
-//            System.out.println("+++++++++++");
-//            System.out.println(coreElement.toString());
-//        }
-//        System.out.println("----------end----------");
         // running gpt
         String resultGpt = chatGptService.analyzeVerificationEmail(coreElements.toString());
         if(resultGpt.equals("false")){
