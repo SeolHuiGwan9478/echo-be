@@ -135,7 +135,7 @@ public class AuthService {
         member.setSuperAccount(superAccount);
         memberRepository.save(member);
 
-        Map<String, Object> customClaims = Map.of("superAccountUids", superAccount.getMemberUids());
+        Map<String, Object> customClaims = Map.of("accounts", superAccount.getMemberUids());
         setCustomUidClaims(member.getUid(), customClaims);
 
         constructAndRedirect(response, customToken, member.getDisplayName(), member.getProfileImageUrl(), member.getEmail());
@@ -159,7 +159,7 @@ public class AuthService {
         superAccount.getMemberUids().add(newMember.getUid());
         superAccountRepository.save(superAccount);
 
-        Map<String, Object> customClaims = Map.of("superAccountUids", superAccount.getMemberUids());
+        Map<String, Object> customClaims = Map.of("accounts", superAccount.getMemberUids());
         setCustomUidClaims(superAccountUid, customClaims);
 
         constructAndRedirect(response, customToken, newMember.getDisplayName(), newMember.getProfileImageUrl(), newMember.getEmail());
