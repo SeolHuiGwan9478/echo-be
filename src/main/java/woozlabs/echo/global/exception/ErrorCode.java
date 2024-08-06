@@ -18,6 +18,8 @@ public enum ErrorCode {
     NOT_FOUND_FIREBASE_SERVICE_ACCOUNT_KEY(404, "Not found Firebase SDK file"),
     FIREBASE_CLOUD_MESSAGING_SEND_ERR(500, "FCM(Firebase Cloud Messaging) Send Error"),
     NOT_FOUND_FIREBASE_CLOUD_MESSAGING_TOKEN_ERR(404, "Not Found FCM Token"),
+    FAILED_TO_CREATE_CUSTOM_TOKEN(500, "Failed to create custom token"),
+    FAILED_TO_SET_CUSTOM_CLAIMS(500, "Failed to set custom claims"),
 
     // member
     NOT_FOUND_MEMBER_ERROR_MESSAGE(404, "Not found: Member"),
@@ -33,7 +35,6 @@ public enum ErrorCode {
     // token
     NOT_FOUND_ACCESS_TOKEN(404, "Not found: Access Token"),
     NOT_FOUND_REFRESH_TOKEN(404, "Not found: Refresh Token"),
-    FAILED_TO_CREATE_CUSTOM_TOKEN(500, "Failed to create custom token"),
     FAILED_TO_VERIFY_ID_TOKEN(500, "failed to verify Id Token"),
 
     // email

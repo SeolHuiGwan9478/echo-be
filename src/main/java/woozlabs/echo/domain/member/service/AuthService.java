@@ -39,6 +39,14 @@ public class AuthService {
         }
     }
 
+    private void setCustomUidClaims(String uid, Map<String, Object> claims) {
+        try {
+            FirebaseAuth.getInstance().setCustomUserClaims(uid, claims);
+        } catch (FirebaseAuthException e) {
+            throw new CustomErrorException(ErrorCode.FAILED_TO_SET_CUSTOM_CLAIMS, e.getMessage());
+        }
+    }
+
     private Map<String, Object> getGoogleUserInfoAndTokens(String code) {
         try {
             // Google Token 추출
@@ -127,6 +135,9 @@ public class AuthService {
         member.setSuperAccount(superAccount);
         memberRepository.save(member);
 
+        Map<String, Object> customClaims = Map.of("superAccountUids", superAccount.getMemberUids());
+        setCustomUidClaims(member.getUid(), customClaims);
+
         constructAndRedirect(response, customToken, member.getDisplayName(), member.getProfileImageUrl(), member.getEmail());
     }
 
@@ -147,6 +158,9 @@ public class AuthService {
         superAccount.getMembers().add(newMember);
         superAccount.getMemberUids().add(newMember.getUid());
         superAccountRepository.save(superAccount);
+
+        Map<String, Object> customClaims = Map.of("superAccountUids", superAccount.getMemberUids());
+        setCustomUidClaims(superAccountUid, customClaims);
 
         constructAndRedirect(response, customToken, newMember.getDisplayName(), newMember.getProfileImageUrl(), newMember.getEmail());
     }
