@@ -1,1 +1,1 @@
-verification, authentication, otp, one-time, verify, confirm
+verification, verify, authentication, otp, one-time, confirm
