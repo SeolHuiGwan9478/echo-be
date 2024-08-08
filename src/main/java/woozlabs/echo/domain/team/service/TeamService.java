@@ -88,9 +88,15 @@ public class TeamService {
 
         SendInvitationEmailDto sendInvitationEmailDto = SendInvitationEmailDto.builder()
                 .to(requestDto.getInviteeEmail())
-                .inviterName(inviter.getDisplayName())
+                .username(requestDto.getInviteeEmail())
+                .userImage("https://vercel.com/static/vercel-user.png") // mock
+                .invitedByUsername(inviter.getDisplayName())
+                .invitedByEmail(inviter.getEmail())
                 .teamName(team.getName())
-                .invitationLink(invitationLink)
+                .teamImage("https://vercel.com/static/vercel-team.png") // mock
+                .inviteLink(invitationLink)
+                .inviteFromIp("192.168.1.1")
+                .inviteFromLocation("Seoul, Korea")
                 .build();
 
         emailService.sendInvitationEmail(sendInvitationEmailDto);
