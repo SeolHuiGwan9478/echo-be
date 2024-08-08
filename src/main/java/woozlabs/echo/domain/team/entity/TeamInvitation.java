@@ -1,13 +1,17 @@
 package woozlabs.echo.domain.team.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import woozlabs.echo.domain.member.entity.Member;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TeamInvitation {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,6 +30,9 @@ public class TeamInvitation {
     @Enumerated(EnumType.STRING)
     private InvitationStatus status;
 
+    @Enumerated(EnumType.STRING)
+    private InviteeRole role;
+
     private String token;
     private LocalDateTime expiresAt;
     private LocalDateTime sentAt;
@@ -34,7 +41,23 @@ public class TeamInvitation {
         PENDING, ACCEPTED, REJECTED, EXPIRED
     }
 
+    public void accept() {
+        this.status = InvitationStatus.ACCEPTED;
+    }
+
     public enum InviteeRole {
         ADMIN, EDITOR, VIEWER
+    }
+
+    @Builder
+    public TeamInvitation(Team team, Member inviter, String inviteeEmail, String token, LocalDateTime expiresAt, LocalDateTime sentAt, InviteeRole inviteeRole) {
+        this.team = team;
+        this.inviter = inviter;
+        this.inviteeEmail = inviteeEmail;
+        this.status = InvitationStatus.PENDING;
+        this.token = token;
+        this.expiresAt = expiresAt;
+        this.sentAt = sentAt;
+        this.role = inviteeRole;
     }
 }
