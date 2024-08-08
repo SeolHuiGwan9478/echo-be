@@ -34,7 +34,7 @@ public class TeamController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{teamId}/invite")
+    @PostMapping("/team/{teamId}/invite")
     public ResponseEntity<Void> inviteToTeam(HttpServletRequest httpServletRequest,
                                              @PathVariable("teamId") Long teamId,
                                              @RequestBody TeamInvitationRequestDto requestDto) {
