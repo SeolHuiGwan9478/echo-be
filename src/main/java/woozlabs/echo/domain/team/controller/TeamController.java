@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import woozlabs.echo.domain.team.dto.CreateTeamRequestDto;
+import woozlabs.echo.domain.team.dto.TeamInvitationRequestDto;
 import woozlabs.echo.domain.team.dto.TeamResponseDto;
 import woozlabs.echo.domain.team.service.TeamService;
 import woozlabs.echo.global.constant.GlobalConstant;
@@ -30,6 +31,15 @@ public class TeamController {
                                            @RequestBody CreateTeamRequestDto createTeamRequestDto) {
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
         teamService.createTeam(uid, createTeamRequestDto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{teamId}/invite")
+    public ResponseEntity<Void> inviteToTeam(HttpServletRequest httpServletRequest,
+                                             @PathVariable("teamId") Long teamId,
+                                             @RequestBody TeamInvitationRequestDto requestDto) {
+        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        teamService.inviteToTeam(uid, teamId, requestDto);
         return ResponseEntity.ok().build();
     }
 }
