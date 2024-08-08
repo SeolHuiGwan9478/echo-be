@@ -11,6 +11,16 @@ import com.google.api.services.gmail.model.Thread;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
+import jakarta.activation.DataHandler;
+import jakarta.activation.DataSource;
+import jakarta.activation.FileDataSource;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
+import jakarta.mail.Session;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
@@ -33,16 +43,6 @@ import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
-import javax.activation.DataHandler;
-import javax.activation.DataSource;
-import javax.activation.FileDataSource;
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.Session;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -437,7 +437,7 @@ public class GmailService {
         MimeMessage email = new MimeMessage(session);
         // setting base
         email.setFrom(new InternetAddress(request.getFromEmailAddress()));
-        email.addRecipient(javax.mail.Message.RecipientType.TO,
+        email.addRecipient(jakarta.mail.Message.RecipientType.TO,
                 new InternetAddress(request.getToEmailAddress()));
         email.setSubject(request.getSubject());
         // setting body
@@ -467,7 +467,7 @@ public class GmailService {
         MimeMessage email = new MimeMessage(session);
         // setting base
         email.setFrom(new InternetAddress(request.getFromEmailAddress()));
-        email.addRecipient(javax.mail.Message.RecipientType.TO,
+        email.addRecipient(jakarta.mail.Message.RecipientType.TO,
                 new InternetAddress(request.getToEmailAddress()));
         email.setSubject(request.getSubject());
         // setting body
