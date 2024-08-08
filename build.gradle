@@ -44,7 +44,7 @@ dependencies {
 	implementation 'com.google.apis:google-api-services-calendar:v3-rev20220715-2.0.0'
 	implementation 'com.google.apis:google-api-services-gmail:v1-rev20240520-2.0.0'
 	implementation 'com.google.auth:google-auth-library-oauth2-http:1.19.0'
-	implementation group: 'javax.mail', name: 'mail', version: '1.4'
+	implementation 'com.sun.mail:jakarta.mail:2.0.1'
 	implementation group: 'org.apache.httpcomponents.client5', name: 'httpclient5', version: '5.3.1'
 	implementation group: 'com.google.firebase', name: 'firebase-admin', version: '9.3.0'
 	implementation 'org.jsoup:jsoup:1.15.3'

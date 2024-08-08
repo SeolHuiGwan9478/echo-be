@@ -79,7 +79,9 @@ public enum ErrorCode {
     NOT_FOUND_CONTACT_GROUP(404, "Not Found: Contact Group"),
 
     // verification
-    KEYWORD_IO_EXCEPTION(500, "I/O Exception finding verification keywords");
+    KEYWORD_IO_EXCEPTION(500, "I/O Exception finding verification keywords"),
+    EXTRACT_VERIFICATION_LINK_ERR(500, "Extract Verification Link Error"),
+    EXTRACT_VERIFICATION_CODE_ERR(500, "Extract Verification Code Error");
 
     private final int status;
     private final String message;
