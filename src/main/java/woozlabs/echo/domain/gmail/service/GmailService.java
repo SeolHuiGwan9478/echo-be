@@ -47,9 +47,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
@@ -73,7 +71,7 @@ public class GmailService {
     );
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
-    private final AsyncGmailService asyncGmailService;
+    private final AsyncGmailService multiThreadGmailService;
     private final MemberRepository memberRepository;
     private final GmailUtility gmailUtility;
 
@@ -309,23 +307,29 @@ public class GmailService {
 
     // Methods : get something
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
-        List<CompletableFuture<Optional<GmailThreadListThreads>>> futures = threads.stream()
-                .map((thread) -> asyncGmailService.asyncRequestGmailThreadGetForList(thread, gmailService)
-                        .thenApply(Optional::of)
-                        .exceptionally(error -> {
-                            log.error(error.getMessage());
-                            return Optional.empty();
-                        })
-                ).toList();
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join(); // only get first top of message
+        int nThreads = Runtime.getRuntime().availableProcessors();
+        ExecutorService executor = Executors.newFixedThreadPool(nThreads);
+        List<CompletableFuture<GmailThreadListThreads>> futures = threads.stream()
+                .map((thread) -> {
+                    CompletableFuture<GmailThreadListThreads> future = new CompletableFuture<>();
+                    executor.execute(() -> {
+                        try{
+                            GmailThreadListThreads result = multiThreadGmailService
+                                    .multiThreadRequestGmailThreadGetForList(thread, gmailService);
+                            future.complete(result);
+                        }catch (Exception e){
+                            System.out.println(e.getMessage());
+                            log.error(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
+                            future.completeExceptionally(new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG));
+                        }
+                    });
+                    return future;
+                }).toList();
         return futures.stream().map((future) -> {
             try{
-                Optional<GmailThreadListThreads> result = future.get();
-                if(result.isEmpty()){
-                    throw new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
-                }
-                return result.get();
-            }catch (InterruptedException | CancellationException | ExecutionException e){
+                return future.get();
+            }catch (Exception e){
+                log.error(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
                 throw new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
         }).collect(Collectors.toList());
@@ -333,7 +337,7 @@ public class GmailService {
 
     private List<GmailDraftListDrafts> getDetailedDrafts(List<Draft> drafts, Gmail gmailService) {
         List<CompletableFuture<Optional<GmailDraftListDrafts>>> futures = drafts.stream()
-                .map((draft) -> asyncGmailService.asyncRequestGmailDraftGetForList(draft, gmailService)
+                .map((draft) -> multiThreadGmailService.asyncRequestGmailDraftGetForList(draft, gmailService)
                         .thenApply(Optional::of)
                         .exceptionally(error -> {
                             log.error(error.getMessage());
