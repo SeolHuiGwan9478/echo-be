@@ -53,14 +53,14 @@ public class GmailUtility {
         }
         byte[] decodedBinaryContent = Base64.getDecoder().decode(standardBase64);
         String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
-//        if(!isVerificationEmail(decodedContent)) return extractVerificationInfo; // check verification email
-//        links.addAll(getVerificationLink(decodedContent));
-//        codes.addAll(getVerificationCode(decodedContent));
-//        if(!codes.isEmpty() || !links.isEmpty()){
-//            extractVerificationInfo.setVerification(Boolean.TRUE);
-//        }
-//        extractVerificationInfo.setLinks(links);
-//        extractVerificationInfo.setCodes(codes);
+        if(!isVerificationEmail(decodedContent)) return extractVerificationInfo; // check verification email
+        links.addAll(getVerificationLink(decodedContent));
+        codes.addAll(getVerificationCode(decodedContent));
+        if(!codes.isEmpty() || !links.isEmpty()){
+            extractVerificationInfo.setVerification(Boolean.TRUE);
+        }
+        extractVerificationInfo.setLinks(links);
+        extractVerificationInfo.setCodes(codes);
         return extractVerificationInfo;
     }
 

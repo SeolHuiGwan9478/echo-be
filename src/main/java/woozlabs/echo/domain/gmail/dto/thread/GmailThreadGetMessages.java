@@ -115,11 +115,11 @@ public class GmailThreadGetMessages {
         gmailThreadGetMessages.setHistoryId(message.getHistoryId());
         gmailThreadGetMessages.setPayload(convertedPayload);
         // verification code
-        ExtractVerificationInfo verificationInfo = findVerificationEmail(convertedPayload, gmailUtility);
-        if(!verificationInfo.getCodes().isEmpty() || !verificationInfo.getLinks().isEmpty()){
-            verificationInfo.setVerification(Boolean.TRUE);
-        }
-        gmailThreadGetMessages.setVerification(verificationInfo);
+//        ExtractVerificationInfo verificationInfo = findVerificationEmail(convertedPayload, gmailUtility);
+//        if(!verificationInfo.getCodes().isEmpty() || !verificationInfo.getLinks().isEmpty()){
+//            verificationInfo.setVerification(Boolean.TRUE);
+//        }
+//        gmailThreadGetMessages.setVerification(verificationInfo);
         return gmailThreadGetMessages;
     }
 
@@ -155,17 +155,23 @@ public class GmailThreadGetMessages {
     }
 
     private static void changeDateFormat(String originDate, GmailThreadGetMessages gmailThreadGetMessages) {
-        Pattern pattern = Pattern.compile(
-                DATE_TIMEZONE_PATTERN
+        Pattern firstPattern = Pattern.compile(
+                DATE_TIMEZONE_PATTERN_1
         );
-        Matcher matcher = pattern.matcher(originDate);
-        if (matcher.matches()) {
-            String datePart = matcher.group(1);
-            String timezonePart = matcher.group(2);
+        Pattern secondPattern = Pattern.compile(
+                DATE_TIMEZONE_PATTER_2
+        );
+        Matcher firstMatcher = firstPattern.matcher(originDate);
+        Matcher secondMatcher = secondPattern.matcher(originDate);
+        if (firstMatcher.matches() || secondMatcher.find()) {
+            String datePart = firstMatcher.group(1);
+            String timezonePart = firstMatcher.group(2);
             datePart = datePart.replaceAll("\\s+", " ");
             // parsing dateTime
-            DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern(
-                    INPUT_GMAIL_DATE_FORMAT, Locale.ENGLISH
+            DateTimeFormatter inputFormatter;
+            inputFormatter = DateTimeFormatter.ofPattern(
+                    INPUT_GMAIL_DATE_FORMAT_1,
+                    Locale.ENGLISH
             );
             LocalDateTime dateTime = LocalDateTime.parse(datePart, inputFormatter);
             // converting timezone format

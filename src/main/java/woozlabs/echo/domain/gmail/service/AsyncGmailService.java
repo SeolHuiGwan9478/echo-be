@@ -30,8 +30,7 @@ public class AsyncGmailService {
     private final String VERIFICATION_EMAIL_LABEL = "VERIFICATION";
     private final GmailUtility gmailUtility;
 
-    @Async
-    public CompletableFuture<GmailThreadListThreads> asyncRequestGmailThreadGetForList(Thread thread, Gmail gmailService){
+    public GmailThreadListThreads multiThreadRequestGmailThreadGetForList(Thread thread, Gmail gmailService){
         try {
             // init
             String id = thread.getId();
@@ -84,7 +83,7 @@ public class AsyncGmailService {
             gmailThreadListThreads.setAttachmentSize(attachments.size());
             gmailThreadListThreads.setMessages(convertedMessages);
             addVerificationLabel(convertedMessages, gmailThreadListThreads);
-            return CompletableFuture.completedFuture(gmailThreadListThreads);
+            return gmailThreadListThreads;
         } catch (IOException e) {
             throw new GmailException(e.getMessage());
         }
