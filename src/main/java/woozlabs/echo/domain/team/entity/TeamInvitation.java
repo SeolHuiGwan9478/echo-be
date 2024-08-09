@@ -31,11 +31,12 @@ public class TeamInvitation {
     private InvitationStatus status;
 
     @Enumerated(EnumType.STRING)
-    private InviteeRole role;
+    private Role role;
 
     private String token;
     private LocalDateTime expiresAt;
     private LocalDateTime sentAt;
+    private boolean deleted = Boolean.FALSE;
 
     public enum InvitationStatus {
         PENDING, ACCEPTED, REJECTED, EXPIRED
@@ -45,12 +46,12 @@ public class TeamInvitation {
         this.status = InvitationStatus.ACCEPTED;
     }
 
-    public enum InviteeRole {
-        ADMIN, EDITOR, VIEWER
+    public void softDelete() {
+        this.deleted = true;
     }
 
     @Builder
-    public TeamInvitation(Team team, Member inviter, String inviteeEmail, String token, LocalDateTime expiresAt, LocalDateTime sentAt, InviteeRole inviteeRole) {
+    public TeamInvitation(Team team, Member inviter, String inviteeEmail, String token, LocalDateTime expiresAt, LocalDateTime sentAt, Role inviteeRole) {
         this.team = team;
         this.inviter = inviter;
         this.inviteeEmail = inviteeEmail;
