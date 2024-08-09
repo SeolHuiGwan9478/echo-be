@@ -42,4 +42,12 @@ public class TeamController {
         teamService.inviteToTeam(uid, teamId, requestDto);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/invite/accept")
+    public ResponseEntity<Void> acceptInvitation(HttpServletRequest httpServletRequest,
+                                                 @RequestParam String token) {
+        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        teamService.acceptInvitation(uid, token);
+        return ResponseEntity.ok().build();
+    }
 }

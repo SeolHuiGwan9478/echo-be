@@ -9,6 +9,7 @@ import woozlabs.echo.domain.team.dto.CreateTeamRequestDto;
 import woozlabs.echo.domain.team.dto.SendInvitationEmailDto;
 import woozlabs.echo.domain.team.dto.TeamInvitationRequestDto;
 import woozlabs.echo.domain.team.dto.TeamResponseDto;
+import woozlabs.echo.domain.team.entity.Role;
 import woozlabs.echo.domain.team.entity.Team;
 import woozlabs.echo.domain.team.entity.TeamInvitation;
 import woozlabs.echo.domain.team.entity.TeamMember;
@@ -54,7 +55,7 @@ public class TeamService {
         TeamMember creatorMember = TeamMember.builder()
                 .team(team)
                 .member(creator)
-                .role(TeamMember.TeamMemberRole.ADMIN)
+                .role(Role.ADMIN)
                 .build();
 
         team.addTeamMember(creatorMember);
@@ -100,5 +101,30 @@ public class TeamService {
                 .build();
 
         emailService.sendInvitationEmail(sendInvitationEmailDto);
+    }
+
+    @Transactional
+    public void acceptInvitation(String inviteeUid, String token) {
+        TeamInvitation teamInvitation = teamInvitationRepository.findByToken(token)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_INVITATION_TOKEN));
+
+        if (teamInvitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new CustomErrorException(ErrorCode.INVITATION_EXPIRED);
+        }
+
+        Member invitee = memberRepository.findByUid(inviteeUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+
+        TeamMember newTeamMember = TeamMember.builder()
+                .team(teamInvitation.getTeam())
+                .member(invitee)
+                .role(teamInvitation.getRole())
+                .build();
+
+        teamInvitation.getTeam().addTeamMember(newTeamMember);
+        teamInvitation.accept();
+
+        teamInvitation.softDelete();
+        teamInvitationRepository.save(teamInvitation);
     }
 }
