@@ -7,6 +7,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 import woozlabs.echo.domain.chatGPT.service.ChatGptService;
 import woozlabs.echo.domain.gmail.dto.verification.ExtractVerificationInfo;
@@ -16,6 +18,7 @@ import woozlabs.echo.global.exception.ErrorCode;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -31,8 +34,8 @@ public class GmailUtility {
 
     @PostConstruct
     public void initKeywords(){
-        this.keywords = readKeywords("src/main/resources/keywords_en.txt");
-        this.keywords.addAll(readKeywords("src/main/resources/keywords_ko.txt"));
+        this.keywords = readKeywords("keywords_en.txt");
+        this.keywords.addAll(readKeywords("keywords_ko.txt"));
     }
 
     public ExtractVerificationInfo extractVerification(String rawContent){
@@ -145,7 +148,8 @@ public class GmailUtility {
 
     private List<String> readKeywords(String fileName){
         List<String> keywords = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+        Resource resource = new ClassPathResource(fileName);
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] newKeywords = line.split(",");
