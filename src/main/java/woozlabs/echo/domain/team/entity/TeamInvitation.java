@@ -50,6 +50,10 @@ public class TeamInvitation {
         this.deleted = true;
     }
 
+    public void setStatus(InvitationStatus status) {
+        this.status = status;
+    }
+
     @Builder
     public TeamInvitation(Team team, Member inviter, String inviteeEmail, String token, LocalDateTime expiresAt, LocalDateTime sentAt, Role inviteeRole) {
         this.team = team;
