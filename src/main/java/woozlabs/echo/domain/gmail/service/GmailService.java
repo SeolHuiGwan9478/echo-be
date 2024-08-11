@@ -58,8 +58,6 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 public class GmailService {
     // constants
     private final String MULTI_PART_TEXT_PLAIN = "text/plain";
-    private final String INBOX_LABEL = "INBOX";
-    private final List<String> CATEGORY_PRIMARY_LABELS = List.of("CATEGORY_UPDATES", "CATEGORY_PERSONAL");
     private final String TEMP_FILE_PREFIX = "echo";
     private final List<String> SCOPES = Arrays.asList(
             "https://www.googleapis.com/auth/gmail.readonly",
@@ -151,7 +149,7 @@ public class GmailService {
         ListThreadsResponse response = getSearchListThreadsResponse(params, gmailService);
         List<Thread> threads = response.getThreads();
         threads = isEmptyResult(threads);
-        List<GmailThreadSearchListThreads> searchedThreads = getSimpleThreads(threads, gmailService); // get detailed threads
+        List<GmailThreadSearchListThreads> searchedThreads = getSimpleThreads(threads); // get detailed threads
         return GmailThreadSearchListResponse.builder()
                 .threads(searchedThreads)
                 .nextPageToken(response.getNextPageToken())
@@ -305,10 +303,18 @@ public class GmailService {
                 .expiration(watchResponse.getExpiration()).build();
     }
 
+    public void stopPubSub(String uid) throws Exception {
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        gmailService.users().stop(USER_ID).execute();
+    }
+
     // Methods : get something
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
         //int nThreads = Runtime.getRuntime().availableProcessors();
-        int nThreads = 50;
+        int nThreads = 25;
         ExecutorService executor = Executors.newFixedThreadPool(nThreads);
         List<CompletableFuture<GmailThreadListThreads>> futures = threads.stream()
                 .map((thread) -> {
@@ -319,7 +325,6 @@ public class GmailService {
                                     .multiThreadRequestGmailThreadGetForList(thread, gmailService);
                             future.complete(result);
                         }catch (Exception e){
-                            System.out.println(e.getMessage());
                             log.error(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
                             future.completeExceptionally(new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG));
                         }
@@ -334,6 +339,14 @@ public class GmailService {
                 throw new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
         }).collect(Collectors.toList());
+    }
+
+    private Gmail createGmailService(String accessToken) throws Exception{
+        HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+        HttpRequestInitializer requestInitializer = createCredentialWithAccessToken(accessToken);
+        return new Gmail.Builder(httpTransport, JSON_FACTORY, requestInitializer)
+                .setApplicationName("Echo")
+                .build();
     }
 
     private List<GmailDraftListDrafts> getDetailedDrafts(List<Draft> drafts, Gmail gmailService) {
@@ -357,7 +370,7 @@ public class GmailService {
         }).collect(Collectors.toList());
     }
 
-    private List<GmailThreadSearchListThreads> getSimpleThreads(List<Thread> threads, Gmail gmailService){
+    private List<GmailThreadSearchListThreads> getSimpleThreads(List<Thread> threads){
         List<GmailThreadSearchListThreads> gmailThreadSearchListThreads = new ArrayList<>();
         threads.forEach((thread) ->{
             GmailThreadSearchListThreads gmailThreadSearchListThread = new GmailThreadSearchListThreads();
@@ -426,14 +439,6 @@ public class GmailService {
                 .build();
         GoogleCredentials googleCredentials = GoogleCredentials.create(token);
         return new HttpCredentialsAdapter(googleCredentials);
-    }
-
-    private Gmail createGmailService(String accessToken) throws Exception{
-        HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-        HttpRequestInitializer requestInitializer = createCredentialWithAccessToken(accessToken);
-        return new Gmail.Builder(httpTransport, JSON_FACTORY, requestInitializer)
-                .setApplicationName("Echo")
-                .build();
     }
 
     private MimeMessage createEmail(GmailMessageSendRequest request) throws MessagingException, IOException {

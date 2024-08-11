@@ -83,7 +83,11 @@ public enum ErrorCode {
     // verification
     KEYWORD_IO_EXCEPTION(500, "I/O Exception finding verification keywords"),
     EXTRACT_VERIFICATION_LINK_ERR(500, "Extract Verification Link Error"),
-    EXTRACT_VERIFICATION_CODE_ERR(500, "Extract Verification Code Error");
+    EXTRACT_VERIFICATION_CODE_ERR(500, "Extract Verification Code Error"),
+
+    // pub/sub
+    CLOUD_PUB_SUB_WATCH_ERR(500, "Failed to watch cloud pub/sub"),
+    CLOUD_PUB_SUB_STOP_ERR(500, "Failed to stop cloud pub/sub");
 
     private final int status;
     private final String message;

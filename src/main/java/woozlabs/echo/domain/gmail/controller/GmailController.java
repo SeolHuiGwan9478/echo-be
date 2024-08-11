@@ -283,14 +283,28 @@ public class GmailController {
         }
     }
     @PostMapping("/api/v1/gmail/watch")
-    public ResponseEntity<ResponseDto> getWatch(HttpServletRequest httpServletRequest, @RequestBody PubSubWatchRequest request){
+    public ResponseEntity<ResponseDto> postWatch(HttpServletRequest httpServletRequest, @RequestBody PubSubWatchRequest request){
         log.info("Request to watch pub/sub");
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             PubSubWatchResponse response = gmailService.subscribePubSub(uid, request);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (IOException e){
-            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
+            throw new CustomErrorException(ErrorCode.CLOUD_PUB_SUB_WATCH_ERR, e.getMessage());
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    @PostMapping("/api/v1/gmail/stop")
+    public ResponseEntity<ResponseDto> getStop(HttpServletRequest httpServletRequest){
+        log.info("Request to stop pub/sub");
+        try{
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            gmailService.stopPubSub(uid);
+            return new ResponseEntity<>(HttpStatus.OK);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.CLOUD_PUB_SUB_STOP_ERR, e.getMessage());
         }catch (Exception e){
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }
