@@ -14,7 +14,6 @@ import woozlabs.echo.domain.gmail.util.GmailUtility;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.time.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -24,7 +23,7 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Service
 @RequiredArgsConstructor
-public class AsyncGmailService {
+public class MultiThreadGmailService {
     private final String CONTENT_DISPOSITION_KEY = "Content-Disposition";
     private final String CONTENT_DISPOSITION_INLINE_VALUE = "inline";
     private final String VERIFICATION_EMAIL_LABEL = "VERIFICATION";

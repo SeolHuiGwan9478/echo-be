@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.gmail.dto.verification;
+package woozlabs.echo.domain.gmail.dto.extract;
 
 import lombok.Data;
 

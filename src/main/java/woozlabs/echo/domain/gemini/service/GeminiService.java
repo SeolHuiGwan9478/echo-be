@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gemini.GeminiInterface;
 import woozlabs.echo.domain.gemini.dto.GeminiRequest;
 import woozlabs.echo.domain.gemini.dto.GeminiResponse;
+import woozlabs.echo.domain.chatGPT.prompt.ScheduleMailPrompt;
 import woozlabs.echo.domain.gemini.prompt.ThreadKeypointPrompt;
 import woozlabs.echo.domain.gemini.prompt.ThreadSummaryPrompt;
 import woozlabs.echo.domain.gemini.prompt.VerificationMailPrompt;
@@ -18,7 +19,6 @@ import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.util.Base64;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -129,8 +129,6 @@ public class GeminiService {
 
     public String analyzeVerificationEmail(String emailContent) {
         String coreContent = extractCoreContent(emailContent);
-
-        System.out.println("coreContent = " + coreContent);
         String prompt = VerificationMailPrompt.getPrompt(coreContent);
         return getCompletion(prompt);
     }

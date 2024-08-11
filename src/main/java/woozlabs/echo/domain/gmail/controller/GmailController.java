@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
 import woozlabs.echo.domain.gmail.dto.draft.*;
+import woozlabs.echo.domain.gmail.dto.extract.ExtractScheduleInfo;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
@@ -18,6 +19,7 @@ import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.service.GmailService;
+import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.dto.ResponseDto;
 import woozlabs.echo.global.exception.CustomErrorException;
@@ -31,7 +33,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GmailController {
     private final GmailService gmailService;
-
+    private final GmailUtility gmailUtility;
     // threads
     @GetMapping("/api/v1/gmail/threads")
     public ResponseEntity<ResponseDto> getQueryThreads(HttpServletRequest httpServletRequest,
@@ -291,6 +293,16 @@ public class GmailController {
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    @PostMapping("/ner-test")
+    public ResponseEntity<ResponseDto> testNer(@RequestBody String text){
+        try{
+            ExtractScheduleInfo response = gmailUtility.extractSchedule(text);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

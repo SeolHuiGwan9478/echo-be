@@ -71,7 +71,7 @@ public class GmailService {
     );
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
-    private final AsyncGmailService multiThreadGmailService;
+    private final MultiThreadGmailService multiThreadGmailService;
     private final MemberRepository memberRepository;
     private final GmailUtility gmailUtility;
 
@@ -307,7 +307,8 @@ public class GmailService {
 
     // Methods : get something
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
-        int nThreads = Runtime.getRuntime().availableProcessors();
+        //int nThreads = Runtime.getRuntime().availableProcessors();
+        int nThreads = 16;
         ExecutorService executor = Executors.newFixedThreadPool(nThreads);
         List<CompletableFuture<GmailThreadListThreads>> futures = threads.stream()
                 .map((thread) -> {
