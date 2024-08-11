@@ -9,6 +9,7 @@ public final class GlobalConstant {
     public static final String AUTH_SIGN_IN_DOMAIN = "https://echo-homepage.vercel.app/sign-in";
     // End Points
     public static final String FE_HOST_ADDRESS = "http://127.0.0.1:3000";
+    public static final String ECHO_NEXT_APP_DOMAIN = "https://echo-homepage.vercel.app";
     // Basic Char
     public static final String SPACE_CHAR = " ";
     public static final String EMPTY_CHAR = "";

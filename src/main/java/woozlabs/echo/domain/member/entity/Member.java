@@ -5,11 +5,13 @@ import lombok.*;
 import woozlabs.echo.domain.echo.entity.EmailTemplate;
 import woozlabs.echo.domain.contactGroup.entity.MemberContactGroup;
 import woozlabs.echo.domain.echo.entity.UserSidebarConfig;
+import woozlabs.echo.domain.signature.Signature;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -47,4 +49,13 @@ public class Member extends BaseEntity {
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     private List<MemberContactGroup> memberContactGroups = new ArrayList<>();
+
+    @OneToMany(mappedBy = "ownerId", cascade = CascadeType.ALL)
+    private List<Signature> allSignatures = new ArrayList<>();
+
+    public List<Signature> getSignatures() {
+        return allSignatures.stream()
+                .filter(signature -> signature.getType() == Signature.SignatureType.MEMBER)
+                .collect(Collectors.toList());
+    }
 }
