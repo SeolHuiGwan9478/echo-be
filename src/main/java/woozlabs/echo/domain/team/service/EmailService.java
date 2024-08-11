@@ -1,8 +1,11 @@
 package woozlabs.echo.domain.team.service;
 
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
+import com.amazonaws.services.simpleemail.model.*;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -17,11 +20,15 @@ import woozlabs.echo.global.exception.ErrorCode;
 @RequiredArgsConstructor
 public class EmailService {
 
+    private final AmazonSimpleEmailService amazonSimpleEmailService;
     private final JavaMailSender javaMailSender;
     private final TemplateEngine templateEngine;
 
+    @Value("${aws.ses.from.email}")
+    private String fromEmail;
+
     @Async
-    public void sendInvitationEmail(SendInvitationEmailDto sendInvitationEmailDto) {
+    public void sendEmailViaSMTP(SendInvitationEmailDto sendInvitationEmailDto) {
         MimeMessage message = javaMailSender.createMimeMessage();
 
         try {
@@ -33,6 +40,24 @@ public class EmailService {
 
             javaMailSender.send(message);
         } catch (MessagingException e) {
+            throw new CustomErrorException(ErrorCode.FAILED_TO_INVITATION_MAIL, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendEmailViaSES(SendInvitationEmailDto sendInvitationEmailDto) {
+        try {
+            SendEmailRequest request = new SendEmailRequest()
+                    .withDestination(new Destination().withToAddresses(sendInvitationEmailDto.getTo()))
+                    .withMessage(new Message()
+                            .withBody(new Body()
+                                    .withHtml(new Content()
+                                            .withCharset("UTF-8").withData(getHtmlContent(sendInvitationEmailDto))))
+                            .withSubject(new Content().withCharset("UTF-8").withData("Join your team on Echo")))
+                    .withSource(fromEmail);
+
+            amazonSimpleEmailService.sendEmail(request);
+        } catch (Exception e) {
             throw new CustomErrorException(ErrorCode.FAILED_TO_INVITATION_MAIL, e.getMessage());
         }
     }
