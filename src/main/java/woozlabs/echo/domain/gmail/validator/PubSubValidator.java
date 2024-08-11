@@ -1,7 +1,7 @@
 package woozlabs.echo.domain.gmail.validator;
 
 import org.springframework.stereotype.Component;
-import woozlabs.echo.domain.member.entity.FcmToken;
+import woozlabs.echo.domain.gmail.entity.FcmToken;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 

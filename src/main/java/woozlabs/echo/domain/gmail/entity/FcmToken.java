@@ -1,7 +1,8 @@
-package woozlabs.echo.domain.member.entity;
+package woozlabs.echo.domain.gmail.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import woozlabs.echo.domain.member.entity.Member;
 
 @Entity
 @Getter
