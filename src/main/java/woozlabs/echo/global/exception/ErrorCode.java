@@ -20,6 +20,8 @@ public enum ErrorCode {
     NOT_FOUND_FIREBASE_CLOUD_MESSAGING_TOKEN_ERR(404, "Not Found FCM Token"),
     FAILED_TO_CREATE_CUSTOM_TOKEN(500, "Failed to create custom token"),
     FAILED_TO_SET_CUSTOM_CLAIMS(500, "Failed to set custom claims"),
+    DUPLICATE_FCM_TOKEN_ERR(400,"Is already exist this token"),
+    EXCEED_FCM_TOKEN_SIZE_ERR(400, "Exceed maximum token size"),
 
     // member
     NOT_FOUND_MEMBER_ERROR_MESSAGE(404, "Not found: Member"),

@@ -308,7 +308,7 @@ public class GmailService {
     // Methods : get something
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
         //int nThreads = Runtime.getRuntime().availableProcessors();
-        int nThreads = 16;
+        int nThreads = 50;
         ExecutorService executor = Executors.newFixedThreadPool(nThreads);
         List<CompletableFuture<GmailThreadListThreads>> futures = threads.stream()
                 .map((thread) -> {

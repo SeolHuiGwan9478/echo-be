@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.gmail.dto.pubsub.FcmTokenResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubMessage;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubNotification;
+import woozlabs.echo.domain.gmail.validator.PubSubValidator;
 import woozlabs.echo.domain.member.entity.FcmToken;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.repository.FcmTokenRepository;
@@ -26,6 +27,7 @@ public class PubSubService {
     private final ObjectMapper om;
     private final MemberRepository memberRepository;
     private final FcmTokenRepository fcmTokenRepository;
+    private final PubSubValidator pubSubValidator;
 
     public void handleFirebaseCloudMessage(PubSubMessage pubsubMessage) throws JsonProcessingException {
         String messageData = pubsubMessage.getMessage().getData();
@@ -53,13 +55,14 @@ public class PubSubService {
                 throw new CustomErrorException(ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR);
             }
         });
-
     }
 
     @Transactional
     public FcmTokenResponse saveFcmToken(String uid, String fcmToken){
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        List<FcmToken> tokens = fcmTokenRepository.findByMember(member);
+        pubSubValidator.validateSaveFcmToken(tokens, fcmToken);
         FcmToken newFcmToken = FcmToken.builder()
                 .fcmToken(fcmToken)
                 .member(member).build();
