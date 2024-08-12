@@ -13,7 +13,7 @@ import java.math.BigInteger;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class History {
+public class PubSubHistory {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private BigInteger historyId;
@@ -21,4 +21,8 @@ public class History {
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "member_id")
     private Member member;
+
+    public void updateHistoryId(BigInteger recentHistoryId){
+        this.historyId = recentHistoryId;
+    }
 }
