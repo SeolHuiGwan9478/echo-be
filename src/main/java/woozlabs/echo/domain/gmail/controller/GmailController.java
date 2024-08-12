@@ -11,6 +11,8 @@ import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
 import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractScheduleInfo;
+import woozlabs.echo.domain.gmail.dto.extract.RecommendScheduleEmailTemplate;
+import woozlabs.echo.domain.gmail.dto.extract.TestRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
@@ -333,4 +335,15 @@ public class GmailController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @PostMapping("/generate-template-test")
+    public ResponseEntity<ResponseDto> testTemplate(@RequestBody TestRequest test){
+        try{
+            RecommendScheduleEmailTemplate response = gmailUtility.generateScheduleEmailTemplate(test.getText(), test.getDates());
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

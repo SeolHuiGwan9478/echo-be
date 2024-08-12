@@ -1,6 +1,6 @@
 package woozlabs.echo.domain.chatGPT.prompt;
 
-public class ScheduleMailPrompt {
+public class ScheduleEmailPrompt {
     private static final String SCHEDULE_MAIL_ANALYSIS = """
             Email Content:
             [Insert the actual email content here]

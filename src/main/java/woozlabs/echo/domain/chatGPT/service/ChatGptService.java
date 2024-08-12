@@ -2,21 +2,18 @@ package woozlabs.echo.domain.chatGPT.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.chatGPT.ChatGPTInterface;
 import woozlabs.echo.domain.chatGPT.dto.ChatGPTRequest;
 import woozlabs.echo.domain.chatGPT.dto.ChatGPTResponse;
-import woozlabs.echo.domain.chatGPT.prompt.ScheduleMailPrompt;
+import woozlabs.echo.domain.chatGPT.prompt.ScheduleEmailPrompt;
+import woozlabs.echo.domain.chatGPT.prompt.ScheduleEmailTemplatePrompt;
 import woozlabs.echo.domain.gemini.prompt.VerificationMailPrompt;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -54,7 +51,12 @@ public class ChatGptService {
 
     public String analyzeScheduleEmail(String emailContent){
         LocalDate currentDateTime = LocalDate.now();
-        String prompt = ScheduleMailPrompt.getPrompt(emailContent, currentDateTime.toString());
+        String prompt = ScheduleEmailPrompt.getPrompt(emailContent, currentDateTime.toString());
+        return getCompletion(prompt);
+    }
+
+    public String generateScheduleEmailTemplate(String emailContent, List<String> availableDates){
+        String prompt = ScheduleEmailTemplatePrompt.getPrompt(emailContent, availableDates);
         return getCompletion(prompt);
     }
 }
