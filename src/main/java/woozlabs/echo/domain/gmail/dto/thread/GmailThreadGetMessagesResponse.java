@@ -21,7 +21,7 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitCcAndBcc;
 import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Data
-public class GmailThreadGetMessages {
+public class GmailThreadGetMessagesResponse {
     private String id; // message id
     private String date;
     private String timezone; // timezone
@@ -36,8 +36,8 @@ public class GmailThreadGetMessages {
     private GmailThreadGetPayload payload;
     private ExtractVerificationInfo verification = new ExtractVerificationInfo();
 
-    public static GmailThreadGetMessages toGmailThreadGetMessages(Message message, GmailUtility gmailUtility){
-        GmailThreadGetMessages gmailThreadGetMessages = new GmailThreadGetMessages();
+    public static GmailThreadGetMessagesResponse toGmailThreadGetMessages(Message message, GmailUtility gmailUtility){
+        GmailThreadGetMessagesResponse gmailThreadGetMessages = new GmailThreadGetMessagesResponse();
         MessagePart payload = message.getPayload();
         GmailThreadGetPayload convertedPayload = new GmailThreadGetPayload(payload);
         List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
@@ -146,7 +146,7 @@ public class GmailThreadGetMessages {
         info.updateLinks(newInfo.getLinks());
     }
 
-    private static void changeDateFormat(String originDate, GmailThreadGetMessages gmailThreadGetMessages) {
+    private static void changeDateFormat(String originDate, GmailThreadGetMessagesResponse gmailThreadGetMessages) {
         Pattern firstPattern = Pattern.compile(
                 DATE_TIMEZONE_PATTERN_1
         );
@@ -187,7 +187,7 @@ public class GmailThreadGetMessages {
         }
     }
 
-    private static void convertToIanaTimezone(GmailThreadGetMessages gmailThreadGetMessages, String timezonePart) {
+    private static void convertToIanaTimezone(GmailThreadGetMessagesResponse gmailThreadGetMessages, String timezonePart) {
         try{
             ZoneOffset offset = ZoneOffset.of(timezonePart);
             for (String zoneId : ZoneOffset.getAvailableZoneIds()){

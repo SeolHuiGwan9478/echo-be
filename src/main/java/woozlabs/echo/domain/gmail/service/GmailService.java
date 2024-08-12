@@ -25,20 +25,25 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.*;
 import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadTotalCountResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
+import woozlabs.echo.domain.gmail.entity.FcmToken;
 import woozlabs.echo.domain.gmail.entity.PubSubHistory;
 import woozlabs.echo.domain.gmail.exception.GmailException;
+import woozlabs.echo.domain.gmail.repository.FcmTokenRepository;
 import woozlabs.echo.domain.gmail.repository.PubSubHistoryRepository;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
+import woozlabs.echo.domain.gmail.validator.PubSubValidator;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.global.constant.GlobalConstant;
@@ -74,7 +79,9 @@ public class GmailService {
     private final MultiThreadGmailService multiThreadGmailService;
     private final MemberRepository memberRepository;
     private final PubSubHistoryRepository pubSubHistoryRepository;
+    private final FcmTokenRepository fcmTokenRepository;
     private final GmailUtility gmailUtility;
+    private final PubSubValidator pubSubValidator;
 
     public GmailThreadListResponse getQueryUserEmailThreads(String uid, String pageToken, String q) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
@@ -114,7 +121,7 @@ public class GmailService {
         String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Thread thread = getOneThreadResponse(id, gmailService);
-        List<GmailThreadGetMessages> messages = getConvertedMessages(thread.getMessages());
+        List<GmailThreadGetMessagesResponse> messages = getConvertedMessages(thread.getMessages());
         return GmailThreadGetResponse.builder()
                 .id(thread.getId())
                 .historyId(thread.getHistoryId())
@@ -157,6 +164,15 @@ public class GmailService {
                 .threads(searchedThreads)
                 .nextPageToken(response.getNextPageToken())
                 .build();
+    }
+
+    public void getUserEmailMessage(String uid, String messageId) throws Exception {
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
+        System.out.println(message);
     }
 
     public GmailMessageAttachmentResponse getAttachment(String uid, String messageId, String id) throws Exception{
@@ -292,13 +308,17 @@ public class GmailService {
                 .build();
     }
 
+    @Transactional
     public PubSubWatchResponse subscribePubSub(String uid, PubSubWatchRequest dto) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        List<FcmToken> fcmTokens = fcmTokenRepository.findByMember(member);
+        pubSubValidator.validateWatch(fcmTokens);
         String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         WatchRequest watchRequest = new WatchRequest()
                 .setLabelIds(dto.getLabelIds())
+                .setLabelFilterBehavior("include")
                 .setTopicName("projects/echo-email-app/topics/gmail");
         WatchResponse watchResponse = gmailService.users().watch(USER_ID, watchRequest).execute();
         Optional<PubSubHistory> pubSubHistory = pubSubHistoryRepository.findByMember(member);
@@ -318,7 +338,9 @@ public class GmailService {
 
     public void stopPubSub(String uid) throws Exception {
         Member member = memberRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE
+                        , ErrorCode.NOT_FOUND_ACCESS_TOKEN.getMessage())
+        );
         String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         gmailService.users().stop(USER_ID).execute();
@@ -393,8 +415,8 @@ public class GmailService {
         return gmailThreadSearchListThreads;
     }
 
-    private List<GmailThreadGetMessages> getConvertedMessages(List<Message> messages){
-        return messages.stream().map((message) -> GmailThreadGetMessages.toGmailThreadGetMessages(message, gmailUtility)).toList();
+    private List<GmailThreadGetMessagesResponse> getConvertedMessages(List<Message> messages){
+        return messages.stream().map((message) -> GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message, gmailUtility)).toList();
     }
 
     private ListThreadsResponse getQueryListThreadsResponse(String pageToken, String q, Gmail gmailService) throws IOException {

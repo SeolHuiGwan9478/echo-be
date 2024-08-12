@@ -16,6 +16,8 @@ import woozlabs.echo.domain.gmail.dto.pubsub.PubSubMessage;
 import woozlabs.echo.domain.gmail.service.PubSubService;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.dto.ResponseDto;
+import woozlabs.echo.global.exception.CustomErrorException;
+import woozlabs.echo.global.exception.ErrorCode;
 
 @Slf4j
 @RestController
@@ -28,11 +30,13 @@ public class PubSubController {
         log.info("Request to webhook from gcp pub/sub");
         try{
             pubSubService.handleFirebaseCloudMessage(pubsubMessage);
-        }catch (Exception e){
-            e.printStackTrace();
-            System.out.println("error");
+            return new ResponseEntity<>(HttpStatus.OK);
+        }catch (CustomErrorException e){
+            log.error(e.getMessage());
+        } catch (Exception e){
+            log.error(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST.getMessage());
         }
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @PostMapping("/api/v1/fcm")

@@ -86,8 +86,9 @@ public enum ErrorCode {
     EXTRACT_VERIFICATION_CODE_ERR(500, "Extract Verification Code Error"),
 
     // pub/sub
-    CLOUD_PUB_SUB_WATCH_ERR(500, "Failed to watch cloud pub/sub"),
-    CLOUD_PUB_SUB_STOP_ERR(500, "Failed to stop cloud pub/sub");
+    CLOUD_PUB_SUB_WATCH_ERR(400, "Failed to watch cloud pub/sub"),
+    CLOUD_PUB_SUB_STOP_ERR(500, "Failed to stop cloud pub/sub"),
+    NOT_FOUND_PUB_SUB_HISTORY_ERR(404, "Not Found: PubSubHistory");
 
     private final int status;
     private final String message;

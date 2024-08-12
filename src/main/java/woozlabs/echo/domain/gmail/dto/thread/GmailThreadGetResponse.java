@@ -13,5 +13,5 @@ import java.util.List;
 public class GmailThreadGetResponse implements ResponseDto {
     private String id;
     private BigInteger historyId;
-    private List<GmailThreadGetMessages> messages;
+    private List<GmailThreadGetMessagesResponse> messages;
 }

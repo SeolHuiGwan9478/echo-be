@@ -144,6 +144,19 @@ public class GmailController {
     }
 
     // messages
+    @GetMapping("/api/v1/gmail/messages/{messageId}")
+    public ResponseEntity<ResponseDto> getMessage(HttpServletRequest httpServletRequest,
+                                                  @PathVariable("messageId") String messageId){
+        log.info("Request to get message({})", messageId);
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            gmailService.getUserEmailMessage(uid, messageId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
     @GetMapping("/api/v1/gmail/messages/{messageId}/attachments/{id}")
     public ResponseEntity<ResponseDto> getAttachment(HttpServletRequest httpServletRequest,
                                                      @PathVariable("messageId") String messageId, @PathVariable("id") String id){
@@ -158,7 +171,6 @@ public class GmailController {
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }
     }
-
 
     @PostMapping(value = "/api/v1/gmail/messages/send", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseDto> sendMessage(HttpServletRequest httpServletRequest,
@@ -291,7 +303,9 @@ public class GmailController {
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (IOException e){
             throw new CustomErrorException(ErrorCode.CLOUD_PUB_SUB_WATCH_ERR, e.getMessage());
-        }catch (Exception e){
+        }catch (CustomErrorException e){
+            throw e;
+        } catch (Exception e){
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }
     }

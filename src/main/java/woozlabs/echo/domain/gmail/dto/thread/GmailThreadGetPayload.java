@@ -14,7 +14,7 @@ public class GmailThreadGetPayload {
     private final GmailThreadGetBody body;
     private final List<GmailThreadGetPart> parts;
 
-    GmailThreadGetPayload(MessagePart messagePart){
+    public GmailThreadGetPayload(MessagePart messagePart){
         this.partId = messagePart.getPartId();
         this.mimeType = messagePart.getMimeType();
         this.fileName = messagePart.getFilename();

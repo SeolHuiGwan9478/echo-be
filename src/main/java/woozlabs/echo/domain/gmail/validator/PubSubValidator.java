@@ -21,4 +21,10 @@ public class PubSubValidator {
         }
         throw new CustomErrorException(ErrorCode.EXCEED_FCM_TOKEN_SIZE_ERR, ErrorCode.EXCEED_FCM_TOKEN_SIZE_ERR.getMessage());
     }
+
+    public void validateWatch(List<FcmToken> tokens){
+        if(tokens.isEmpty()){
+            throw new CustomErrorException(ErrorCode.CLOUD_PUB_SUB_WATCH_ERR, ErrorCode.CLOUD_PUB_SUB_WATCH_ERR.getMessage());
+        }
+    }
 }

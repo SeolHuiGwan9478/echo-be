@@ -13,6 +13,10 @@ import com.google.api.services.gmail.model.ListHistoryResponse;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +24,8 @@ import woozlabs.echo.domain.gmail.dto.pubsub.FcmTokenResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.MessageInHistoryData;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubMessage;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubNotification;
+import woozlabs.echo.domain.gmail.entity.PubSubHistory;
+import woozlabs.echo.domain.gmail.repository.PubSubHistoryRepository;
 import woozlabs.echo.domain.gmail.validator.PubSubValidator;
 import woozlabs.echo.domain.gmail.entity.FcmToken;
 import woozlabs.echo.domain.member.entity.Member;
@@ -30,6 +36,7 @@ import woozlabs.echo.global.exception.ErrorCode;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -47,44 +54,53 @@ public class PubSubService {
 
     );
     private final Long MAX_HISTORY_COUNT = 50L;
+    private final String PUB_SUB_LABEL_ID = "INBOX";
+    private final List<String> PUB_SUB_HISTORY_TYPE = List.of("messageAdded");
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private final ObjectMapper om;
     private final MemberRepository memberRepository;
     private final FcmTokenRepository fcmTokenRepository;
+    private final PubSubHistoryRepository pubSubHistoryRepository;
     private final PubSubValidator pubSubValidator;
 
+    @Transactional
     public void handleFirebaseCloudMessage(PubSubMessage pubsubMessage) throws Exception {
-        System.out.println(pubsubMessage);
         String messageData = pubsubMessage.getMessage().getData();
         String decodedData = new String(java.util.Base64.getDecoder().decode(messageData));
         PubSubNotification notification = om.readValue(decodedData, PubSubNotification.class);
         String email = notification.getEmailAddress();
+        BigInteger newHistoryId = new BigInteger(notification.getHistoryId());
         Member member = memberRepository.findByEmail(email).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE)
         );
+        PubSubHistory pubSubHistory = pubSubHistoryRepository.findByMember(member).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR)
+        );
         Gmail gmailService = createGmailService(member.getAccessToken());
         List<FcmToken> fcmTokens = fcmTokenRepository.findByMember(member);
-        BigInteger historyId = new BigInteger(notification.getHistoryId());
-        System.out.println(decodedData);
-        getHistoryListById(historyId, gmailService);
-//        fcmTokens.forEach((fcmToken) -> {
-//            String token = fcmToken.getFcmToken();
-//            // handle fcm
-//            Message message = Message.builder()
-//                    .setNotification(Notification.builder()
-//                            .setTitle(notification.getEmailAddress())
-//                            .setBody(notification.getHistoryId())
-//                            .build())
-//                    .setToken(token)
-//                    .build();
-//            try{
-//                String response = FirebaseMessaging.getInstance().send(message);
-//                System.out.println(response);
-//            } catch (FirebaseMessagingException e) {
-//                throw new CustomErrorException(ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR);
-//            }
-//        });
+        List<MessageInHistoryData> getHistoryList = getHistoryListById(pubSubHistory, newHistoryId, gmailService);
+        if(getHistoryList.isEmpty()) return; // watch message
+        fcmTokens.forEach((fcmToken) -> {
+            String token = fcmToken.getFcmToken();
+            getHistoryList.forEach((historyData) -> {
+                // handle fcm
+                Message message = Message.builder()
+                        .setNotification(Notification.builder()
+                                .setTitle(notification.getEmailAddress())
+                                .setBody(historyData.getId())
+                                .build()
+                        )
+                        .setToken(token)
+                        .build();
+                try{
+                    String response = FirebaseMessaging.getInstance().send(message);
+                    System.out.println(response);
+                } catch (FirebaseMessagingException e) {
+                    throw new CustomErrorException(ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR);
+                }
+            });
+        });
     }
 
     @Transactional
@@ -100,26 +116,27 @@ public class PubSubService {
         return new FcmTokenResponse(newFcmToken.getId());
     }
 
-    private void getHistoryListById(BigInteger historyId, Gmail gmailService) throws IOException {
-        System.out.println(historyId);
+    private List<MessageInHistoryData> getHistoryListById(PubSubHistory pubSubHistory, BigInteger newHistoryId, Gmail gmailService) throws IOException {
+        BigInteger historyId = pubSubHistory.getHistoryId();
         ListHistoryResponse historyResponse = gmailService.users().history()
                 .list(USER_ID)
-                .setStartHistoryId(new BigInteger("1224937"))
-                .setLabelId("INBOX")
-                .setHistoryTypes(List.of("messageAdded"))
+                .setStartHistoryId(historyId)
+                .setLabelId(PUB_SUB_LABEL_ID)
+                .setHistoryTypes(PUB_SUB_HISTORY_TYPE)
                 .setMaxResults(MAX_HISTORY_COUNT)
                 .execute();
         List<History> histories = historyResponse.getHistory();
-        if(histories.isEmpty()) return;
-        System.out.println(histories);
+        List<MessageInHistoryData> historyDataList = new ArrayList<>();
+        if(histories == null) return historyDataList;
         for(History history : histories){
             List<HistoryMessageAdded> addedMessages = history.getMessagesAdded();
-            List<MessageInHistoryData> historyDataList = addedMessages.stream().map((addedMessage) -> {
+            addedMessages.forEach((addedMessage) -> {
                 com.google.api.services.gmail.model.Message message = addedMessage.getMessage();
-                return MessageInHistoryData.toMessageInHistoryData(message);
-            }).toList();
-            System.out.println(historyDataList);
+                historyDataList.add(MessageInHistoryData.toMessageInHistoryData(message));
+            });
         }
+        pubSubHistory.updateHistoryId(newHistoryId);
+        return historyDataList;
     }
 
     private Gmail createGmailService(String accessToken) throws Exception{
