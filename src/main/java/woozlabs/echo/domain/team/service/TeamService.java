@@ -100,7 +100,7 @@ public class TeamService {
                 .inviteFromLocation("Seoul, Korea")
                 .build();
 
-        emailService.sendEmailViaSMTP(sendInvitationEmailDto);
+        emailService.sendEmailViaSES(sendInvitationEmailDto);
     }
 
     @Transactional

@@ -47,6 +47,7 @@ public class EmailService {
         }
     }
 
+    @Async
     public void sendEmailViaSES(SendInvitationEmailDto sendInvitationEmailDto) {
         try {
             SendEmailRequest request = new SendEmailRequest()
