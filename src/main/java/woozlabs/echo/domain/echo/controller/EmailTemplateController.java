@@ -42,7 +42,7 @@ public class EmailTemplateController {
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
         try {
             emailTemplateService.createTemplate(uid, createEmailTemplateRequest);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.status(201).build();
         } catch (Exception e) {
             log.error("Error occurred while creating email template for user with UID: {}", uid, e);
             throw new CustomErrorException(ErrorCode.FAILED_TO_CREATE_EMAIL_TEMPLATE, e.getMessage());
