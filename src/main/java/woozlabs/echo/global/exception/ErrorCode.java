@@ -4,7 +4,6 @@ import lombok.Getter;
 
 @Getter
 public enum ErrorCode {
-
     // Global HttpStatus
     BAD_REQUEST(400, "Invalid Request"),
     UNAUTHORIZED_REQUEST(401, "Unauthorized"),

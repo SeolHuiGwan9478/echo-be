@@ -11,11 +11,10 @@ import org.jsoup.select.Elements;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 import woozlabs.echo.domain.chatGPT.service.ChatGptService;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractScheduleInfo;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
-import woozlabs.echo.domain.gmail.dto.extract.RecommendScheduleEmailTemplate;
+import woozlabs.echo.domain.gmail.dto.extract.GenScheduleEmailTemplateResponse;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
@@ -77,9 +76,9 @@ public class GmailUtility {
         return om.readValue(result, ExtractScheduleInfo.class);
     }
 
-    public RecommendScheduleEmailTemplate generateScheduleEmailTemplate(String decodedContent, List<String> availableDates) throws JsonProcessingException {
+    public GenScheduleEmailTemplateResponse generateScheduleEmailTemplate(String decodedContent, List<String> availableDates) throws JsonProcessingException {
         String result = chatGptService.generateScheduleEmailTemplate(decodedContent, availableDates);
-        return om.readValue(result, RecommendScheduleEmailTemplate.class);
+        return om.readValue(result, GenScheduleEmailTemplateResponse.class);
     }
 
     private List<String> getVerificationLink(String decodedContent){

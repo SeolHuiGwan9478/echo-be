@@ -4,7 +4,7 @@ import lombok.Data;
 import woozlabs.echo.global.dto.ResponseDto;
 
 @Data
-public class RecommendScheduleEmailTemplate implements ResponseDto {
+public class GenScheduleEmailTemplateResponse implements ResponseDto {
     private String template;
     private Boolean isSchedule;
 }

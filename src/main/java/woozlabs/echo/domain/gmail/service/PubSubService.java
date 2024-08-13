@@ -94,8 +94,7 @@ public class PubSubService {
                         .setToken(token)
                         .build();
                 try{
-                    String response = FirebaseMessaging.getInstance().send(message);
-                    System.out.println(response);
+                    FirebaseMessaging.getInstance().send(message);
                 } catch (FirebaseMessagingException e) {
                     throw new CustomErrorException(ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR);
                 }
