@@ -20,6 +20,7 @@ import com.google.firebase.messaging.Notification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.FcmTokenResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.MessageInHistoryData;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubMessage;
@@ -63,6 +64,7 @@ public class PubSubService {
     private final FcmTokenRepository fcmTokenRepository;
     private final PubSubHistoryRepository pubSubHistoryRepository;
     private final PubSubValidator pubSubValidator;
+    private final GmailService gmailServiceImpl;
 
     @Transactional
     public void handleFirebaseCloudMessage(PubSubMessage pubsubMessage) throws Exception {
@@ -85,19 +87,23 @@ public class PubSubService {
         fcmTokens.forEach((fcmToken) -> {
             String token = fcmToken.getFcmToken();
             getHistoryList.forEach((historyData) -> {
-                // handle fcm
-                Message message = Message.builder()
-                        .setNotification(Notification.builder()
-                                .setTitle(notification.getEmailAddress())
-                                .setBody(historyData.getId())
-                                .build()
-                        )
-                        .setToken(token)
-                        .build();
-                try{
+                try { // handle fcm
+                    GmailMessageGetResponse gmailMessage = gmailServiceImpl.getUserEmailMessage(member.getUid(), historyData.getId());
+                    String subject = gmailMessage.getSubject();
+                    String snippet = gmailMessage.getSnippet();
+                    Message message = Message.builder()
+                            .setNotification(Notification.builder()
+                                    .setTitle(subject)
+                                    .setBody(snippet)
+                                    .build()
+                            )
+                            .setToken(token)
+                            .build();
                     FirebaseMessaging.getInstance().send(message);
-                } catch (FirebaseMessagingException e) {
-                    throw new CustomErrorException(ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR);
+                }catch (FirebaseMessagingException e) {
+                    throw new CustomErrorException(ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR, ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR.getMessage());
+                } catch (Exception e) {
+                    throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST.getMessage());
                 }
             });
         });
