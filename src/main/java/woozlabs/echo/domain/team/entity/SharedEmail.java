@@ -1,8 +1,6 @@
 package woozlabs.echo.domain.team.entity;
 
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
 import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -18,10 +16,9 @@ public class SharedEmail {
 
     @Id
     private String id;
-    private String teamId;  // MySQL의 Team 엔티티 ID 참조
+    private String teamId;
     private String threadId;
-    private String subject;
-    private String sharedById;  // MySQL의 Member 엔티티 ID 참조
+    private String sharedById;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
