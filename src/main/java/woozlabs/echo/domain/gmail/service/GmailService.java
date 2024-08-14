@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
+import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
@@ -165,13 +166,13 @@ public class GmailService {
                 .build();
     }
 
-    public void getUserEmailMessage(String uid, String messageId) throws Exception {
+    public GmailMessageGetResponse getUserEmailMessage(String uid, String messageId) throws Exception {
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
         String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
-        System.out.println(message);
+        return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
     }
 
     public GmailMessageAttachmentResponse getAttachment(String uid, String messageId, String id) throws Exception{

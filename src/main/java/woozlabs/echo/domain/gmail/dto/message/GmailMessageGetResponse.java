@@ -5,8 +5,8 @@ import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import lombok.Data;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
-import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
+import woozlabs.echo.global.dto.ResponseDto;
 
 import java.math.BigInteger;
 import java.time.*;
@@ -23,7 +23,7 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitCcAndBcc;
 import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Data
-public class GmailMessageGetResponse {
+public class GmailMessageGetResponse implements ResponseDto {
     private String id; // message id
     private String subject;
     private String date;
@@ -99,6 +99,9 @@ public class GmailMessageGetResponse {
                         }).toList();
                         gmailMessageGetResponse.setTo(data);
                     }
+                }case MESSAGE_PAYLOAD_HEADER_SUBJECT_KEY -> {
+                    String subject = header.getValue();
+                    gmailMessageGetResponse.setSubject(subject);
                 }
             }
         }
@@ -109,11 +112,11 @@ public class GmailMessageGetResponse {
         gmailMessageGetResponse.setHistoryId(message.getHistoryId());
         gmailMessageGetResponse.setPayload(convertedPayload);
         // verification code
-//        ExtractVerificationInfo verificationInfo = findVerificationEmail(convertedPayload, gmailUtility);
-//        if(!verificationInfo.getCodes().isEmpty() || !verificationInfo.getLinks().isEmpty()){
-//            verificationInfo.setVerification(Boolean.TRUE);
-//        }
-//        gmailThreadGetMessages.setVerification(verificationInfo);
+        ExtractVerificationInfo verificationInfo = findVerificationEmail(convertedPayload, gmailUtility);
+        if(!verificationInfo.getCodes().isEmpty() || !verificationInfo.getLinks().isEmpty()){
+            verificationInfo.setVerification(Boolean.TRUE);
+        }
+        gmailMessageGetResponse.setVerification(verificationInfo);
         return gmailMessageGetResponse;
     }
 

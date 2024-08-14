@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
+import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadTotalCountResponse;
@@ -146,8 +147,8 @@ public class GmailController {
         log.info("Request to get message({})", messageId);
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-            gmailService.getUserEmailMessage(uid, messageId);
-            return new ResponseEntity<>(HttpStatus.OK);
+            GmailMessageGetResponse response = gmailService.getUserEmailMessage(uid, messageId);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e){
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }
