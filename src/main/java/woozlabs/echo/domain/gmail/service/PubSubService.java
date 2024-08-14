@@ -81,6 +81,7 @@ public class PubSubService {
         List<FcmToken> fcmTokens = fcmTokenRepository.findByMember(member);
         List<MessageInHistoryData> getHistoryList = getHistoryListById(pubSubHistory, newHistoryId, gmailService);
         if(getHistoryList.isEmpty()) return; // watch message
+
         fcmTokens.forEach((fcmToken) -> {
             String token = fcmToken.getFcmToken();
             getHistoryList.forEach((historyData) -> {
