@@ -8,23 +8,16 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.History;
-import com.google.api.services.gmail.model.HistoryMessageAdded;
 import com.google.api.services.gmail.model.ListHistoryResponse;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.FirebaseMessagingException;
-import com.google.firebase.messaging.Message;
-import com.google.firebase.messaging.Notification;
+import com.google.firebase.messaging.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
-import woozlabs.echo.domain.gmail.dto.pubsub.FcmTokenResponse;
-import woozlabs.echo.domain.gmail.dto.pubsub.MessageInHistoryData;
-import woozlabs.echo.domain.gmail.dto.pubsub.PubSubMessage;
-import woozlabs.echo.domain.gmail.dto.pubsub.PubSubNotification;
+import woozlabs.echo.domain.gmail.dto.pubsub.*;
 import woozlabs.echo.domain.gmail.entity.PubSubHistory;
 import woozlabs.echo.domain.gmail.repository.PubSubHistoryRepository;
 import woozlabs.echo.domain.gmail.validator.PubSubValidator;
@@ -37,9 +30,7 @@ import woozlabs.echo.global.exception.ErrorCode;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
 
@@ -56,7 +47,7 @@ public class PubSubService {
     );
     private final Long MAX_HISTORY_COUNT = 50L;
     private final String PUB_SUB_LABEL_ID = "INBOX";
-    private final List<String> PUB_SUB_HISTORY_TYPE = List.of("messageAdded");
+    //private final List<String> PUB_SUB_HISTORY_TYPE = List.of("messageAdded");
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private final ObjectMapper om;
@@ -80,32 +71,34 @@ public class PubSubService {
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR)
         );
         Gmail gmailService = createGmailService(member.getAccessToken());
-        List<FcmToken> fcmTokens = fcmTokenRepository.findByMember(member);
+        List<String> fcmTokens = fcmTokenRepository.findByMember(member).stream().map(FcmToken::getFcmToken).toList();
         List<MessageInHistoryData> getHistoryList = getHistoryListById(pubSubHistory, newHistoryId, gmailService);
         if(getHistoryList.isEmpty()) return; // watch message
-
-        fcmTokens.forEach((fcmToken) -> {
-            String token = fcmToken.getFcmToken();
-            getHistoryList.forEach((historyData) -> {
-                try { // handle fcm
-                    GmailMessageGetResponse gmailMessage = gmailServiceImpl.getUserEmailMessage(member.getUid(), historyData.getId());
-                    String subject = gmailMessage.getSubject();
-                    String snippet = gmailMessage.getSnippet();
-                    Message message = Message.builder()
-                            .setNotification(Notification.builder()
-                                    .setTitle(subject)
-                                    .setBody(snippet)
-                                    .build()
-                            )
-                            .setToken(token)
-                            .build();
-                    FirebaseMessaging.getInstance().send(message);
-                }catch (FirebaseMessagingException e) {
-                    throw new CustomErrorException(ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR, ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR.getMessage());
-                } catch (Exception e) {
-                    throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST.getMessage());
-                }
-            });
+        // send multicast messages
+        getHistoryList.forEach((historyData) -> {
+            try{
+                // get detailed message info
+                GmailMessageGetResponse gmailMessage = gmailServiceImpl.getUserEmailMessage(member.getUid(), historyData.getId());
+                String subject = gmailMessage.getSubject();
+                String snippet = gmailMessage.getSnippet();
+                Map<String, String> data = new HashMap<>();
+                createMessageData(historyData, data, gmailMessage);
+                // create firebase message
+                MulticastMessage message = MulticastMessage.builder()
+                        .setNotification(Notification.builder()
+                                .setTitle(subject)
+                                .setBody(snippet)
+                                .build()
+                        )
+                        .putAllData(data)
+                        .addAllTokens(fcmTokens)
+                        .build();
+                FirebaseMessaging.getInstance().sendEachForMulticastAsync(message);
+            }catch (FirebaseMessagingException e) {
+                throw new CustomErrorException(ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR, ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR.getMessage());
+            } catch (Exception e) {
+                throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST.getMessage());
+            }
         });
     }
 
@@ -128,18 +121,29 @@ public class PubSubService {
                 .list(USER_ID)
                 .setStartHistoryId(historyId)
                 .setLabelId(PUB_SUB_LABEL_ID)
-                .setHistoryTypes(PUB_SUB_HISTORY_TYPE)
                 .setMaxResults(MAX_HISTORY_COUNT)
                 .execute();
         List<History> histories = historyResponse.getHistory();
         List<MessageInHistoryData> historyDataList = new ArrayList<>();
         if(histories == null) return historyDataList;
         for(History history : histories){
-            List<HistoryMessageAdded> addedMessages = history.getMessagesAdded();
-            addedMessages.forEach((addedMessage) -> {
-                com.google.api.services.gmail.model.Message message = addedMessage.getMessage();
-                historyDataList.add(MessageInHistoryData.toMessageInHistoryData(message));
-            });
+            // add addedMessages
+            historyDataList.addAll(history.getMessagesAdded() != null
+                    ? history.getMessagesAdded().stream().map(
+                    (message) -> MessageInHistoryData.toMessageInHistoryData(message.getMessage(), HistoryType.MESSAGE_ADDED)).toList()
+                    : Collections.emptyList());
+            historyDataList.addAll(history.getMessagesDeleted() != null
+                    ? history.getMessagesDeleted().stream().map(
+                    (message) -> MessageInHistoryData.toMessageInHistoryData(message.getMessage(), HistoryType.MESSAGE_DELETED)).toList()
+                    : Collections.emptyList());
+            historyDataList.addAll(history.getLabelsAdded() != null
+                    ? history.getLabelsAdded().stream().map(
+                    (message) -> MessageInHistoryData.toMessageInHistoryData(message.getMessage(), HistoryType.LABEL_ADDED)).toList()
+                    : Collections.emptyList());
+            historyDataList.addAll(history.getLabelsRemoved() != null
+                    ? history.getLabelsRemoved().stream().map(
+                    (message) -> MessageInHistoryData.toMessageInHistoryData(message.getMessage(), HistoryType.LABEL_REMOVED)).toList()
+                    : Collections.emptyList());
         }
         pubSubHistory.updateHistoryId(newHistoryId);
         return historyDataList;
@@ -160,5 +164,25 @@ public class PubSubService {
                 .build();
         GoogleCredentials googleCredentials = GoogleCredentials.create(token);
         return new HttpCredentialsAdapter(googleCredentials);
+    }
+
+    private void createMessageData(MessageInHistoryData historyData, Map<String, String> data, GmailMessageGetResponse gmailMessage) {
+        String FCM_MSG_ID_KEY = "id";
+        String FCM_MSG_THREAD_ID_KEY = "threadId";
+        String FCM_MSG_TYPE_KEY = "type";
+        String FCM_MSG_VERIFICATION_KEY = "verification";
+        String FCM_MSG_CODE_KEY = "code";
+        String FCM_MSG_LINK_KEY = "link";
+        // set base info
+        data.put(FCM_MSG_ID_KEY, historyData.getId());
+        data.put(FCM_MSG_THREAD_ID_KEY, historyData.getThreadId());
+        data.put(FCM_MSG_TYPE_KEY, historyData.getHistoryType().getType());
+        // set verification data
+        List<String> codes = gmailMessage.getVerification().getCodes();
+        List<String> links = gmailMessage.getVerification().getLinks();
+        data.put(FCM_MSG_VERIFICATION_KEY, gmailMessage.getVerification().toString());
+        data.put(FCM_MSG_CODE_KEY, String.join(",", codes));
+        data.put(FCM_MSG_LINK_KEY, String.join(",", links));
+        // set schedule data
     }
 }
