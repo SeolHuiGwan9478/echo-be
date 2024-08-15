@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.draft.*;
+import woozlabs.echo.domain.gmail.dto.history.GmailHistoryListResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
@@ -316,6 +317,20 @@ public class GmailController {
             return new ResponseEntity<>(HttpStatus.OK);
         }catch (IOException e){
             throw new CustomErrorException(ErrorCode.CLOUD_PUB_SUB_STOP_ERR, e.getMessage());
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    @GetMapping("/api/v1/gmail/histories")
+    public ResponseEntity<ResponseDto> getHistories(HttpServletRequest httpServletRequest,
+                                                    @RequestParam("historyId") String historyId,
+                                                    @RequestParam("pageToken") String pageToken){
+        log.info("Request to get histories from {}", historyId);
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailHistoryListResponse response = gmailService.getHistories(uid, historyId, pageToken);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (Exception e){
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }

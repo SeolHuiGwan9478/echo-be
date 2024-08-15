@@ -41,6 +41,9 @@ public final class GlobalConstant {
     public static final String DRAFT_PAYLOAD_HEADER_FROM_KEY = "From";
     public static final String DRAFT_PAYLOAD_HEADER_DATE_KEY = "Date";
 
+    // Gmail History
+    public static final String HISTORY_INBOX_LABEL = "inbox";
+
     // Email Error Message
     public static final String EMAIL_ERR_MSG_KEY = "EmailException";
     public static final String REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG = "Internal Server Error: Request gmail messages get one api";

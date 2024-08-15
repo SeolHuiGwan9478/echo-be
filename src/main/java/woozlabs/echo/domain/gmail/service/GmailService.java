@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.draft.*;
+import woozlabs.echo.domain.gmail.dto.history.*;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesResponse;
@@ -53,6 +54,7 @@ import woozlabs.echo.global.exception.ErrorCode;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -344,6 +346,61 @@ public class GmailService {
         String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         gmailService.users().stop(USER_ID).execute();
+    }
+
+    public GmailHistoryListResponse getHistories(String uid, String historyId, String pageToken) throws Exception {
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        ListHistoryResponse historyResponse = gmailService
+                .users()
+                .history()
+                .list(USER_ID)
+                .setLabelId(HISTORY_INBOX_LABEL)
+                .setPageToken(pageToken)
+                .setStartHistoryId(new BigInteger(historyId))
+                .execute();
+        List<History> histories = historyResponse.getHistory(); // get histories
+        GmailHistoryListResponse response = GmailHistoryListResponse.builder()
+                .nextPageToken(historyResponse.getNextPageToken())
+                .historyId(historyResponse.getHistoryId())
+                .build();
+        if(histories == null) return response;
+        // convert history format
+        List<GmailHistoryListData> historyListData = histories.stream().map((history) -> {
+            List<GmailHistoryListMessageAdded> messagesAdded = history.getMessagesAdded() != null
+                    ? history.getMessagesAdded().stream()
+                    .map(GmailHistoryListMessageAdded::toGmailHistoryListMessageAdded)
+                    .toList()
+                    : Collections.emptyList();
+
+            List<GmailHistoryListMessageDeleted> messagesDeleted = history.getMessagesDeleted() != null
+                    ? history.getMessagesDeleted().stream()
+                    .map(GmailHistoryListMessageDeleted::toGmailHistoryListMessageDeleted)
+                    .toList()
+                    : Collections.emptyList();
+
+            List<GmailHistoryListLabelAdded> labelsAdded = history.getLabelsAdded() != null
+                    ? history.getLabelsAdded().stream()
+                    .map(GmailHistoryListLabelAdded::toGmailHistoryListLabelRAdded)
+                    .toList()
+                    : Collections.emptyList();
+
+            List<GmailHistoryListLabelRemoved> labelsRemoved = history.getLabelsRemoved() != null
+                    ? history.getLabelsRemoved().stream()
+                    .map(GmailHistoryListLabelRemoved::toGmailHistoryListLabelRemoved)
+                    .toList()
+                    : Collections.emptyList();
+            return GmailHistoryListData.builder()
+                    .messagesAdded(messagesAdded)
+                    .messagesDeleted(messagesDeleted)
+                    .labelsAdded(labelsAdded)
+                    .labelsRemoved(labelsRemoved)
+                    .build();
+        }).toList();
+        response.setHistory(historyListData);
+        return response;
     }
 
     // Methods : get something
