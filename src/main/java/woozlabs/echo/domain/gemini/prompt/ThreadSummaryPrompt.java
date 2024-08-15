@@ -24,20 +24,19 @@ public class ThreadSummaryPrompt {
             """;
 
     private static final String GMAIL_SUMMARIZE_GUIDELINES = """
-            Summarize and refine the following text in a natural way. The output should:
+            Summarize and refine the following text. Ensure the summary:
             
-            1. Capture the main points and essential information
-            2. Maintain the original tone and style of the writer
-            3. Be concise but preserve important details
-            4. Improve clarity and coherence if needed
-            5. Respond in the same language as the input text
-            6. Don't forget to translate your answer into the language of the text entered.
-   
+            1. Captures the main points and essential information.
+            2. Maintains the original tone and style.
+            3. Is concise but includes key details.
+            4. Enhances clarity and coherence if needed.
+            5. Uses the same language as the input text.
+            
             Original text:
             
             %s
-   
-            Please provide the summarized and refined version:
+            
+            Please provide the summarized and refined version in the same language.
             """;
 
     public static String getPrompt(String threadContent) {
