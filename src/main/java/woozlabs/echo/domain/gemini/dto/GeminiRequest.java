@@ -20,6 +20,15 @@ public class GeminiRequest {
         this.contents = Arrays.asList(content);
     }
 
+    public GeminiRequest(String contents, String parts) {
+        List<Part> partsList = Arrays.asList(
+                new TextPart(contents),
+                new TextPart(parts)
+        );
+        Content content = new Content(partsList);
+        this.contents = Collections.singletonList(content);
+    }
+
     public GeminiRequest(String text, InlineData inlineData) {
         List<Content> contents = List.of(
                 new Content(

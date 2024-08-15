@@ -45,7 +45,7 @@ public class GeminiController {
     @PostMapping("/writer/change-tone")
     public ResponseEntity<String> changeTone(@RequestBody ChangeToneRequest request) {
         try {
-            String changedText = geminiService.changeTone(request.getText(), request.getTone());
+            String changedText = geminiService.changeTone(request.getContents(), request.getParts(), request.getTone());
             return ResponseEntity.ok(changedText);
         } catch (Exception e) {
             log.error("Error changing tone: ", e);
@@ -84,11 +84,5 @@ public class GeminiController {
             log.error("Error extracting keypoint: ", e);
             throw new CustomErrorException(ErrorCode.FAILED_TO_EXTRACT_KEYPOINT, e.getMessage());
         }
-    }
-
-    @PostMapping("/gmail/verification")
-    public ResponseEntity<String> analyzeEmail(@RequestBody String emailContent) {
-        String result = geminiService.analyzeVerificationEmail(emailContent);
-        return ResponseEntity.ok(result);
     }
 }
