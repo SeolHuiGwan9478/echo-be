@@ -31,7 +31,7 @@ public class TeamController {
                                            @RequestBody CreateTeamRequestDto createTeamRequestDto) {
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
         teamService.createTeam(uid, createTeamRequestDto);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(201).build();
     }
 
     @PostMapping("/team/{teamId}/invite")
