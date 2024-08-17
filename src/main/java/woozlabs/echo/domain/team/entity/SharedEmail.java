@@ -19,6 +19,7 @@ public class SharedEmail {
     private String teamId;
     private String threadId;
     private String sharedById;
+    private ShareStatus shareStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
