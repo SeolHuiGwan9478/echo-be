@@ -74,10 +74,9 @@ public class EmailService {
         context.setVariable("invitedByUsername", dto.getInvitedByUsername());
         context.setVariable("invitedByEmail", dto.getInvitedByEmail());
         context.setVariable("teamName", dto.getTeamName());
+        context.setVariable("teamRole", dto.getTeamRole());
         context.setVariable("teamImage", dto.getTeamImage());
         context.setVariable("inviteLink", dto.getInviteLink());
-        context.setVariable("inviteFromIp", dto.getInviteFromIp());
-        context.setVariable("inviteFromLocation", dto.getInviteFromLocation());
 
         return templateEngine.process("invite-email", context);
     }
