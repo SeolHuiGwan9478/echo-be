@@ -94,10 +94,9 @@ public class TeamService {
                 .invitedByUsername(inviter.getDisplayName())
                 .invitedByEmail(inviter.getEmail())
                 .teamName(team.getName())
+                .teamRole(requestDto.getInviteeRole())
                 .teamImage("https://vercel.com/static/vercel-team.png") // mock
                 .inviteLink(invitationLink)
-                .inviteFromIp("192.168.1.1")
-                .inviteFromLocation("Seoul, Korea")
                 .build();
 
         emailService.sendEmailViaSES(sendInvitationEmailDto);
