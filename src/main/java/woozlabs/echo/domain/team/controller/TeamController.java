@@ -43,7 +43,7 @@ public class TeamController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/invite/accept")
+    @PostMapping("/team/invite/accept")
     public ResponseEntity<Void> acceptInvitation(HttpServletRequest httpServletRequest,
                                                  @RequestParam String token) {
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);

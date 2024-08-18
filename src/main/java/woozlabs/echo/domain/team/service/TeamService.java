@@ -14,6 +14,7 @@ import woozlabs.echo.domain.team.entity.Team;
 import woozlabs.echo.domain.team.entity.TeamInvitation;
 import woozlabs.echo.domain.team.entity.TeamMember;
 import woozlabs.echo.domain.team.repository.TeamInvitationRepository;
+import woozlabs.echo.domain.team.repository.TeamMemberRepository;
 import woozlabs.echo.domain.team.repository.TeamRepository;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
@@ -32,6 +33,7 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final MemberRepository memberRepository;
     private final TeamInvitationRepository teamInvitationRepository;
+    private final TeamMemberRepository teamMemberRepository;
     private final EmailService emailService;
 
     public List<TeamResponseDto> getTeams(String uid) {
@@ -40,6 +42,14 @@ public class TeamService {
         return teams.stream()
                 .map(TeamResponseDto::new)
                 .collect(Collectors.toList());
+    }
+
+    public TeamMember getTeamMember(String uid, Long teamId) {
+        Member member = memberRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+
+        return teamMemberRepository.findByMemberAndTeamId(member, teamId)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_TEAM_MEMBER));
     }
 
     @Transactional

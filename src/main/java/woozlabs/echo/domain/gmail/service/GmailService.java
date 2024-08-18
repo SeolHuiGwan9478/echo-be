@@ -383,7 +383,7 @@ public class GmailService {
 
             List<GmailHistoryListLabelAdded> labelsAdded = history.getLabelsAdded() != null
                     ? history.getLabelsAdded().stream()
-                    .map(GmailHistoryListLabelAdded::toGmailHistoryListLabelRAdded)
+                    .map(GmailHistoryListLabelAdded::toGmailHistoryListLabelAdded)
                     .toList()
                     : Collections.emptyList();
 
