@@ -84,6 +84,9 @@ public enum ErrorCode {
     FAILED_TO_INVITATION_MAIL(500, "Failed to send email"),
     NOT_FOUND_INVITATION_TOKEN(404, "Not Found: Invitation Token"),
     INVITATION_EXPIRED(400, "The team invitation approval deadline has expired"),
+    NOT_FOUND_TEAM_MEMBER(404, "The Member can't be found in the team"),
+    NOT_FOUND_SHARED_EMAIL(404, "Not Found: Shared Email"),
+    UNAUTHORIZED_ACCESS(401, "You can't access this feature with this privilege"),
 
     // verification
     KEYWORD_IO_EXCEPTION(500, "I/O Exception finding verification keywords"),
