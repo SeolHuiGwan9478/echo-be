@@ -15,6 +15,13 @@ public final class GlobalConstant {
     public static final String EMPTY_CHAR = "";
     // Gmail global
     public static final String USER_ID = "me";
+    // Gmail messages
+    public static final String MESSAGE_PAYLOAD_HEADER_SUBJECT_KEY = "Subject";
+    public static final String MESSAGE_PAYLOAD_HEADER_FROM_KEY = "From";
+    public static final String MESSAGE_PAYLOAD_HEADER_DATE_KEY = "Date";
+    public static final String MESSAGE_PAYLOAD_HEADER_CC_KEY = "Cc";
+    public static final String MESSAGE_PAYLOAD_HEADER_BCC_KEY = "Bcc";
+    public static final String MESSAGE_PAYLOAD_HEADER_TO_KEY = "To";
     // Gmail threads
     public static final String THREAD_PAYLOAD_HEADER_SUBJECT_KEY = "Subject";
     public static final String THREAD_PAYLOAD_HEADER_FROM_KEY = "From";
@@ -34,6 +41,9 @@ public final class GlobalConstant {
     public static final String DRAFT_PAYLOAD_HEADER_SUBJECT_KEY = "Subject";
     public static final String DRAFT_PAYLOAD_HEADER_FROM_KEY = "From";
     public static final String DRAFT_PAYLOAD_HEADER_DATE_KEY = "Date";
+
+    // Gmail History
+    public static final String HISTORY_INBOX_LABEL = "inbox";
 
     // Email Error Message
     public static final String EMAIL_ERR_MSG_KEY = "EmailException";

@@ -13,12 +13,12 @@ import woozlabs.echo.domain.gemini.dto.GeminiResponse;
 import woozlabs.echo.domain.gemini.prompt.ThreadKeypointPrompt;
 import woozlabs.echo.domain.gemini.prompt.ThreadSummaryPrompt;
 import woozlabs.echo.domain.gemini.prompt.VerificationMailPrompt;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.util.Base64;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -68,7 +68,7 @@ public class GeminiService {
 
     public String summarizeGmailThread(GmailThreadGetResponse gmailThread) {
         StringBuilder threadContent = new StringBuilder();
-        for (GmailThreadGetMessages message : gmailThread.getMessages()) {
+        for (GmailThreadGetMessagesResponse message : gmailThread.getMessages()) {
             extractContentFromPayload(message.getPayload(), threadContent);
         }
         String prompt = ThreadSummaryPrompt.getPrompt(threadContent.toString());

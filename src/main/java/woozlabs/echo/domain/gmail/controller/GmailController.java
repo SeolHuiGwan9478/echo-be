@@ -8,9 +8,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import woozlabs.echo.domain.gmail.dto.*;
 import woozlabs.echo.domain.gmail.dto.draft.*;
+import woozlabs.echo.domain.gmail.dto.history.GmailHistoryListResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
+import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadTotalCountResponse;
@@ -31,7 +32,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GmailController {
     private final GmailService gmailService;
-
     // threads
     @GetMapping("/api/v1/gmail/threads")
     public ResponseEntity<ResponseDto> getQueryThreads(HttpServletRequest httpServletRequest,
@@ -142,6 +142,19 @@ public class GmailController {
     }
 
     // messages
+    @GetMapping("/api/v1/gmail/messages/{messageId}")
+    public ResponseEntity<ResponseDto> getMessage(HttpServletRequest httpServletRequest,
+                                                  @PathVariable("messageId") String messageId){
+        log.info("Request to get message({})", messageId);
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailMessageGetResponse response = gmailService.getUserEmailMessage(uid, messageId);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
     @GetMapping("/api/v1/gmail/messages/{messageId}/attachments/{id}")
     public ResponseEntity<ResponseDto> getAttachment(HttpServletRequest httpServletRequest,
                                                      @PathVariable("messageId") String messageId, @PathVariable("id") String id){
@@ -156,7 +169,6 @@ public class GmailController {
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }
     }
-
 
     @PostMapping(value = "/api/v1/gmail/messages/send", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseDto> sendMessage(HttpServletRequest httpServletRequest,
@@ -281,14 +293,44 @@ public class GmailController {
         }
     }
     @PostMapping("/api/v1/gmail/watch")
-    public ResponseEntity<ResponseDto> getWatch(HttpServletRequest httpServletRequest, @RequestBody PubSubWatchRequest request){
+    public ResponseEntity<ResponseDto> postWatch(HttpServletRequest httpServletRequest, @RequestBody PubSubWatchRequest request){
         log.info("Request to watch pub/sub");
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             PubSubWatchResponse response = gmailService.subscribePubSub(uid, request);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (IOException e){
-            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
+            throw new CustomErrorException(ErrorCode.CLOUD_PUB_SUB_WATCH_ERR, e.getMessage());
+        }catch (CustomErrorException e){
+            throw e;
+        } catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    @PostMapping("/api/v1/gmail/stop")
+    public ResponseEntity<ResponseDto> getStop(HttpServletRequest httpServletRequest){
+        log.info("Request to stop pub/sub");
+        try{
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            gmailService.stopPubSub(uid);
+            return new ResponseEntity<>(HttpStatus.OK);
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.CLOUD_PUB_SUB_STOP_ERR, e.getMessage());
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    @GetMapping("/api/v1/gmail/histories")
+    public ResponseEntity<ResponseDto> getHistories(HttpServletRequest httpServletRequest,
+                                                    @RequestParam("historyId") String historyId,
+                                                    @RequestParam("pageToken") String pageToken){
+        log.info("Request to get histories from {}", historyId);
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailHistoryListResponse response = gmailService.getHistories(uid, historyId, pageToken);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (Exception e){
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }

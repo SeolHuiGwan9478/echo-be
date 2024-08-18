@@ -25,18 +25,26 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import woozlabs.echo.domain.gmail.dto.*;
 import woozlabs.echo.domain.gmail.dto.draft.*;
+import woozlabs.echo.domain.gmail.dto.history.*;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
+import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesResponse;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadTotalCountResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
+import woozlabs.echo.domain.gmail.entity.FcmToken;
+import woozlabs.echo.domain.gmail.entity.PubSubHistory;
 import woozlabs.echo.domain.gmail.exception.GmailException;
+import woozlabs.echo.domain.gmail.repository.FcmTokenRepository;
+import woozlabs.echo.domain.gmail.repository.PubSubHistoryRepository;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
+import woozlabs.echo.domain.gmail.validator.PubSubValidator;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.global.constant.GlobalConstant;
@@ -46,6 +54,7 @@ import woozlabs.echo.global.exception.ErrorCode;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -58,8 +67,6 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 public class GmailService {
     // constants
     private final String MULTI_PART_TEXT_PLAIN = "text/plain";
-    private final String INBOX_LABEL = "INBOX";
-    private final List<String> CATEGORY_PRIMARY_LABELS = List.of("CATEGORY_UPDATES", "CATEGORY_PERSONAL");
     private final String TEMP_FILE_PREFIX = "echo";
     private final List<String> SCOPES = Arrays.asList(
             "https://www.googleapis.com/auth/gmail.readonly",
@@ -71,9 +78,12 @@ public class GmailService {
     );
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
-    private final AsyncGmailService multiThreadGmailService;
+    private final MultiThreadGmailService multiThreadGmailService;
     private final MemberRepository memberRepository;
+    private final PubSubHistoryRepository pubSubHistoryRepository;
+    private final FcmTokenRepository fcmTokenRepository;
     private final GmailUtility gmailUtility;
+    private final PubSubValidator pubSubValidator;
 
     public GmailThreadListResponse getQueryUserEmailThreads(String uid, String pageToken, String q) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
@@ -113,7 +123,7 @@ public class GmailService {
         String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Thread thread = getOneThreadResponse(id, gmailService);
-        List<GmailThreadGetMessages> messages = getConvertedMessages(thread.getMessages());
+        List<GmailThreadGetMessagesResponse> messages = getConvertedMessages(thread.getMessages());
         return GmailThreadGetResponse.builder()
                 .id(thread.getId())
                 .historyId(thread.getHistoryId())
@@ -151,11 +161,20 @@ public class GmailService {
         ListThreadsResponse response = getSearchListThreadsResponse(params, gmailService);
         List<Thread> threads = response.getThreads();
         threads = isEmptyResult(threads);
-        List<GmailThreadSearchListThreads> searchedThreads = getSimpleThreads(threads, gmailService); // get detailed threads
+        List<GmailThreadSearchListThreads> searchedThreads = getSimpleThreads(threads); // get detailed threads
         return GmailThreadSearchListResponse.builder()
                 .threads(searchedThreads)
                 .nextPageToken(response.getNextPageToken())
                 .build();
+    }
+
+    public GmailMessageGetResponse getUserEmailMessage(String uid, String messageId) throws Exception {
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
+        return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
     }
 
     public GmailMessageAttachmentResponse getAttachment(String uid, String messageId, String id) throws Exception{
@@ -291,23 +310,103 @@ public class GmailService {
                 .build();
     }
 
+    @Transactional
     public PubSubWatchResponse subscribePubSub(String uid, PubSubWatchRequest dto) throws Exception{
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        List<FcmToken> fcmTokens = fcmTokenRepository.findByMember(member);
+        pubSubValidator.validateWatch(fcmTokens);
         String accessToken = member.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         WatchRequest watchRequest = new WatchRequest()
                 .setLabelIds(dto.getLabelIds())
+                .setLabelFilterBehavior("include")
                 .setTopicName("projects/echo-email-app/topics/gmail");
         WatchResponse watchResponse = gmailService.users().watch(USER_ID, watchRequest).execute();
+        Optional<PubSubHistory> pubSubHistory = pubSubHistoryRepository.findByMember(member);
+        if(pubSubHistory.isEmpty()){
+            PubSubHistory newHistory = PubSubHistory.builder()
+                    .historyId(watchResponse.getHistoryId())
+                    .member(member).build();
+            pubSubHistoryRepository.save(newHistory);
+        }else{
+            PubSubHistory findHistory = pubSubHistory.get();
+            findHistory.updateHistoryId(watchResponse.getHistoryId());
+        }
         return PubSubWatchResponse.builder()
                 .historyId(watchResponse.getHistoryId())
                 .expiration(watchResponse.getExpiration()).build();
     }
 
+    public void stopPubSub(String uid) throws Exception {
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE
+                        , ErrorCode.NOT_FOUND_ACCESS_TOKEN.getMessage())
+        );
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        gmailService.users().stop(USER_ID).execute();
+    }
+
+    public GmailHistoryListResponse getHistories(String uid, String historyId, String pageToken) throws Exception {
+        Member member = memberRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        String accessToken = member.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        ListHistoryResponse historyResponse = gmailService
+                .users()
+                .history()
+                .list(USER_ID)
+                .setLabelId(HISTORY_INBOX_LABEL)
+                .setPageToken(pageToken)
+                .setStartHistoryId(new BigInteger(historyId))
+                .execute();
+        List<History> histories = historyResponse.getHistory(); // get histories
+        GmailHistoryListResponse response = GmailHistoryListResponse.builder()
+                .nextPageToken(historyResponse.getNextPageToken())
+                .historyId(historyResponse.getHistoryId())
+                .build();
+        if(histories == null) return response;
+        // convert history format
+        List<GmailHistoryListData> historyListData = histories.stream().map((history) -> {
+            List<GmailHistoryListMessageAdded> messagesAdded = history.getMessagesAdded() != null
+                    ? history.getMessagesAdded().stream()
+                    .map(GmailHistoryListMessageAdded::toGmailHistoryListMessageAdded)
+                    .toList()
+                    : Collections.emptyList();
+
+            List<GmailHistoryListMessageDeleted> messagesDeleted = history.getMessagesDeleted() != null
+                    ? history.getMessagesDeleted().stream()
+                    .map(GmailHistoryListMessageDeleted::toGmailHistoryListMessageDeleted)
+                    .toList()
+                    : Collections.emptyList();
+
+            List<GmailHistoryListLabelAdded> labelsAdded = history.getLabelsAdded() != null
+                    ? history.getLabelsAdded().stream()
+                    .map(GmailHistoryListLabelAdded::toGmailHistoryListLabelRAdded)
+                    .toList()
+                    : Collections.emptyList();
+
+            List<GmailHistoryListLabelRemoved> labelsRemoved = history.getLabelsRemoved() != null
+                    ? history.getLabelsRemoved().stream()
+                    .map(GmailHistoryListLabelRemoved::toGmailHistoryListLabelRemoved)
+                    .toList()
+                    : Collections.emptyList();
+            return GmailHistoryListData.builder()
+                    .messagesAdded(messagesAdded)
+                    .messagesDeleted(messagesDeleted)
+                    .labelsAdded(labelsAdded)
+                    .labelsRemoved(labelsRemoved)
+                    .build();
+        }).toList();
+        response.setHistory(historyListData);
+        return response;
+    }
+
     // Methods : get something
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
-        int nThreads = Runtime.getRuntime().availableProcessors();
+        //int nThreads = Runtime.getRuntime().availableProcessors();
+        int nThreads = 25;
         ExecutorService executor = Executors.newFixedThreadPool(nThreads);
         List<CompletableFuture<GmailThreadListThreads>> futures = threads.stream()
                 .map((thread) -> {
@@ -318,7 +417,6 @@ public class GmailService {
                                     .multiThreadRequestGmailThreadGetForList(thread, gmailService);
                             future.complete(result);
                         }catch (Exception e){
-                            System.out.println(e.getMessage());
                             log.error(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
                             future.completeExceptionally(new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG));
                         }
@@ -333,6 +431,14 @@ public class GmailService {
                 throw new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
         }).collect(Collectors.toList());
+    }
+
+    private Gmail createGmailService(String accessToken) throws Exception{
+        HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+        HttpRequestInitializer requestInitializer = createCredentialWithAccessToken(accessToken);
+        return new Gmail.Builder(httpTransport, JSON_FACTORY, requestInitializer)
+                .setApplicationName("Echo")
+                .build();
     }
 
     private List<GmailDraftListDrafts> getDetailedDrafts(List<Draft> drafts, Gmail gmailService) {
@@ -356,7 +462,7 @@ public class GmailService {
         }).collect(Collectors.toList());
     }
 
-    private List<GmailThreadSearchListThreads> getSimpleThreads(List<Thread> threads, Gmail gmailService){
+    private List<GmailThreadSearchListThreads> getSimpleThreads(List<Thread> threads){
         List<GmailThreadSearchListThreads> gmailThreadSearchListThreads = new ArrayList<>();
         threads.forEach((thread) ->{
             GmailThreadSearchListThreads gmailThreadSearchListThread = new GmailThreadSearchListThreads();
@@ -366,8 +472,8 @@ public class GmailService {
         return gmailThreadSearchListThreads;
     }
 
-    private List<GmailThreadGetMessages> getConvertedMessages(List<Message> messages){
-        return messages.stream().map((message) -> GmailThreadGetMessages.toGmailThreadGetMessages(message, gmailUtility)).toList();
+    private List<GmailThreadGetMessagesResponse> getConvertedMessages(List<Message> messages){
+        return messages.stream().map((message) -> GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message, gmailUtility)).toList();
     }
 
     private ListThreadsResponse getQueryListThreadsResponse(String pageToken, String q, Gmail gmailService) throws IOException {
@@ -425,14 +531,6 @@ public class GmailService {
                 .build();
         GoogleCredentials googleCredentials = GoogleCredentials.create(token);
         return new HttpCredentialsAdapter(googleCredentials);
-    }
-
-    private Gmail createGmailService(String accessToken) throws Exception{
-        HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-        HttpRequestInitializer requestInitializer = createCredentialWithAccessToken(accessToken);
-        return new Gmail.Builder(httpTransport, JSON_FACTORY, requestInitializer)
-                .setApplicationName("Echo")
-                .build();
     }
 
     private MimeMessage createEmail(GmailMessageSendRequest request) throws MessagingException, IOException {

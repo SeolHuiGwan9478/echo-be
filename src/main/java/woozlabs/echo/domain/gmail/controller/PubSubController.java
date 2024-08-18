@@ -16,6 +16,8 @@ import woozlabs.echo.domain.gmail.dto.pubsub.PubSubMessage;
 import woozlabs.echo.domain.gmail.service.PubSubService;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.dto.ResponseDto;
+import woozlabs.echo.global.exception.CustomErrorException;
+import woozlabs.echo.global.exception.ErrorCode;
 
 @Slf4j
 @RestController
@@ -26,8 +28,15 @@ public class PubSubController {
     @PostMapping(value = "/api/v1/webhook", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseDto> handleGmailWebhook(@RequestBody PubSubMessage pubsubMessage) throws JsonProcessingException {
         log.info("Request to webhook from gcp pub/sub");
-        pubSubService.handleFirebaseCloudMessage(pubsubMessage);
-        return new ResponseEntity<>(HttpStatus.OK);
+        try{
+            pubSubService.handleFirebaseCloudMessage(pubsubMessage);
+            return new ResponseEntity<>(HttpStatus.OK);
+        }catch (CustomErrorException e){
+            log.error(e.getMessage());
+        } catch (Exception e){
+            log.error(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST.getMessage());
+        }
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @PostMapping("/api/v1/fcm")

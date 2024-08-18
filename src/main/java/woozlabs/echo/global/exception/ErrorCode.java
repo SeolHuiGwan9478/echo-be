@@ -4,7 +4,6 @@ import lombok.Getter;
 
 @Getter
 public enum ErrorCode {
-
     // Global HttpStatus
     BAD_REQUEST(400, "Invalid Request"),
     UNAUTHORIZED_REQUEST(401, "Unauthorized"),
@@ -20,6 +19,8 @@ public enum ErrorCode {
     NOT_FOUND_FIREBASE_CLOUD_MESSAGING_TOKEN_ERR(404, "Not Found FCM Token"),
     FAILED_TO_CREATE_CUSTOM_TOKEN(500, "Failed to create custom token"),
     FAILED_TO_SET_CUSTOM_CLAIMS(500, "Failed to set custom claims"),
+    DUPLICATE_FCM_TOKEN_ERR(400,"Is already exist this token"),
+    EXCEED_FCM_TOKEN_SIZE_ERR(400, "Exceed maximum token size"),
 
     // member
     NOT_FOUND_MEMBER_ERROR_MESSAGE(404, "Not found: Member"),
@@ -87,7 +88,12 @@ public enum ErrorCode {
     // verification
     KEYWORD_IO_EXCEPTION(500, "I/O Exception finding verification keywords"),
     EXTRACT_VERIFICATION_LINK_ERR(500, "Extract Verification Link Error"),
-    EXTRACT_VERIFICATION_CODE_ERR(500, "Extract Verification Code Error");
+    EXTRACT_VERIFICATION_CODE_ERR(500, "Extract Verification Code Error"),
+
+    // pub/sub
+    CLOUD_PUB_SUB_WATCH_ERR(400, "Failed to watch cloud pub/sub"),
+    CLOUD_PUB_SUB_STOP_ERR(500, "Failed to stop cloud pub/sub"),
+    NOT_FOUND_PUB_SUB_HISTORY_ERR(404, "Not Found: PubSubHistory");
 
     private final int status;
     private final String message;

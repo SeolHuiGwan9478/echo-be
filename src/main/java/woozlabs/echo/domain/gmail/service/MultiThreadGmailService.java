@@ -8,13 +8,16 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListAttachments;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListDrafts;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesBcc;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesCc;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesFrom;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.time.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -24,7 +27,7 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Service
 @RequiredArgsConstructor
-public class AsyncGmailService {
+public class MultiThreadGmailService {
     private final String CONTENT_DISPOSITION_KEY = "Content-Disposition";
     private final String CONTENT_DISPOSITION_INLINE_VALUE = "inline";
     private final String VERIFICATION_EMAIL_LABEL = "VERIFICATION";
@@ -44,13 +47,13 @@ public class AsyncGmailService {
             List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
             List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
-            List<GmailThreadGetMessages> convertedMessages = new ArrayList<>();
+            List<GmailThreadGetMessagesResponse> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
             for(int idx = 0;idx < messages.size();idx++){
                 int idxForLambda = idx;
                 Message message = messages.get(idx);
                 MessagePart payload = message.getPayload();
-                convertedMessages.add(GmailThreadGetMessages.toGmailThreadGetMessages(message, gmailUtility));
+                convertedMessages.add(GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message, gmailUtility));
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
                 labelIds.addAll(message.getLabelIds());
                 if(idxForLambda == messages.size()-1){
@@ -67,7 +70,7 @@ public class AsyncGmailService {
                         gmailThreadListThreads.setSubject(header.getValue());
                     }
                 });
-                GmailThreadGetMessages gmailThreadGetMessage = convertedMessages.get(convertedMessages.size()-1);
+                GmailThreadGetMessagesResponse gmailThreadGetMessage = convertedMessages.get(convertedMessages.size()-1);
                 froms.add(gmailThreadGetMessage.getFrom());
                 ccs.addAll(gmailThreadGetMessage.getCc());
                 bccs.addAll(gmailThreadGetMessage.getBcc());
@@ -89,8 +92,8 @@ public class AsyncGmailService {
         }
     }
 
-    private void addVerificationLabel(List<GmailThreadGetMessages> convertedMessages, GmailThreadListThreads gmailThreadListThreads) {
-        for(GmailThreadGetMessages convertedMessage : convertedMessages){
+    private void addVerificationLabel(List<GmailThreadGetMessagesResponse> convertedMessages, GmailThreadListThreads gmailThreadListThreads) {
+        for(GmailThreadGetMessagesResponse convertedMessage : convertedMessages){
             if(convertedMessage.getVerification().getVerification()){
                 gmailThreadListThreads.addLabel(VERIFICATION_EMAIL_LABEL);
                 break;

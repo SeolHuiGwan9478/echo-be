@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.math.BigInteger;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -16,7 +14,7 @@ public class GmailThreadListThreads implements Comparable<GmailThreadListThreads
     private List<String> labelIds;
     private int attachmentSize;
     private List<GmailThreadListAttachments> attachments;
-    private List<GmailThreadGetMessages> messages;
+    private List<GmailThreadGetMessagesResponse> messages;
     private List<GmailThreadGetMessagesFrom> from;
     private List<GmailThreadGetMessagesCc> cc;
     private List<GmailThreadGetMessagesBcc> bcc;
