@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class ChangeToneRequest {
 
-    String text;
+    String contents;
+    String parts;
     String tone;
 }

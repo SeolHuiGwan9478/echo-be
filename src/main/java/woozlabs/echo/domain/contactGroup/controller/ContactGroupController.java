@@ -31,7 +31,7 @@ public class ContactGroupController {
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
         String contactGroupName = createContactGroupRequest.getName();
         contactGroupService.createContactGroup(uid, contactGroupName);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(201).build();
     }
 
     @PostMapping("/contactGroups/{contactGroupId}/members")

@@ -79,6 +79,12 @@ public enum ErrorCode {
     NOT_FOUND_ORGANIZATION(404, "Not Found: Organization"),
     NOT_FOUND_CONTACT_GROUP(404, "Not Found: Contact Group"),
 
+    // team
+    NOT_FOUND_TEAM(404, "Not Found: Team"),
+    FAILED_TO_INVITATION_MAIL(500, "Failed to send email"),
+    NOT_FOUND_INVITATION_TOKEN(404, "Not Found: Invitation Token"),
+    INVITATION_EXPIRED(400, "The team invitation approval deadline has expired"),
+
     // verification
     KEYWORD_IO_EXCEPTION(500, "I/O Exception finding verification keywords"),
     EXTRACT_VERIFICATION_LINK_ERR(500, "Extract Verification Link Error"),

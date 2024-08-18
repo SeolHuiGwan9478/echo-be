@@ -53,6 +53,19 @@ public class GeminiService {
                 .orElse(null);
     }
 
+    public String getCompletionWithParts(String contents, String parts) {
+        GeminiRequest geminiRequest = new GeminiRequest(contents, parts);
+        GeminiResponse response = getCompletion(geminiRequest);
+
+        return response.getCandidates()
+                .stream()
+                .findFirst().flatMap(candidate -> candidate.getContent().getParts()
+                        .stream()
+                        .findFirst()
+                        .map(GeminiResponse.TextPart::getText))
+                .orElse(null);
+    }
+
     public String summarizeGmailThread(GmailThreadGetResponse gmailThread) {
         StringBuilder threadContent = new StringBuilder();
         for (GmailThreadGetMessagesResponse message : gmailThread.getMessages()) {
@@ -107,9 +120,15 @@ public class GeminiService {
         }
     }
 
-    public String changeTone(String text, String tone) {
-        String prompt = "Change the tone of the following text to " + tone + ": " + text;
-        return getCompletion(prompt);
+    public String changeTone(String contents, String parts, String tone) {
+        String prompt = String.format(
+                "Given the following context:\n\n%s\n\n" +
+                        "Change the tone of only this specific part to %s, maintaining its original meaning:\n\n%s\n\n" +
+                        "Provide only the modified part, keeping its length similar to the original. " +
+                        "Do not explain or summarize other parts of the context.",
+                contents, tone, parts
+        );
+        return getCompletionWithParts(contents, prompt);
     }
 
     public String checkGrammar(String text) {
@@ -125,35 +144,5 @@ public class GeminiService {
     public String keypoint(String text) {
         String prompt = ThreadKeypointPrompt.getPrompt(text);
         return getCompletion(prompt);
-    }
-
-    public String analyzeVerificationEmail(String emailContent) {
-        String coreContent = extractCoreContent(emailContent);
-        String prompt = VerificationMailPrompt.getPrompt(coreContent);
-        return getCompletion(prompt);
-    }
-
-    private String extractCoreContent(String htmlContent) {
-        Document doc = Jsoup.parse(htmlContent, "UTF-8");
-
-        doc.select("style, script, head, title, meta, img").remove();
-        doc.select("table, tbody, tr, td, th, thead, tfoot").unwrap();
-        Elements coreElements = doc.select("div, p, h1, h2, h3, a, pre, span, td");
-
-        for (Element coreElement : coreElements) {
-            coreElement.removeAttr("style");
-            coreElement.removeAttr("class");
-            coreElement.removeAttr("id");
-            coreElement.removeAttr("align");
-            coreElement.removeAttr("width");
-            coreElement.removeAttr("height");
-            coreElement.removeAttr("valign");
-            coreElement.removeAttr("bgcolor");
-            coreElement.removeAttr("cellpadding");
-            coreElement.removeAttr("cellspacing");
-            coreElement.removeAttr("border");
-        }
-
-        return coreElements.toString();
     }
 }
