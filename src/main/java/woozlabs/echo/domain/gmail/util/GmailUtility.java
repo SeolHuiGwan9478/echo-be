@@ -203,11 +203,11 @@ public class GmailUtility {
             Matcher matcher = pattern.matcher(resultGpt);
             if(matcher.find()){
                 String idValue = matcher.group(1);
-                String cssSelector = "a[id='" + idValue + "']";
+                String cssSelector = "#" + idValue;
                 Elements searchElements = coreElements.select(cssSelector);
                 for(Element element : searchElements){
                     if(element.attr("id").equals(idValue)){
-                        verificationInfo.add(element.attr("href"));
+                        verificationInfo.add(element.text());
                     }
                 }
             }

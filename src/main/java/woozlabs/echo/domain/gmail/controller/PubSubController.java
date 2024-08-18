@@ -26,7 +26,7 @@ public class PubSubController {
     private final PubSubService pubSubService;
 
     @PostMapping(value = "/api/v1/webhook", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseDto> handleGmailWebhook(@RequestBody PubSubMessage pubsubMessage) throws JsonProcessingException {
+    public ResponseEntity<ResponseDto> handleGmailWebhook(@RequestBody PubSubMessage pubsubMessage){
         log.info("Request to webhook from gcp pub/sub");
         try{
             pubSubService.handleFirebaseCloudMessage(pubsubMessage);

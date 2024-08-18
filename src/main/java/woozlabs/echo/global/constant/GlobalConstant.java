@@ -43,7 +43,7 @@ public final class GlobalConstant {
     public static final String DRAFT_PAYLOAD_HEADER_DATE_KEY = "Date";
 
     // Gmail History
-    public static final String HISTORY_INBOX_LABEL = "inbox";
+    public static final String HISTORY_INBOX_LABEL = "INBOX";
 
     // Email Error Message
     public static final String EMAIL_ERR_MSG_KEY = "EmailException";

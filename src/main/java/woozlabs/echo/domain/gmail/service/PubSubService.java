@@ -180,7 +180,7 @@ public class PubSubService {
         // set verification data
         List<String> codes = gmailMessage.getVerification().getCodes();
         List<String> links = gmailMessage.getVerification().getLinks();
-        data.put(FCM_MSG_VERIFICATION_KEY, gmailMessage.getVerification().toString());
+        data.put(FCM_MSG_VERIFICATION_KEY, gmailMessage.getVerification().getVerification().toString());
         data.put(FCM_MSG_CODE_KEY, String.join(",", codes));
         data.put(FCM_MSG_LINK_KEY, String.join(",", links));
         // set schedule data
