@@ -2,8 +2,7 @@ package woozlabs.echo.domain.team.dto.thread;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesFrom;
-import woozlabs.echo.domain.gmail.dto.verification.ExtractVerificationInfo;
+import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
 
 import java.math.BigInteger;
 import java.util.ArrayList;

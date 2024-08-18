@@ -6,7 +6,10 @@ import lombok.NoArgsConstructor;
 public final class GlobalConstant {
     // Auth
     public static final String AUTH_UNAUTHORIZED_ERR_MSG = "인증되지 않은 사용자입니다.";
+<<<<<<< Updated upstream
     public static final String AUTH_SIGN_IN_DOMAIN = "https://echo-homepage.vercel.app/sign-in";
+=======
+>>>>>>> Stashed changes
     // End Points
     public static final String FE_HOST_ADDRESS = "http://127.0.0.1:3000";
     public static final String ECHO_NEXT_APP_DOMAIN = "https://echo-homepage.vercel.app";
@@ -43,7 +46,7 @@ public final class GlobalConstant {
     public static final String DRAFT_PAYLOAD_HEADER_DATE_KEY = "Date";
 
     // Gmail History
-    public static final String HISTORY_INBOX_LABEL = "inbox";
+    public static final String HISTORY_INBOX_LABEL = "INBOX";
 
     // Email Error Message
     public static final String EMAIL_ERR_MSG_KEY = "EmailException";
