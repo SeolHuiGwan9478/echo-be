@@ -28,7 +28,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-<<<<<<< Updated upstream
         registry.addInterceptor(firebaseAuthInterceptor)
                 .addPathPatterns(
                         "/api/v1/gmail/**",
@@ -37,8 +36,5 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/v1/fcm",
                         "/api/v1/echo/**"
                 );
-=======
-        registry.addInterceptor(firebaseAuthInterceptor).addPathPatterns("/api/v1/gmail/**");
->>>>>>> Stashed changes
     }
 }

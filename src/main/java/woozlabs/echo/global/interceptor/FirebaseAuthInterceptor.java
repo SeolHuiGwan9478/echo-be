@@ -17,20 +17,13 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 public class FirebaseAuthInterceptor implements HandlerInterceptor {
     private final String AUTH_HEADER_NAME = "Authorization";
     private final String AUTH_HEADER_PREFIX = "Bearer ";
-<<<<<<< Updated upstream
-
+    private final String FIREBASE_UID_KEY = "uid";
     private final FirebaseTokenVerifier firebaseTokenVerifier;
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if(request.getMethod().equals("OPTIONS")){
             return true;
         }
-=======
-    private final String FIREBASE_UID_KEY = "uid";
-    private final FirebaseTokenVerifier firebaseTokenVerifier;
-    @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
->>>>>>> Stashed changes
         String authHeader = request.getHeader(AUTH_HEADER_NAME);
         if(authHeader == null || !authHeader.startsWith(AUTH_HEADER_PREFIX)){ // token checking
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, AUTH_UNAUTHORIZED_ERR_MSG);
@@ -44,12 +37,7 @@ public class FirebaseAuthInterceptor implements HandlerInterceptor {
             System.out.println(e.getMessage());
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, AUTH_UNAUTHORIZED_ERR_MSG);
             return false;
-        }
-<<<<<<< Updated upstream
-=======
-        System.out.println(firebaseToken.getUid());
->>>>>>> Stashed changes
-        // setting attribute of request obj
+        }        // setting attribute of request obj
         request.setAttribute(FIREBASE_UID_KEY, firebaseToken.getUid());
         return true;
     }
