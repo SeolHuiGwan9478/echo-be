@@ -325,7 +325,7 @@ public class GmailController {
     @GetMapping("/api/v1/gmail/histories")
     public ResponseEntity<ResponseDto> getHistories(HttpServletRequest httpServletRequest,
                                                     @RequestParam("historyId") String historyId,
-                                                    @RequestParam("pageToken") String pageToken){
+                                                    @RequestParam(value = "pageToken", required = false) String pageToken){
         log.info("Request to get histories from {}", historyId);
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
