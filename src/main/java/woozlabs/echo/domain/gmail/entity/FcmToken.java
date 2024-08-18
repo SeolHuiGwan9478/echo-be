@@ -18,4 +18,6 @@ public class FcmToken {
     private Member member;
 
     private String fcmToken;
+
+    private String machineUuid;
 }

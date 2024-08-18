@@ -107,11 +107,6 @@ public class GmailThreadGetMessagesResponse {
         gmailThreadGetMessages.setHistoryId(message.getHistoryId());
         gmailThreadGetMessages.setPayload(convertedPayload);
         // verification code
-//        ExtractVerificationInfo verificationInfo = findVerificationEmail(convertedPayload, gmailUtility);
-//        if(!verificationInfo.getCodes().isEmpty() || !verificationInfo.getLinks().isEmpty()){
-//            verificationInfo.setVerification(Boolean.TRUE);
-//        }
-//        gmailThreadGetMessages.setVerification(verificationInfo);
         return gmailThreadGetMessages;
     }
 

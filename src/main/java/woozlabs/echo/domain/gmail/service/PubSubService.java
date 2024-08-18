@@ -103,13 +103,14 @@ public class PubSubService {
     }
 
     @Transactional
-    public FcmTokenResponse saveFcmToken(String uid, String fcmToken){
+    public FcmTokenResponse saveFcmToken(String uid, FcmTokenRequest dto){
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
         List<FcmToken> tokens = fcmTokenRepository.findByMember(member);
-        pubSubValidator.validateSaveFcmToken(tokens, fcmToken);
+        pubSubValidator.validateSaveFcmToken(tokens, dto.getFcmToken());
         FcmToken newFcmToken = FcmToken.builder()
-                .fcmToken(fcmToken)
+                .fcmToken(dto.getFcmToken())
+                .machineUuid(dto.getMachineUuid())
                 .member(member).build();
         fcmTokenRepository.save(newFcmToken);
         return new FcmTokenResponse(newFcmToken.getId());
