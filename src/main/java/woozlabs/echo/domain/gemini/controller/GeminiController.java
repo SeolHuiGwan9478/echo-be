@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import woozlabs.echo.domain.gemini.dto.ChangeToneRequest;
+import woozlabs.echo.domain.gemini.dto.ProofreadResponse;
 import woozlabs.echo.domain.gemini.service.GeminiService;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetResponse;
 import woozlabs.echo.domain.gmail.service.GmailService;
@@ -53,14 +54,14 @@ public class GeminiController {
         }
     }
 
-    @PostMapping("/writer/check-grammar")
-    public ResponseEntity<String> checkGrammar(@RequestBody String text) {
+    @PostMapping("/writer/proofread")
+    public ResponseEntity<ProofreadResponse> proofread(@RequestBody String text) {
         try {
-            String correctedText = geminiService.checkGrammar(text);
+            ProofreadResponse correctedText = geminiService.proofread(text);
             return ResponseEntity.ok(correctedText);
         } catch (Exception e) {
             log.error("Error checking grammar: ", e);
-            throw new CustomErrorException(ErrorCode.FAILED_TO_CHECK_GRAMMAR, e.getMessage());
+            throw new CustomErrorException(ErrorCode.FAILED_TO_PROOFREAD, e.getMessage());
         }
     }
 
