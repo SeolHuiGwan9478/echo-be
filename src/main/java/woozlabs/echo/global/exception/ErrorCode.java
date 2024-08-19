@@ -56,9 +56,10 @@ public enum ErrorCode {
     FAILED_TO_GEMINI_COMPLETION(500, "Error while getting completion from Gemini"),
     FAILED_TO_SUMMARIZE_GEMINI(500, "Error summarizing Gmail thread from Gemini"),
     FAILED_TO_CHANGE_TONE(500, "Error changing tone from Gemini"),
-    FAILED_TO_CHECK_GRAMMAR(500, "Error checking grammar from Gemini"),
+    FAILED_TO_PROOFREAD(500, "Error proofread from Gemini"),
     FAILED_TO_SUMMARIZE_TEXT(500, "Error summarizing text from Gemini"),
     FAILED_TO_EXTRACT_KEYPOINT(500, "Error extracting keypoint from Gemini"),
+    FAILED_TO_PARSE_GEMINI_RESPONSE(500, "Error parsing GEMINI response"),
 
     // chatGPT
     FAILED_TO_CHATGPT_COMPLETION(500, "Error while getting completion from chatGPT"),
