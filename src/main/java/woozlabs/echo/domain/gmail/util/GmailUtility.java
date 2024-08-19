@@ -76,7 +76,8 @@ public class GmailUtility {
         return om.readValue(result, ExtractScheduleInfo.class);
     }
 
-    public GenScheduleEmailTemplateResponse generateScheduleEmailTemplate(String decodedContent, List<String> availableDates) throws JsonProcessingException {
+    public GenScheduleEmailTemplateResponse generateScheduleEmailTemplate(String decodedContent) throws JsonProcessingException {
+        List<String> availableDates = new ArrayList<>(); // 변경 필요
         String result = chatGptService.generateScheduleEmailTemplate(decodedContent, availableDates);
         return om.readValue(result, GenScheduleEmailTemplateResponse.class);
     }

@@ -6,4 +6,5 @@ import lombok.Data;
 public class PubSubMessage {
     private PubSubInMessage message;
     private String subscription;
+    private int deliveryAttempt;
 }

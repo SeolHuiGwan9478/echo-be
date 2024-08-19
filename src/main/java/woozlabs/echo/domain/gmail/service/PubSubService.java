@@ -79,15 +79,15 @@ public class PubSubService {
             try{
                 // get detailed message info
                 GmailMessageGetResponse gmailMessage = gmailServiceImpl.getUserEmailMessage(member.getUid(), historyData.getId());
+                String from = gmailMessage.getFrom().getEmail();
                 String subject = gmailMessage.getSubject();
-                String snippet = gmailMessage.getSnippet();
                 Map<String, String> data = new HashMap<>();
                 createMessageData(historyData, data, gmailMessage);
                 // create firebase message
                 MulticastMessage message = MulticastMessage.builder()
                         .setNotification(Notification.builder()
-                                .setTitle(subject)
-                                .setBody(snippet)
+                                .setTitle(from)
+                                .setBody(subject)
                                 .build()
                         )
                         .putAllData(data)

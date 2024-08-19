@@ -35,9 +35,7 @@ public class GenController {
     @PostMapping("/api/v1/gen/email-template")
     public ResponseEntity<ResponseDto> genEmailTemplate(@RequestBody GenScheduleEmailTemplateRequest dto){
         try{
-            GenScheduleEmailTemplateResponse response = gmailUtility.generateScheduleEmailTemplate(
-                    dto.getContent(), dto.getAvailableDates()
-            );
+            GenScheduleEmailTemplateResponse response = gmailUtility.generateScheduleEmailTemplate(dto.getContent());
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (JsonProcessingException e){
             throw new CustomErrorException(ErrorCode.OBJECT_MAPPER_JSON_PARSING_ERROR_MESSAGE, ErrorCode.NOT_FOUND_ACCESS_TOKEN.getMessage());
