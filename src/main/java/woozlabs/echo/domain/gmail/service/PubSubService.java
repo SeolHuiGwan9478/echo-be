@@ -47,7 +47,6 @@ public class PubSubService {
     );
     private final Long MAX_HISTORY_COUNT = 50L;
     private final String PUB_SUB_LABEL_ID = "INBOX";
-    //private final List<String> PUB_SUB_HISTORY_TYPE = List.of("messageAdded");
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private final ObjectMapper om;
@@ -106,14 +105,20 @@ public class PubSubService {
     public FcmTokenResponse saveFcmToken(String uid, FcmTokenRequest dto){
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
-        List<FcmToken> tokens = fcmTokenRepository.findByMember(member);
-        pubSubValidator.validateSaveFcmToken(tokens, dto.getFcmToken());
-        FcmToken newFcmToken = FcmToken.builder()
-                .fcmToken(dto.getFcmToken())
-                .machineUuid(dto.getMachineUuid())
-                .member(member).build();
-        fcmTokenRepository.save(newFcmToken);
-        return new FcmTokenResponse(newFcmToken.getId());
+        Optional<FcmToken> findFcmToken = fcmTokenRepository.findByMemberAndMachineUuid(member, dto.getMachineUuid());
+        if(findFcmToken.isEmpty()){
+            List<FcmToken> tokens = fcmTokenRepository.findByMember(member);
+            pubSubValidator.validateSaveFcmToken(tokens, dto.getFcmToken());
+            FcmToken newFcmToken = FcmToken.builder()
+                    .fcmToken(dto.getFcmToken())
+                    .machineUuid(dto.getMachineUuid())
+                    .member(member).build();
+            fcmTokenRepository.save(newFcmToken);
+            return new FcmTokenResponse(newFcmToken.getId());
+        }
+        FcmToken existFcmToken = findFcmToken.get();
+        existFcmToken.updateFcmToken(dto.getFcmToken());
+        return new FcmTokenResponse(existFcmToken.getId());
     }
 
     private List<MessageInHistoryData> getHistoryListById(PubSubHistory pubSubHistory, BigInteger newHistoryId, Gmail gmailService) throws IOException {
