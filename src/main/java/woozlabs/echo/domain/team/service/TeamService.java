@@ -9,7 +9,7 @@ import woozlabs.echo.domain.team.dto.CreateTeamRequestDto;
 import woozlabs.echo.domain.team.dto.SendInvitationEmailDto;
 import woozlabs.echo.domain.team.dto.TeamInvitationRequestDto;
 import woozlabs.echo.domain.team.dto.TeamResponseDto;
-import woozlabs.echo.domain.team.entity.Role;
+import woozlabs.echo.domain.team.entity.TeamMemberRole;
 import woozlabs.echo.domain.team.entity.Team;
 import woozlabs.echo.domain.team.entity.TeamInvitation;
 import woozlabs.echo.domain.team.entity.TeamMember;
@@ -65,7 +65,7 @@ public class TeamService {
         TeamMember creatorMember = TeamMember.builder()
                 .team(team)
                 .member(creator)
-                .role(Role.ADMIN)
+                .role(TeamMemberRole.ADMIN)
                 .build();
 
         team.addTeamMember(creatorMember);
@@ -90,7 +90,7 @@ public class TeamService {
                 .token(token)
                 .expiresAt(expiresAt)
                 .sentAt(LocalDateTime.now())
-                .inviteeRole(requestDto.getInviteeRole())
+                .inviteeRole(requestDto.getInviteeTeamMemberRole())
                 .build();
 
         teamInvitationRepository.save(invitation);
@@ -104,7 +104,7 @@ public class TeamService {
                 .invitedByUsername(inviter.getDisplayName())
                 .invitedByEmail(inviter.getEmail())
                 .teamName(team.getName())
-                .teamRole(requestDto.getInviteeRole())
+                .teamTeamMemberRole(requestDto.getInviteeTeamMemberRole())
                 .teamImage("https://vercel.com/static/vercel-team.png") // mock
                 .inviteLink(invitationLink)
                 .build();

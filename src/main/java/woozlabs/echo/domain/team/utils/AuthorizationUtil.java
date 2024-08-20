@@ -1,7 +1,7 @@
 package woozlabs.echo.domain.team.utils;
 
-import woozlabs.echo.domain.team.entity.Role;
-import woozlabs.echo.domain.team.entity.ShareStatus;
+import woozlabs.echo.domain.team.entity.TeamMemberRole;
+import woozlabs.echo.domain.sharedEmail.entity.ShareStatus;
 import woozlabs.echo.domain.team.entity.TeamMember;
 
 public class AuthorizationUtil {
@@ -11,17 +11,21 @@ public class AuthorizationUtil {
             return shareStatus == ShareStatus.PUBLIC;
         }
 
-        Role role = teamMember.getRole();
-        return role == Role.ADMIN || role == Role.EDITOR ||
-                (role == Role.VIEWER && (shareStatus == ShareStatus.PUBLIC || shareStatus == ShareStatus.TEAM)) ||
-                (role == Role.PUBLIC_VIEWER && shareStatus == ShareStatus.PUBLIC);
+        TeamMemberRole teamMemberRole = teamMember.getRole();
+        return teamMemberRole == TeamMemberRole.ADMIN || teamMemberRole == TeamMemberRole.EDITOR ||
+                (teamMemberRole == TeamMemberRole.VIEWER && (shareStatus == ShareStatus.PUBLIC || shareStatus == ShareStatus.TEAM)) ||
+                (teamMemberRole == TeamMemberRole.PUBLIC_VIEWER && shareStatus == ShareStatus.PUBLIC);
+    }
+
+    public static boolean canSharedEmail(TeamMember teamMember) {
+        return teamMember != null && (teamMember.getRole() == TeamMemberRole.ADMIN);
     }
 
     public static boolean canEditSharedEmail(TeamMember teamMember) {
-        return teamMember != null && (teamMember.getRole() == Role.ADMIN || teamMember.getRole() == Role.EDITOR);
+        return teamMember != null && (teamMember.getRole() == TeamMemberRole.ADMIN || teamMember.getRole() == TeamMemberRole.EDITOR);
     }
 
     public static boolean canDeleteSharedEmail(TeamMember teamMember) {
-        return teamMember != null && (teamMember.getRole() == Role.ADMIN || teamMember.getRole() == Role.EDITOR);
+        return teamMember != null && (teamMember.getRole() == TeamMemberRole.ADMIN);
     }
 }

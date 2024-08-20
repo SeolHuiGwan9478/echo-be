@@ -1,22 +1,21 @@
-package woozlabs.echo.domain.team.service;
+package woozlabs.echo.domain.sharedEmail.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetResponse;
-import woozlabs.echo.domain.team.dto.ShareEmailRequestDto;
-import woozlabs.echo.domain.team.entity.SharedEmail;
+import woozlabs.echo.domain.sharedEmail.dto.ShareEmailRequestDto;
+import woozlabs.echo.domain.sharedEmail.entity.SharedEmail;
+import woozlabs.echo.domain.sharedEmail.entity.Thread;
+import woozlabs.echo.domain.sharedEmail.repository.SharedInboxRepository;
+import woozlabs.echo.domain.sharedEmail.repository.ThreadRepository;
 import woozlabs.echo.domain.team.entity.TeamMember;
-import woozlabs.echo.domain.team.entity.Thread;
-import woozlabs.echo.domain.team.repository.SharedInboxRepository;
-import woozlabs.echo.domain.team.repository.ThreadRepository;
+import woozlabs.echo.domain.team.service.TeamService;
 import woozlabs.echo.domain.team.utils.AuthorizationUtil;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,18 +40,18 @@ public class SharedInboxService {
             throw new CustomErrorException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
 
-        return threadRepository.findById(threadId).orElse(null);
+        return threadRepository.findByThreadId(threadId);
     }
 
     @Transactional
     public void shareEmail(String sharedByUid, ShareEmailRequestDto shareEmailRequestDto) {
         TeamMember teamMember = teamService.getTeamMember(sharedByUid, Long.parseLong(shareEmailRequestDto.getTeamId()));
-        if (!AuthorizationUtil.canEditSharedEmail(teamMember)) {
+        if (!AuthorizationUtil.canSharedEmail(teamMember)) {
             throw new CustomErrorException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
 
         Thread thread = Thread.builder()
-                .id(shareEmailRequestDto.getGmailThread().getId())
+                .threadId(shareEmailRequestDto.getGmailThread().getId())
                 .historyId(shareEmailRequestDto.getGmailThread().getHistoryId())
                 .messages(shareEmailRequestDto.getGmailThread().getMessages())
                 .createdAt(LocalDateTime.now())
@@ -63,7 +62,7 @@ public class SharedInboxService {
 
         SharedEmail sharedEmail = SharedEmail.builder()
                 .teamId(shareEmailRequestDto.getTeamId())
-                .threadId(saveThread.getId())
+                .threadId(saveThread.getThreadId())
                 .sharedById(sharedByUid)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())

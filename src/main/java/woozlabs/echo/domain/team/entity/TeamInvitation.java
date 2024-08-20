@@ -31,7 +31,7 @@ public class TeamInvitation {
     private InvitationStatus status;
 
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private TeamMemberRole role;
 
     private String token;
     private LocalDateTime expiresAt;
@@ -55,7 +55,7 @@ public class TeamInvitation {
     }
 
     @Builder
-    public TeamInvitation(Team team, Member inviter, String inviteeEmail, String token, LocalDateTime expiresAt, LocalDateTime sentAt, Role inviteeRole) {
+    public TeamInvitation(Team team, Member inviter, String inviteeEmail, String token, LocalDateTime expiresAt, LocalDateTime sentAt, TeamMemberRole inviteeRole) {
         this.team = team;
         this.inviter = inviter;
         this.inviteeEmail = inviteeEmail;
