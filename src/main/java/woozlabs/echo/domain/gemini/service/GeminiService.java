@@ -1,15 +1,19 @@
 package woozlabs.echo.domain.gemini.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gemini.GeminiInterface;
 import woozlabs.echo.domain.gemini.dto.GeminiRequest;
 import woozlabs.echo.domain.gemini.dto.GeminiResponse;
+import woozlabs.echo.domain.gemini.dto.ProofreadResponse;
+import woozlabs.echo.domain.gemini.prompt.ProofreadPrompt;
 import woozlabs.echo.domain.gemini.prompt.ThreadKeypointPrompt;
 import woozlabs.echo.domain.gemini.prompt.ThreadSummaryPrompt;
 import woozlabs.echo.domain.gemini.prompt.VerificationMailPrompt;
@@ -30,6 +34,7 @@ public class GeminiService {
     public static final String GEMINI_PRO_VISION = "gemini-pro-vision";
 
     private final GeminiInterface geminiInterface;
+    private final ObjectMapper objectMapper;
 
     private GeminiResponse getCompletion(GeminiRequest request) {
         try {
@@ -131,9 +136,18 @@ public class GeminiService {
         return getCompletionWithParts(contents, prompt);
     }
 
-    public String checkGrammar(String text) {
-        String prompt = "Check and correct the grammar of the following text: " + text;
-        return getCompletion(prompt);
+    public ProofreadResponse proofread(String text) {
+        String prompt = ProofreadPrompt.getPrompt(text);
+        String response = getCompletion(prompt);
+
+        try {
+            String sanitizedResponse = response
+                    .replaceAll("[`\\p{Cntrl}&&[^\r\n\t]]", "")
+                    .replaceAll("\\n\\n", " ");
+            return objectMapper.readValue(sanitizedResponse, ProofreadResponse.class);
+        } catch (Exception e) {
+            throw new CustomErrorException(ErrorCode.FAILED_TO_PARSE_GEMINI_RESPONSE, e.getMessage());
+        }
     }
 
     public String summarize(String text) {
