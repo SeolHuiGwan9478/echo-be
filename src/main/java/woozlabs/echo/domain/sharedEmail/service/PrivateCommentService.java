@@ -1,15 +1,20 @@
-package woozlabs.echo.domain.team.service;
+package woozlabs.echo.domain.sharedEmail.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import woozlabs.echo.domain.team.dto.PrivateCommentCreateDto;
-import woozlabs.echo.domain.team.dto.PrivateCommentResponseDto;
-import woozlabs.echo.domain.team.entity.PrivateComment;
-import woozlabs.echo.domain.team.entity.SharedEmail;
+import woozlabs.echo.domain.sharedEmail.dto.PrivateCommentCreateDto;
+import woozlabs.echo.domain.sharedEmail.dto.PrivateCommentResponseDto;
+import woozlabs.echo.domain.sharedEmail.dto.UserPublicKeyDto;
+import woozlabs.echo.domain.sharedEmail.entity.PrivateComment;
+import woozlabs.echo.domain.sharedEmail.entity.SharedEmail;
+import woozlabs.echo.domain.sharedEmail.entity.UserPublicKey;
+import woozlabs.echo.domain.sharedEmail.repository.PrivateCommentRepository;
+import woozlabs.echo.domain.sharedEmail.repository.SharedInboxRepository;
+import woozlabs.echo.domain.sharedEmail.repository.UserPublicKeyRepository;
 import woozlabs.echo.domain.team.entity.TeamMember;
-import woozlabs.echo.domain.team.repository.PrivateCommentRepository;
-import woozlabs.echo.domain.team.repository.SharedInboxRepository;
+import woozlabs.echo.domain.team.repository.TeamMemberRepository;
+import woozlabs.echo.domain.team.service.TeamService;
 import woozlabs.echo.domain.team.utils.AuthorizationUtil;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
@@ -24,7 +29,9 @@ import java.util.stream.Collectors;
 public class PrivateCommentService {
 
     private final PrivateCommentRepository privateCommentRepository;
+    private final UserPublicKeyRepository userPublicKeyRepository;
     private final SharedInboxRepository sharedInboxRepository;
+    private final TeamMemberRepository teamMemberRepository;
     private final TeamService teamService;
 
     public List<PrivateCommentResponseDto> getCommentsBySharedEmailId(String uid, String sharedEmailId) {
@@ -58,8 +65,33 @@ public class PrivateCommentService {
                 .authorId(uid)
                 .encryptedContents(privateCommentCreateDto.getEncryptedContents())
                 .createdAt(LocalDateTime.now())
+                .updatedAt(null)
                 .build();
 
         privateCommentRepository.save(comment);
+    }
+
+    @Transactional
+    public void saveUserPublicKey(String uid, String publicKey) {
+        UserPublicKey userPublicKey = UserPublicKey.builder()
+                .uid(uid)
+                .publicKey(publicKey)
+                .build();
+
+        userPublicKeyRepository.save(userPublicKey);
+    }
+
+    public List<UserPublicKeyDto> getPublicKeysForSharedEmail(String sharedEmailId) {
+        SharedEmail sharedEmail = sharedInboxRepository.findById(sharedEmailId)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL));
+
+        List<TeamMember> teamMembers = teamMemberRepository.findByTeamId(Long.parseLong(sharedEmail.getTeamId()));
+
+        return teamMembers.stream()
+                .map(member -> {
+                    UserPublicKey publicKey = userPublicKeyRepository.findByUid(member.getMember().getUid());
+                    return new UserPublicKeyDto(publicKey);
+                })
+                .collect(Collectors.toList());
     }
 }
