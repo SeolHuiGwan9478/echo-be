@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.team.dto;
+package woozlabs.echo.domain.sharedEmail.dto;
 
 import lombok.Getter;
 import lombok.Setter;

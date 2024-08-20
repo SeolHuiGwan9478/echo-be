@@ -1,13 +1,13 @@
-package woozlabs.echo.domain.team.controller;
+package woozlabs.echo.domain.sharedEmail.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import woozlabs.echo.domain.team.dto.ShareEmailRequestDto;
-import woozlabs.echo.domain.team.entity.SharedEmail;
-import woozlabs.echo.domain.team.entity.Thread;
-import woozlabs.echo.domain.team.service.SharedInboxService;
+import woozlabs.echo.domain.sharedEmail.dto.ShareEmailRequestDto;
+import woozlabs.echo.domain.sharedEmail.entity.SharedEmail;
+import woozlabs.echo.domain.sharedEmail.entity.Thread;
+import woozlabs.echo.domain.sharedEmail.service.SharedInboxService;
 import woozlabs.echo.global.constant.GlobalConstant;
 
 import java.util.List;

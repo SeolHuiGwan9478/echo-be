@@ -1,12 +1,12 @@
-package woozlabs.echo.domain.team.controller;
+package woozlabs.echo.domain.sharedEmail.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import woozlabs.echo.domain.team.dto.PrivateCommentCreateDto;
-import woozlabs.echo.domain.team.dto.PrivateCommentResponseDto;
-import woozlabs.echo.domain.team.service.PrivateCommentService;
+import woozlabs.echo.domain.sharedEmail.dto.PrivateCommentCreateDto;
+import woozlabs.echo.domain.sharedEmail.dto.PrivateCommentResponseDto;
+import woozlabs.echo.domain.sharedEmail.service.PrivateCommentService;
 import woozlabs.echo.global.constant.GlobalConstant;
 
 import java.util.List;

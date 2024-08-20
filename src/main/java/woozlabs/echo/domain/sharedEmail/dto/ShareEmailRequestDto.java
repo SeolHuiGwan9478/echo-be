@@ -1,9 +1,9 @@
-package woozlabs.echo.domain.team.dto;
+package woozlabs.echo.domain.sharedEmail.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import woozlabs.echo.domain.team.dto.thread.ThreadGetResponse;
+import woozlabs.echo.domain.sharedEmail.dto.thread.ThreadGetResponse;
 
 @Getter
 @Setter

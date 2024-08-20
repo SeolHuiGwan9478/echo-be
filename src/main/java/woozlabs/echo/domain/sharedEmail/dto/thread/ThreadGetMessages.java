@@ -1,8 +1,7 @@
-package woozlabs.echo.domain.team.dto.thread;
+package woozlabs.echo.domain.sharedEmail.dto.thread;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -24,5 +23,5 @@ public class ThreadGetMessages {
     private String snippet;
     private BigInteger historyId;
     private ThreadGetPayload payload;
-    private ExtractVerificationInfo verification = new ExtractVerificationInfo();
+    private ThreadExtractVerificationInfo verification = new ThreadExtractVerificationInfo();
 }
