@@ -47,7 +47,6 @@ public class PubSubService {
     );
     private final Long MAX_HISTORY_COUNT = 50L;
     private final String PUB_SUB_LABEL_ID = "INBOX";
-    //private final List<String> PUB_SUB_HISTORY_TYPE = List.of("messageAdded");
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private final ObjectMapper om;
@@ -63,10 +62,14 @@ public class PubSubService {
         String decodedData = new String(java.util.Base64.getDecoder().decode(messageData));
         PubSubNotification notification = om.readValue(decodedData, PubSubNotification.class);
         String email = notification.getEmailAddress();
+        int deliveryAttempt = pubsubMessage.getDeliveryAttempt();
         BigInteger newHistoryId = new BigInteger(notification.getHistoryId());
         Member member = memberRepository.findByEmail(email).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE)
         );
+        if(deliveryAttempt > 3){ // stop pub/sub alert(* case: failed to alert more than three times)
+            gmailServiceImpl.stopPubSub(member.getUid());
+        }
         PubSubHistory pubSubHistory = pubSubHistoryRepository.findByMember(member).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR)
         );
@@ -79,15 +82,15 @@ public class PubSubService {
             try{
                 // get detailed message info
                 GmailMessageGetResponse gmailMessage = gmailServiceImpl.getUserEmailMessage(member.getUid(), historyData.getId());
+                String from = gmailMessage.getFrom().getEmail();
                 String subject = gmailMessage.getSubject();
-                String snippet = gmailMessage.getSnippet();
                 Map<String, String> data = new HashMap<>();
                 createMessageData(historyData, data, gmailMessage);
                 // create firebase message
                 MulticastMessage message = MulticastMessage.builder()
                         .setNotification(Notification.builder()
-                                .setTitle(subject)
-                                .setBody(snippet)
+                                .setTitle(from)
+                                .setBody(subject)
                                 .build()
                         )
                         .putAllData(data)
@@ -103,16 +106,23 @@ public class PubSubService {
     }
 
     @Transactional
-    public FcmTokenResponse saveFcmToken(String uid, String fcmToken){
+    public FcmTokenResponse saveFcmToken(String uid, FcmTokenRequest dto){
         Member member = memberRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
-        List<FcmToken> tokens = fcmTokenRepository.findByMember(member);
-        pubSubValidator.validateSaveFcmToken(tokens, fcmToken);
-        FcmToken newFcmToken = FcmToken.builder()
-                .fcmToken(fcmToken)
-                .member(member).build();
-        fcmTokenRepository.save(newFcmToken);
-        return new FcmTokenResponse(newFcmToken.getId());
+        Optional<FcmToken> findFcmToken = fcmTokenRepository.findByMemberAndMachineUuid(member, dto.getMachineUuid());
+        if(findFcmToken.isEmpty()){
+            List<FcmToken> tokens = fcmTokenRepository.findByMember(member);
+            pubSubValidator.validateSaveFcmToken(tokens, dto.getFcmToken());
+            FcmToken newFcmToken = FcmToken.builder()
+                    .fcmToken(dto.getFcmToken())
+                    .machineUuid(dto.getMachineUuid())
+                    .member(member).build();
+            fcmTokenRepository.save(newFcmToken);
+            return new FcmTokenResponse(newFcmToken.getId());
+        }
+        FcmToken existFcmToken = findFcmToken.get();
+        existFcmToken.updateFcmToken(dto.getFcmToken());
+        return new FcmTokenResponse(existFcmToken.getId());
     }
 
     private List<MessageInHistoryData> getHistoryListById(PubSubHistory pubSubHistory, BigInteger newHistoryId, Gmail gmailService) throws IOException {

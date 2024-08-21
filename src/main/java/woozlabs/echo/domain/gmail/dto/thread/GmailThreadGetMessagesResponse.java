@@ -107,44 +107,39 @@ public class GmailThreadGetMessagesResponse {
         gmailThreadGetMessages.setHistoryId(message.getHistoryId());
         gmailThreadGetMessages.setPayload(convertedPayload);
         // verification code
-//        ExtractVerificationInfo verificationInfo = findVerificationEmail(convertedPayload, gmailUtility);
-//        if(!verificationInfo.getCodes().isEmpty() || !verificationInfo.getLinks().isEmpty()){
-//            verificationInfo.setVerification(Boolean.TRUE);
-//        }
-//        gmailThreadGetMessages.setVerification(verificationInfo);
         return gmailThreadGetMessages;
     }
 
-    private static ExtractVerificationInfo findVerificationEmail(GmailThreadGetPayload payload, GmailUtility gmailUtility){
-        // payload body check
-        String payloadBody = payload.getBody().getData();
-        ExtractVerificationInfo verificationInfo;
-        if(payload.getMimeType().equals("text/html")) verificationInfo = gmailUtility.extractVerification(payloadBody);
-        else verificationInfo = new ExtractVerificationInfo();
-        List<GmailThreadGetPart> parts = payload.getParts();
-        for(GmailThreadGetPart part : parts){
-            if(part.getMimeType().equals("text/html")) findVerificationInfoInParts(part, verificationInfo, gmailUtility);
-        }
-        return verificationInfo;
-    }
-
-    private static void findVerificationInfoInParts(GmailThreadGetPart inputPart, ExtractVerificationInfo info, GmailUtility gmailUtility){
-        List<GmailThreadGetPart> parts = inputPart.getParts();
-        if(parts.isEmpty()){
-            String partBody = inputPart.getBody().getData();
-            ExtractVerificationInfo newInfo = gmailUtility.extractVerification(partBody);
-            info.updateCodes(newInfo.getCodes());
-            info.updateLinks(newInfo.getLinks());
-            return;
-        }
-        for(GmailThreadGetPart part : parts){
-            findVerificationInfoInParts(part, info, gmailUtility);
-        }
-        String partBody = inputPart.getBody().getData();
-        ExtractVerificationInfo newInfo = gmailUtility.extractVerification(partBody);
-        info.updateCodes(newInfo.getCodes());
-        info.updateLinks(newInfo.getLinks());
-    }
+//    private static ExtractVerificationInfo findVerificationEmail(GmailThreadGetPayload payload, GmailUtility gmailUtility){
+//        // payload body check
+//        String payloadBody = payload.getBody().getData();
+//        ExtractVerificationInfo verificationInfo;
+//        if(payload.getMimeType().equals("text/html")) verificationInfo = gmailUtility.extractVerification(payloadBody);
+//        else verificationInfo = new ExtractVerificationInfo();
+//        List<GmailThreadGetPart> parts = payload.getParts();
+//        for(GmailThreadGetPart part : parts){
+//            if(part.getMimeType().equals("text/html")) findVerificationInfoInParts(part, verificationInfo, gmailUtility);
+//        }
+//        return verificationInfo;
+//    }
+//
+//    private static void findVerificationInfoInParts(GmailThreadGetPart inputPart, ExtractVerificationInfo info, GmailUtility gmailUtility){
+//        List<GmailThreadGetPart> parts = inputPart.getParts();
+//        if(parts.isEmpty()){
+//            String partBody = inputPart.getBody().getData();
+//            ExtractVerificationInfo newInfo = gmailUtility.extractVerification(partBody);
+//            info.updateCodes(newInfo.getCodes());
+//            info.updateLinks(newInfo.getLinks());
+//            return;
+//        }
+//        for(GmailThreadGetPart part : parts){
+//            findVerificationInfoInParts(part, info, gmailUtility);
+//        }
+//        String partBody = inputPart.getBody().getData();
+//        ExtractVerificationInfo newInfo = gmailUtility.extractVerification(partBody);
+//        info.updateCodes(newInfo.getCodes());
+//        info.updateLinks(newInfo.getLinks());
+//    }
 
     private static void changeDateFormat(String originDate, GmailThreadGetMessagesResponse gmailThreadGetMessages) {
         Pattern firstPattern = Pattern.compile(
