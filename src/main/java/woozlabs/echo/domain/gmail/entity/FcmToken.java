@@ -18,4 +18,9 @@ public class FcmToken {
     private Member member;
 
     private String fcmToken;
+    private String machineUuid;
+
+    public void updateFcmToken(String newFcmToken){
+        this.fcmToken = newFcmToken;
+    }
 }
