@@ -62,10 +62,14 @@ public class PubSubService {
         String decodedData = new String(java.util.Base64.getDecoder().decode(messageData));
         PubSubNotification notification = om.readValue(decodedData, PubSubNotification.class);
         String email = notification.getEmailAddress();
+        int deliveryAttempt = pubsubMessage.getDeliveryAttempt();
         BigInteger newHistoryId = new BigInteger(notification.getHistoryId());
         Member member = memberRepository.findByEmail(email).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE)
         );
+        if(deliveryAttempt > 3){ // stop pub/sub alert(* case: failed to alert more than three times)
+            gmailServiceImpl.stopPubSub(member.getUid());
+        }
         PubSubHistory pubSubHistory = pubSubHistoryRepository.findByMember(member).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR)
         );
