@@ -81,9 +81,9 @@ public class GmailUtility {
     }
 
     public GenScheduleEmailTemplateResponse generateScheduleEmailTemplate(String uid, String decodedContent) throws IOException, GeneralSecurityException {
-        UnAvailableDatesResponse response = calendarService.getDatesWithNoEventsInTwoWeeks(uid);
-        List<String> availableDates = new ArrayList<>(); // 변경 필요
-        String result = chatGptService.generateScheduleEmailTemplate(decodedContent, availableDates);
+        UnAvailableDatesResponse unAvailableDatesResponse = calendarService.getDatesWithNoEventsInTwoWeeks(uid);
+        List<String> unAvailableDates = unAvailableDatesResponse.getUnavailableDates();
+        String result = chatGptService.generateScheduleEmailTemplate(decodedContent, unAvailableDates);
         return om.readValue(result, GenScheduleEmailTemplateResponse.class);
     }
 

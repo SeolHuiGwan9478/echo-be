@@ -140,19 +140,19 @@ public class PubSubService {
             // add addedMessages
             historyDataList.addAll(history.getMessagesAdded() != null
                     ? history.getMessagesAdded().stream().map(
-                    (message) -> MessageInHistoryData.toMessageInHistoryData(message.getMessage(), HistoryType.MESSAGE_ADDED)).toList()
+                    (message) -> MessageInHistoryData.toMessageInHistoryData(message.getMessage(), HistoryType.MESSAGE_ADDED, Collections.emptyList())).toList()
                     : Collections.emptyList());
             historyDataList.addAll(history.getMessagesDeleted() != null
                     ? history.getMessagesDeleted().stream().map(
-                    (message) -> MessageInHistoryData.toMessageInHistoryData(message.getMessage(), HistoryType.MESSAGE_DELETED)).toList()
+                    (message) -> MessageInHistoryData.toMessageInHistoryData(message.getMessage(), HistoryType.MESSAGE_DELETED, Collections.emptyList())).toList()
                     : Collections.emptyList());
             historyDataList.addAll(history.getLabelsAdded() != null
                     ? history.getLabelsAdded().stream().map(
-                    (message) -> MessageInHistoryData.toMessageInHistoryData(message.getMessage(), HistoryType.LABEL_ADDED)).toList()
+                    (message) -> MessageInHistoryData.toMessageInHistoryData(message.getMessage(), HistoryType.LABEL_ADDED, message.getLabelIds())).toList()
                     : Collections.emptyList());
             historyDataList.addAll(history.getLabelsRemoved() != null
                     ? history.getLabelsRemoved().stream().map(
-                    (message) -> MessageInHistoryData.toMessageInHistoryData(message.getMessage(), HistoryType.LABEL_REMOVED)).toList()
+                    (message) -> MessageInHistoryData.toMessageInHistoryData(message.getMessage(), HistoryType.LABEL_REMOVED, message.getLabelIds())).toList()
                     : Collections.emptyList());
         }
         pubSubHistory.updateHistoryId(newHistoryId);
@@ -183,16 +183,23 @@ public class PubSubService {
         String FCM_MSG_VERIFICATION_KEY = "verification";
         String FCM_MSG_CODE_KEY = "code";
         String FCM_MSG_LINK_KEY = "link";
+        String FCM_MSG_LABEL_KEY = "label";
+        HistoryType historyType = historyData.getHistoryType();
         // set base info
         data.put(FCM_MSG_ID_KEY, historyData.getId());
         data.put(FCM_MSG_THREAD_ID_KEY, historyData.getThreadId());
         data.put(FCM_MSG_TYPE_KEY, historyData.getHistoryType().getType());
-        // set verification data
-        List<String> codes = gmailMessage.getVerification().getCodes();
-        List<String> links = gmailMessage.getVerification().getLinks();
-        data.put(FCM_MSG_VERIFICATION_KEY, gmailMessage.getVerification().getVerification().toString());
-        data.put(FCM_MSG_CODE_KEY, String.join(",", codes));
-        data.put(FCM_MSG_LINK_KEY, String.join(",", links));
+        if(historyType.equals(HistoryType.MESSAGE_ADDED)){
+            // set verification data
+            List<String> codes = gmailMessage.getVerification().getCodes();
+            List<String> links = gmailMessage.getVerification().getLinks();
+            data.put(FCM_MSG_CODE_KEY, String.join(",", codes));
+            data.put(FCM_MSG_LINK_KEY, String.join(",", links));
+            data.put(FCM_MSG_VERIFICATION_KEY, gmailMessage.getVerification().getVerification().toString());
+        }else if(historyType.equals(HistoryType.LABEL_ADDED) || historyType.equals(HistoryType.LABEL_REMOVED)){
+            List<String> labelIds = historyData.getLabelIds();
+            data.put(FCM_MSG_LABEL_KEY, String.join(",", labelIds));
+        }
         // set schedule data
     }
 }
