@@ -32,6 +32,7 @@ public class CalendarService {
 
     private static final String CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar";
     private final String PRIMARY_CALENDAR_ID = "primary";
+    private final String DATES_CONNECTION_CHAR = " ~ ";
     private final MemberRepository memberRepository;
 
     public CalendarListResponse getCalendars(String uid) throws GeneralSecurityException, IOException {
@@ -60,7 +61,7 @@ public class CalendarService {
         List<String> unAvailableDates = events.stream().map((event) -> {
             DateTime startDateTime = event.getStart().getDateTime();
             DateTime endDateTime = event.getEnd().getDateTime();
-            return startDateTime + " ~ " + endDateTime;
+            return startDateTime + DATES_CONNECTION_CHAR + endDateTime;
         }).toList();
         return UnAvailableDatesResponse.builder()
                 .unavailableDates(unAvailableDates)

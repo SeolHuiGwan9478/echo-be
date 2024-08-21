@@ -11,6 +11,8 @@ import org.jsoup.select.Elements;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
+import woozlabs.echo.domain.calendar.dto.UnAvailableDatesResponse;
+import woozlabs.echo.domain.calendar.service.CalendarService;
 import woozlabs.echo.domain.chatGPT.service.ChatGptService;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractScheduleInfo;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
@@ -22,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,6 +37,7 @@ public class GmailUtility {
 
     private final ObjectMapper om;
     private final ChatGptService chatGptService;
+    private final CalendarService calendarService;
     private List<String> keywords;
 
     @PostConstruct
@@ -76,7 +80,8 @@ public class GmailUtility {
         return om.readValue(result, ExtractScheduleInfo.class);
     }
 
-    public GenScheduleEmailTemplateResponse generateScheduleEmailTemplate(String decodedContent) throws JsonProcessingException {
+    public GenScheduleEmailTemplateResponse generateScheduleEmailTemplate(String uid, String decodedContent) throws IOException, GeneralSecurityException {
+        UnAvailableDatesResponse response = calendarService.getDatesWithNoEventsInTwoWeeks(uid);
         List<String> availableDates = new ArrayList<>(); // 변경 필요
         String result = chatGptService.generateScheduleEmailTemplate(decodedContent, availableDates);
         return om.readValue(result, GenScheduleEmailTemplateResponse.class);
