@@ -114,11 +114,15 @@ public class GmailUtility {
         List<String> contents = new ArrayList<>();
         for(String keyword : keywords){
             for(Element element : doc.getAllElements()){
+                List<Element> elements = new ArrayList<>();
                 if(element.ownText().toLowerCase().contains(keyword)
                         && !contents.contains(element.text())){
+                    elements.add(element);
                     contents.add(element.text());
-                    codes.addAll(extractVerificationCode(element.text()));
                 }
+                if(elements.isEmpty()) continue;
+                Elements convertElements = new Elements(elements);
+                codes.addAll(extractCoreContentCode(convertElements));
             }
         }
         return codes.stream().distinct().toList();
