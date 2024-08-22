@@ -6,10 +6,10 @@ import lombok.Getter;
 
 @Getter
 public enum HistoryType {
-    MESSAGE_ADDED("messageAdded"),
-    MESSAGE_DELETED("messageDeleted"),
-    LABEL_ADDED("labelAdded"),
-    LABEL_REMOVED("labelRemoved");
+    MESSAGE_ADDED("MESSAGE_ADDED"),
+    MESSAGE_DELETED("MESSAGE_DELETED"),
+    LABEL_ADDED("LABEL_ADDED"),
+    LABEL_REMOVED("LABEL_REMOVED");
 
     private final String type;
     HistoryType(String type){
