@@ -69,7 +69,6 @@ public class PubSubService {
         Member member = memberRepository.findByEmail(email).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE)
         );
-        System.out.println(deliveryAttempt);
         if(deliveryAttempt > 3){ // stop pub/sub alert(* case: failed to alert more than three times)
             log.info("Request to stop pub/sub alert");
             gmailServiceImpl.stopPubSub(member.getUid());
@@ -90,7 +89,6 @@ public class PubSubService {
                 String subject = gmailMessage.getSubject();
                 Map<String, String> data = new HashMap<>();
                 createMessageData(historyData, data, gmailMessage);
-                System.out.println(fcmTokens);
                 // create firebase message
                 MulticastMessage message = MulticastMessage.builder()
                         .setNotification(Notification.builder()
