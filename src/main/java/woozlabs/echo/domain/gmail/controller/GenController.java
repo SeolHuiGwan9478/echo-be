@@ -37,7 +37,7 @@ public class GenController {
         }
     }
 
-    @PostMapping("/api/v1/gen/email-template")
+    @PostMapping("/api/v1/gen/template")
     public ResponseEntity<ResponseDto> genEmailTemplate(HttpServletRequest httpServletRequest, @RequestBody GenScheduleEmailTemplateRequest dto){
         try{
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);

@@ -14,6 +14,7 @@ import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.messaging.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
@@ -34,6 +35,7 @@ import java.util.*;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PubSubService {
@@ -67,7 +69,9 @@ public class PubSubService {
         Member member = memberRepository.findByEmail(email).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE)
         );
+        System.out.println(deliveryAttempt);
         if(deliveryAttempt > 3){ // stop pub/sub alert(* case: failed to alert more than three times)
+            log.info("Request to stop pub/sub alert");
             gmailServiceImpl.stopPubSub(member.getUid());
         }
         PubSubHistory pubSubHistory = pubSubHistoryRepository.findByMember(member).orElseThrow(
@@ -86,6 +90,7 @@ public class PubSubService {
                 String subject = gmailMessage.getSubject();
                 Map<String, String> data = new HashMap<>();
                 createMessageData(historyData, data, gmailMessage);
+                System.out.println(fcmTokens);
                 // create firebase message
                 MulticastMessage message = MulticastMessage.builder()
                         .setNotification(Notification.builder()

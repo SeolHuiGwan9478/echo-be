@@ -5,56 +5,63 @@ import java.util.List;
 
 public class ScheduleEmailTemplatePrompt {
     private static final String SCHEDULE_EMAIL_TEMPLATE_PROMPT = """
-        Analyze the following email content and create a response email template from the recipient's perspective to schedule a meeting. The recipient can provide available dates up to 2 weeks from today, excluding the unavailable dates provided. Consider the following scenarios:
-                    
+        Analyze the following email content and create a response email template from the recipient's perspective to schedule a meeting. 
+        The recipient can provide available dates and times up to 2 weeks from today, excluding the unavailable dates and times provided. 
+        Consider the following scenarios:
+
         1. If the sender provides specific options:
-        - Check if any of the dates match the recipient's available dates (not in unavailable dates).
-        - If there's a match, create a template selecting that date.
-        - If there's no match, create a template informing the sender that none of the provided dates work, and politely ask if other dates might be possible.
-        
-        2. If the sender mentions relative date phrases like "this week" or "next week" or etc...:
+        - Check that the date and time suggested by the other party do not overlap with the recipient's unavailable dates and times provided below.
+        - If there is no overlap, choose one of the suggested dates and times. Create a template confirming the date and time, and asking if it works for the sender.
+        - If there is overlap, create a template informing the sender that none of the provided dates and times work, and politely ask if other options might be possible.
+        - If none of the proposed dates and times are available, suggest that the meeting is impossible during the provided time slots by mentioning the time zones in the following format: 2024-08-23T13:30:00.000+09:00 ~ 2024-08-23T14:30:00.000+09:00.
+
+        2. If the sender mentions relative date phrases like "this week", "next week", or similar:
         - Interpret these based on the current date provided below.
-        - Select one of the recipient's available dates within the appropriate week (not in unavailable dates).
-        - Create a template proposing that date and end by asking if that day is acceptable.
-        - If there's no match, create a template informing the sender that none of the provided dates work, and politely ask if other dates might be possible.
-        
-        3. If the sender is asking for dates without specific options:
-        - Create a template that prioritizes weekends and daytime hours from the recipient's available dates (not in unavailable dates).
-        
+        - Select one appropriate date and time except for the recipient's unavailable dates and times provided.
+        - Create a template proposing that date and time, and end by asking if that schedule is acceptable.
+        - If none of the proposed dates and times are available, suggest that the meeting is impossible during the provided time slots by mentioning the time zones in the following format: 2024-08-23T13:30:00.000+09:00 ~ 2024-08-23T14:30:00.000+09:00, and politely ask if other options might be possible.
+
+        3. If the sender is asking for dates and times without specific options:
+        - Create a template that prioritizes weekends and daytime hours from the recipient's available dates and times (excluding unavailable dates and times).
+
+        4. If the recipient's unavailable dates and times include the sender's proposed dates and times:
+        - Politely inform the sender that those dates and times are unavailable.
+        - Suggest alternative dates and times from the recipient's available options.
+        - If no suitable alternatives exist, ask if the sender has other options in mind.
+
         Include the following elements in the template:
         - A polite greeting
-        - Email body (proposing a date or requesting a change)
+        - Email body (proposing a date and time or requesting a change)
         - A thank you note and closing
-                    
+
         Return the template as a JSON string with the following structure:
         {
           "template": String,
           "isSchedule": boolean
         }
         - Please remove the back tick.
-                    
+
         The "isSchedule" field should be true if the email is about a schedule or event, and false otherwise.
-        If "isSchedule" field is false, "template" field should be empty string.
-        
+        If the "isSchedule" field is false, the "template" field should be an empty string.
+
         Please make it 150 characters maximum.
-            
+
         Email content to analyze:
         ===
         %s
         ===
-        
-        Recipient's unavailable dates:
+
+        Recipient's unavailable dates and times:
         ===
         %s
         ===
-        
-        Current date for reference:
+
+        Current date and time for reference:
         ===
         %s
         ===
         """;
-
-    public static String getPrompt(String messageContent, List<String> availableDates) {
-        return String.format(SCHEDULE_EMAIL_TEMPLATE_PROMPT, messageContent, availableDates.toString(), LocalDateTime.now());
+    public static String getPrompt(String messageContent, List<String> unAvailableDates) {
+        return String.format(SCHEDULE_EMAIL_TEMPLATE_PROMPT, messageContent, unAvailableDates.toString(), LocalDateTime.now());
     }
 }
