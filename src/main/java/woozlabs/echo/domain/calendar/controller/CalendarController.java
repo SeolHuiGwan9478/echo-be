@@ -33,7 +33,7 @@ public class CalendarController {
         }
     }
 
-    @GetMapping("/api/v1/calendar/unavailable-events")
+    @GetMapping("/api/v1/calendar/events/unavailable")
     public ResponseEntity<?> getUnavailableEvents(HttpServletRequest httpServletRequest) {
         log.info("Request to get unavailable events");
         try {

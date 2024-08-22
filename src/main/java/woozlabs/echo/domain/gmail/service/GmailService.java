@@ -417,6 +417,7 @@ public class GmailService {
                                     .multiThreadRequestGmailThreadGetForList(thread, gmailService);
                             future.complete(result);
                         }catch (Exception e){
+                            log.error(e.getMessage());
                             log.error(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
                             future.completeExceptionally(new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG));
                         }
@@ -427,6 +428,7 @@ public class GmailService {
             try{
                 return future.get();
             }catch (Exception e){
+                log.error(e.getMessage());
                 log.error(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
                 throw new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
