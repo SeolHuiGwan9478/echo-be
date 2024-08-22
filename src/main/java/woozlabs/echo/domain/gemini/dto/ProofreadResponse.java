@@ -20,13 +20,8 @@ public class ProofreadResponse {
     @AllArgsConstructor
     public static class Change {
 
-        @JsonProperty("Original")
         private String original;
-
-        @JsonProperty("Modified")
         private String modified;
-
-        @JsonProperty("Reason")
         private String reason;
     }
 }
