@@ -85,7 +85,7 @@ public class MultiThreadGmailService {
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());
             gmailThreadListThreads.setMessages(convertedMessages);
-            addVerificationLabel(convertedMessages, gmailThreadListThreads);
+            //addVerificationLabel(convertedMessages, gmailThreadListThreads);
             return gmailThreadListThreads;
         } catch (IOException e) {
             throw new GmailException(e.getMessage());

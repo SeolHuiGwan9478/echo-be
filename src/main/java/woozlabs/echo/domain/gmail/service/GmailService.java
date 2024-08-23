@@ -68,6 +68,8 @@ public class GmailService {
     // constants
     private final String MULTI_PART_TEXT_PLAIN = "text/plain";
     private final String TEMP_FILE_PREFIX = "echo";
+    private final String CONTENT_DISPOSITION_KEY = "Content-Disposition";
+    private final String CONTENT_DISPOSITION_INLINE_VALUE = "inline";
     private final List<String> SCOPES = Arrays.asList(
             "https://www.googleapis.com/auth/gmail.readonly",
             "https://www.googleapis.com/auth/userinfo.profile",
@@ -118,17 +120,60 @@ public class GmailService {
     }
 
     public GmailThreadGetResponse getUserEmailThread(String uid, String id) throws Exception{
-        Member member = memberRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
-        String accessToken = member.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
-        Thread thread = getOneThreadResponse(id, gmailService);
-        List<GmailThreadGetMessagesResponse> messages = getConvertedMessages(thread.getMessages());
-        return GmailThreadGetResponse.builder()
-                .id(thread.getId())
-                .historyId(thread.getHistoryId())
-                .messages(messages)
-                .build();
+        try {
+            Member member = memberRepository.findByUid(uid).orElseThrow(
+                    () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+            String accessToken = member.getAccessToken();
+            Gmail gmailService = createGmailService(accessToken);
+            GmailThreadGetResponse gmailThreadGetResponse = new GmailThreadGetResponse();
+            Thread thread = getOneThreadResponse(id, gmailService);
+            List<Message> messages = thread.getMessages();
+            List<GmailThreadGetMessagesFrom> froms = new ArrayList<>();
+            List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
+            List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
+            List<GmailThreadListAttachments> attachments = new ArrayList<>();
+            List<GmailThreadGetMessagesResponse> convertedMessages = new ArrayList<>();
+            List<String> labelIds = new ArrayList<>();
+            for (int idx = 0; idx < messages.size(); idx++) {
+                int idxForLambda = idx;
+                Message message = messages.get(idx);
+                MessagePart payload = message.getPayload();
+                convertedMessages.add(GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message, gmailUtility));
+                List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
+                labelIds.addAll(message.getLabelIds());
+                if (idxForLambda == messages.size() - 1) {
+                    String date = convertedMessages.get(convertedMessages.size() - 1).getDate();
+                    gmailThreadGetResponse.setSnippet(message.getSnippet());
+                    gmailThreadGetResponse.setDate(date);
+                }
+                // get attachments
+                getThreadsAttachments(payload, attachments);
+                headers.forEach((header) -> {
+                    String headerName = header.getName();
+                    // first message -> extraction subject
+                    if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)) {
+                        gmailThreadGetResponse.setSubject(header.getValue());
+                    }
+                });
+                GmailThreadGetMessagesResponse gmailThreadGetMessage = convertedMessages.get(convertedMessages.size() - 1);
+                froms.add(gmailThreadGetMessage.getFrom());
+                ccs.addAll(gmailThreadGetMessage.getCc());
+                bccs.addAll(gmailThreadGetMessage.getBcc());
+            }
+            gmailThreadGetResponse.setLabelIds(labelIds.stream().distinct().collect(Collectors.toList()));
+            gmailThreadGetResponse.setId(id);
+            gmailThreadGetResponse.setHistoryId(thread.getHistoryId());
+            gmailThreadGetResponse.setFrom(froms.stream().distinct().toList());
+            gmailThreadGetResponse.setCc(ccs.stream().distinct().toList());
+            gmailThreadGetResponse.setBcc(bccs.stream().distinct().toList());
+            gmailThreadGetResponse.setThreadSize(messages.size());
+            gmailThreadGetResponse.setAttachments(attachments);
+            gmailThreadGetResponse.setAttachmentSize(attachments.size());
+            gmailThreadGetResponse.setMessages(convertedMessages);
+            return gmailThreadGetResponse;
+        }catch (IOException e) {
+            throw new GmailException(e.getMessage());
+        }
     }
 
     public GmailThreadTrashResponse trashUserEmailThread(String uid, String id) throws Exception{
@@ -474,9 +519,9 @@ public class GmailService {
         return gmailThreadSearchListThreads;
     }
 
-    private List<GmailThreadGetMessagesResponse> getConvertedMessages(List<Message> messages){
-        return messages.stream().map((message) -> GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message, gmailUtility)).toList();
-    }
+//    private List<GmailThreadGetMessagesResponse> getConvertedMessages(List<Message> messages){
+//        return messages.stream().map((message) -> GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message, gmailUtility)).toList();
+//    }
 
     private ListThreadsResponse getQueryListThreadsResponse(String pageToken, String q, Gmail gmailService) throws IOException {
         return gmailService.users().threads()
@@ -616,5 +661,61 @@ public class GmailService {
                 .get(USER_ID, label)
                 .execute();
         return result.getThreadsTotal();
+    }
+
+    private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments){
+        if(part.getParts() == null){ // base condition
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
+                MessagePartBody body = part.getBody();
+                List<MessagePartHeader> headers = part.getHeaders();
+                GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
+                for(MessagePartHeader header : headers){
+                    if(header.getName().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
+                        attachment.setXAttachmentId(header.getValue());
+                    }
+                }
+                attachment.setMimeType(part.getMimeType());
+                attachment.setAttachmentId(body.getAttachmentId());
+                attachment.setSize(body.getSize());
+                attachment.setFileName(part.getFilename());
+                if(!attachments.contains(attachment)){
+                    attachments.add(attachment);
+                }
+            }
+        }else{ // recursion
+            for(MessagePart subPart : part.getParts()){
+                getThreadsAttachments(subPart, attachments);
+            }
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
+                MessagePartBody body = part.getBody();
+                List<MessagePartHeader> headers = part.getHeaders();
+                GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
+                for(MessagePartHeader header : headers){
+                    if(header.getName().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
+                        attachment.setXAttachmentId(header.getValue());
+                    }
+                }
+                attachment.setMimeType(part.getMimeType());
+                attachment.setAttachmentId(body.getAttachmentId());
+                attachment.setSize(body.getSize());
+                attachment.setFileName(part.getFilename());
+                if(!attachments.contains(attachment)){
+                    attachments.add(attachment);
+                }
+            }
+        }
+    }
+
+    private Boolean isInlineFile(MessagePart part){
+        List<MessagePartHeader> headers = part.getHeaders();
+        for(MessagePartHeader header : headers){
+            if(header.getName().equals(CONTENT_DISPOSITION_KEY)){
+                String[] parts = header.getValue().split(";");
+                String inlinePart = parts[0].trim();
+                if(inlinePart.equals(CONTENT_DISPOSITION_INLINE_VALUE)) return Boolean.TRUE;
+                return Boolean.FALSE;
+            }
+        }
+        return Boolean.FALSE;
     }
 }
