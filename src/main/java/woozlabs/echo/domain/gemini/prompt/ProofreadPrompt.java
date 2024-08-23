@@ -14,8 +14,8 @@ public class ProofreadPrompt {
             {
             "correctedText": "[Insert fully corrected text here]",
             "changes": [
-                { "Original": "original text", "Modified": "modified text", "Reason": "reason for change" },
-                { "Original": "another original", "Modified": "another modified", "Reason": "another reason" }
+                { "original": "original text", "modified": "modified text", "reason": "reason for change" },
+                { "original": "another original", "modified": "another modified", "reason": "another reason" }
                 // ... more changes
             ]
             }

@@ -1,11 +1,11 @@
-package woozlabs.echo.domain.team.dto.thread;
+package woozlabs.echo.domain.sharedEmail.dto.thread;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class ThreadGetMessagesTo {
+public class ThreadGetMessagesFrom {
 
     private String name;
     private String email;

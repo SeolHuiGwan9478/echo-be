@@ -1,9 +1,9 @@
-package woozlabs.echo.domain.team.entity;
+package woozlabs.echo.domain.sharedEmail.entity;
 
 import jakarta.persistence.Id;
 import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Document;
-import woozlabs.echo.domain.team.dto.thread.ThreadGetMessages;
+import woozlabs.echo.domain.sharedEmail.dto.thread.ThreadGetMessages;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
@@ -17,7 +17,7 @@ import java.util.List;
 @Document(collection = "threads")
 public class Thread {
     @Id
-    private String id;
+    private String threadId;
     private BigInteger historyId;
     private List<ThreadGetMessages> messages;
     private LocalDateTime createdAt;

@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.team.entity;
+package woozlabs.echo.domain.sharedEmail.entity;
 
 import jakarta.persistence.Id;
 import lombok.*;
@@ -21,4 +21,5 @@ public class PrivateComment {
     private String authorId; // 누가 작성했는지 알기 위한 Id (임시)
     private Map<String, String> encryptedContents; // userId, Contents
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

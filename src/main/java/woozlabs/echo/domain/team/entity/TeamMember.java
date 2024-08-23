@@ -22,10 +22,10 @@ public class TeamMember {
     private Member member;
 
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private TeamMemberRole role;
 
     @Builder
-    public TeamMember(Team team, Member member, Role role) {
+    public TeamMember(Team team, Member member, TeamMemberRole role) {
         this.team = team;
         this.member = member;
         this.role = role;

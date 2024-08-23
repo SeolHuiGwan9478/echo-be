@@ -3,7 +3,7 @@ package woozlabs.echo.domain.team.dto;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import woozlabs.echo.domain.team.entity.Role;
+import woozlabs.echo.domain.team.entity.TeamMemberRole;
 
 @Getter
 @Setter
@@ -16,7 +16,7 @@ public class SendInvitationEmailDto {
     private String invitedByUsername;
     private String invitedByEmail;
     private String teamName;
-    private Role teamRole;
+    private TeamMemberRole teamTeamMemberRole;
     private String teamImage;
     private String inviteLink;
 }

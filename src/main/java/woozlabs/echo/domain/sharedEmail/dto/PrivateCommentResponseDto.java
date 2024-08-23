@@ -1,7 +1,7 @@
-package woozlabs.echo.domain.team.dto;
+package woozlabs.echo.domain.sharedEmail.dto;
 
 import lombok.Getter;
-import woozlabs.echo.domain.team.entity.PrivateComment;
+import woozlabs.echo.domain.sharedEmail.entity.PrivateComment;
 
 import java.time.LocalDateTime;
 import java.util.Map;
