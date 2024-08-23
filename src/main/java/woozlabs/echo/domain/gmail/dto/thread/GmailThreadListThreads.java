@@ -10,19 +10,18 @@ import java.util.List;
 @Data
 public class GmailThreadListThreads implements Comparable<GmailThreadListThreads> {
     private String id;
+    private String subject;
+    private String snippet;
+    private String date;
     private BigInteger historyId;
     private List<String> labelIds;
-    private int attachmentSize;
-    private List<GmailThreadListAttachments> attachments;
-    private List<GmailThreadGetMessagesResponse> messages;
+    private int threadSize;
     private List<GmailThreadGetMessagesFrom> from;
     private List<GmailThreadGetMessagesCc> cc;
     private List<GmailThreadGetMessagesBcc> bcc;
-    private String subject;
-    private String snippet;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private String date;
-    private int threadSize;
+    private int attachmentSize;
+    private List<GmailThreadListAttachments> attachments;
+    private List<GmailThreadGetMessagesResponse> messages;
 
     @Override
     public int compareTo(GmailThreadListThreads o) {
