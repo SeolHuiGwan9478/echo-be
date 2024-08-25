@@ -33,6 +33,7 @@ public enum ErrorCode {
     FAILED_TO_REFRESH_GOOGLE_TOKEN(500, "Failed to refresh google token"),
     FAILED_TO_FETCH_GOOGLE_TOKENS(500, "Failed to get Google access tokens"),
     INVALID_FIELD_TYPE_ERROR_MESSAGE(400, "Invalid Member Field Type"),
+    INVALID_SESSION(400, "Session is empty or invalid"),
 
     // token
     NOT_FOUND_ACCESS_TOKEN(404, "Not found: Access Token"),
