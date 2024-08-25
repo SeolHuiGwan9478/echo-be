@@ -58,8 +58,8 @@ dependencies {
 	implementation 'com.google.code.gson:gson:2.8.8'
 
 	// db
-	implementation 'org.flywaydb:flyway-core'
-	implementation 'org.flywaydb:flyway-mysql'
+	//implementation 'org.flywaydb:flyway-core'
+	//implementation 'org.flywaydb:flyway-mysql'
 }
 
 tasks.named('test') {
