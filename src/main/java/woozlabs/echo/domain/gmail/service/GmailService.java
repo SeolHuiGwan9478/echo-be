@@ -94,6 +94,7 @@ public class GmailService {
         Gmail gmailService = createGmailService(accessToken);
         ListThreadsResponse response = getQueryListThreadsResponse(pageToken, q, gmailService);
         List<Thread> threads = response.getThreads(); // get threads
+        System.out.println(threads);
         threads = isEmptyResult(threads);
         List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
         Collections.sort(detailedThreads);
@@ -518,10 +519,6 @@ public class GmailService {
         });
         return gmailThreadSearchListThreads;
     }
-
-//    private List<GmailThreadGetMessagesResponse> getConvertedMessages(List<Message> messages){
-//        return messages.stream().map((message) -> GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message, gmailUtility)).toList();
-//    }
 
     private ListThreadsResponse getQueryListThreadsResponse(String pageToken, String q, Gmail gmailService) throws IOException {
         return gmailService.users().threads()

@@ -32,6 +32,8 @@ import woozlabs.echo.global.exception.ErrorCode;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
 
@@ -49,6 +51,7 @@ public class PubSubService {
     );
     private final Long MAX_HISTORY_COUNT = 50L;
     private final String PUB_SUB_LABEL_ID = "INBOX";
+    private final String DOMAIN_PATTERN = "(?i)^(https?://(?:www\\.)?[^/]+)";
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private final ObjectMapper om;
@@ -184,9 +187,8 @@ public class PubSubService {
         String FCM_MSG_THREAD_ID_KEY = "threadId";
         String FCM_MSG_TYPE_KEY = "type";
         String FCM_MSG_VERIFICATION_KEY = "verification";
-        String FCM_MSG_CODE_KEY = "code";
-        String FCM_MSG_LINK_KEY = "link";
         String FCM_MSG_LABEL_KEY = "label";
+        String FCM_MSG_DOMAIN_KEY = "domain";
         HistoryType historyType = historyData.getHistoryType();
         // set base info
         data.put(FCM_MSG_ID_KEY, historyData.getId());
@@ -194,11 +196,19 @@ public class PubSubService {
         data.put(FCM_MSG_TYPE_KEY, historyData.getHistoryType().getType());
         if(historyType.equals(HistoryType.MESSAGE_ADDED)){
             // set verification data
-            List<String> codes = gmailMessage.getVerification().getCodes();
-            List<String> links = gmailMessage.getVerification().getLinks();
-            data.put(FCM_MSG_CODE_KEY, String.join(",", codes));
-            data.put(FCM_MSG_LINK_KEY, String.join(",", links));
             data.put(FCM_MSG_VERIFICATION_KEY, gmailMessage.getVerification().getVerification().toString());
+            List<String> links = gmailMessage.getVerification().getLinks();
+            List<String> domains = new ArrayList<>();
+            if(!links.isEmpty()){
+                Pattern pattern = Pattern.compile(DOMAIN_PATTERN);
+                for(String link : links){
+                    Matcher matcher = pattern.matcher(link);
+                    if(matcher.find()) {
+                        domains.add(matcher.group(1));
+                    }
+                }
+            }
+            data.put(FCM_MSG_DOMAIN_KEY, String.join(",", domains));
         }else if(historyType.equals(HistoryType.LABEL_ADDED) || historyType.equals(HistoryType.LABEL_REMOVED)){
             List<String> labelIds = historyData.getLabelIds();
             data.put(FCM_MSG_LABEL_KEY, String.join(",", labelIds));
