@@ -9,7 +9,6 @@ import woozlabs.echo.domain.member.dto.ProfileResponseDto;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.entity.SuperAccount;
 import woozlabs.echo.domain.member.repository.MemberRepository;
-import woozlabs.echo.domain.member.repository.SuperAccountRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
@@ -22,11 +21,19 @@ import java.util.stream.Collectors;
 public class MemberService {
 
     private final MemberRepository memberRepository;
-    private final SuperAccountRepository superAccountRepository;
 
-    public ProfileResponseDto getProfileByEmail(String email) {
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+    public ProfileResponseDto getProfileByField(String fieldType, String fieldValue) {
+        Member member;
+
+        if (fieldType.equals("email")) {
+            member = memberRepository.findByEmail(fieldValue)
+                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        } else if (fieldType.equals("uid")) {
+            member = memberRepository.findByUid(fieldValue)
+                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        } else {
+            throw new CustomErrorException(ErrorCode.INVALID_FIELD_TYPE_ERROR_MESSAGE);
+        }
 
         return ProfileResponseDto.builder()
                 .displayName(member.getDisplayName())
