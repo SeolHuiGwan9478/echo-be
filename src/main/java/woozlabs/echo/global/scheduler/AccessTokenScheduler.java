@@ -19,7 +19,6 @@ import java.util.Map;
 
 @Slf4j
 @Component
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class AccessTokenScheduler {
 
@@ -27,7 +26,7 @@ public class AccessTokenScheduler {
     private final GoogleOAuthUtils googleOAuthUtils;
 
     @Scheduled(fixedRate = 5 * 60 * 1000)
-    @Transactional
+    @Transactional(readOnly = true)
     public void checkAndRefreshTokens() {
         LocalDateTime cutoffTime = LocalDateTime.now().minus(50, ChronoUnit.MINUTES);
         List<Member> members = memberRepository.findMembersByCutoffTime(cutoffTime);
@@ -36,6 +35,7 @@ public class AccessTokenScheduler {
         }
     }
 
+    @Transactional
     public void refreshToken(Member member) {
         try {
             Map<String, String> newTokens = googleOAuthUtils.refreshAccessToken(member.getRefreshToken());
