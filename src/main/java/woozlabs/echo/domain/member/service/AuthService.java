@@ -15,6 +15,7 @@ import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.entity.Role;
 import woozlabs.echo.domain.member.repository.SuperAccountRepository;
 import woozlabs.echo.domain.member.repository.MemberRepository;
+import woozlabs.echo.domain.member.utils.AuthCookieUtils;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
@@ -23,6 +24,7 @@ import woozlabs.echo.global.utils.GoogleOAuthUtils;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -121,19 +123,18 @@ public class AuthService {
         }
     }
 
+
+
     @Transactional
     public void handleGoogleCallback(String code, HttpServletRequest request, HttpServletResponse response) throws FirebaseAuthException {
         Map<String, Object> userInfo = getGoogleUserInfoAndTokens(code);
         String providerId = (String) userInfo.get("id");
 
-        HttpSession session = request.getSession(true);
-        String superAccountUid = (String) session.getAttribute("superAccountUid");
-
-        log.info("Session ID: {}", session.getId());
-        log.info("Session Attribute 'superAccountUid': {}", superAccountUid);
+        Optional<String> superAccountUidOpt = AuthCookieUtils.getCookieValue(request);
+        String superAccountUid = superAccountUidOpt.orElse(null);
 
         if (superAccountUid == null) {
-            log.info("Session 'superAccountUid' is null. Creating new member and super account.");
+            log.info("Cookie 'superAccountUid' is null. Creating new member and super account.");
 
             Member member = createOrUpdateMember(userInfo, true);
             log.info("Created or updated member with UID: {}", member.getUid());
@@ -159,12 +160,12 @@ public class AuthService {
             Map<String, Object> customClaims = Map.of("accounts", superAccount.getMemberUids());
             setCustomUidClaims(member.getUid(), customClaims);
 
-            session.setAttribute("superAccountUid", member.getUid());
+            AuthCookieUtils.addCookie(response, member.getUid());
             log.info("New SuperAccount created with ID: {}", superAccount.getId());
             log.info("Member added to SuperAccount. Member UID: {}", member.getUid());
-            log.info("Session attribute 'superAccountUid' set to: {}", member.getUid());
+            log.info("Cookie attribute 'superAccountUid' set to: {}", member.getUid());
         } else {
-            log.info("Session 'superAccountUid' found. Adding new member to existing SuperAccount.");
+            log.info("Cookie 'superAccountUid' found. Adding new member to existing SuperAccount.");
 
             SuperAccount superAccount = superAccountRepository.findByMemberUids(superAccountUid)
                     .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SUPER_ACCOUNT));
