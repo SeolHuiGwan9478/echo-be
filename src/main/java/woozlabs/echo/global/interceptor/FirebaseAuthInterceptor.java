@@ -34,7 +34,6 @@ public class FirebaseAuthInterceptor implements HandlerInterceptor {
         try{
             firebaseToken = firebaseTokenVerifier.verifyToken(idToken);
         }catch (FirebaseAuthException e){
-            System.out.println(e.getMessage());
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, AUTH_UNAUTHORIZED_ERR_MSG);
             return false;
         }        // setting attribute of request obj

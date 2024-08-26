@@ -20,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.*;
 import woozlabs.echo.domain.gmail.entity.PubSubHistory;
+import woozlabs.echo.domain.gmail.entity.VerificationEmail;
 import woozlabs.echo.domain.gmail.repository.PubSubHistoryRepository;
+import woozlabs.echo.domain.gmail.repository.VerificationEmailRepository;
 import woozlabs.echo.domain.gmail.validator.PubSubValidator;
 import woozlabs.echo.domain.gmail.entity.FcmToken;
 import woozlabs.echo.domain.member.entity.Member;
@@ -58,6 +60,7 @@ public class PubSubService {
     private final MemberRepository memberRepository;
     private final FcmTokenRepository fcmTokenRepository;
     private final PubSubHistoryRepository pubSubHistoryRepository;
+    private final VerificationEmailRepository verificationEmailRepository;
     private final PubSubValidator pubSubValidator;
     private final GmailService gmailServiceImpl;
 
@@ -70,14 +73,15 @@ public class PubSubService {
         int deliveryAttempt = pubsubMessage.getDeliveryAttempt();
         BigInteger newHistoryId = new BigInteger(notification.getHistoryId());
         Member member = memberRepository.findByEmail(email).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE)
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE, ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE.getMessage())
         );
-        if(deliveryAttempt > 3){ // stop pub/sub alert(* case: failed to alert more than three times)
+        if(deliveryAttempt > 2){ // stop pub/sub alert(* case: failed to alert more than three times)
             log.info("Request to stop pub/sub alert");
             gmailServiceImpl.stopPubSub(member.getUid());
+            return;
         }
         PubSubHistory pubSubHistory = pubSubHistoryRepository.findByMember(member).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR)
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR, ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR.getMessage())
         );
         Gmail gmailService = createGmailService(member.getAccessToken());
         List<String> fcmTokens = fcmTokenRepository.findByMember(member).stream().map(FcmToken::getFcmToken).toList();
@@ -91,7 +95,7 @@ public class PubSubService {
                 String from = gmailMessage.getFrom().getEmail();
                 String subject = gmailMessage.getSubject();
                 Map<String, String> data = new HashMap<>();
-                createMessageData(historyData, data, gmailMessage);
+                createMessageData(historyData, data, gmailMessage, member);
                 // create firebase message
                 MulticastMessage message = MulticastMessage.builder()
                         .setNotification(Notification.builder()
@@ -182,13 +186,12 @@ public class PubSubService {
         return new HttpCredentialsAdapter(googleCredentials);
     }
 
-    private void createMessageData(MessageInHistoryData historyData, Map<String, String> data, GmailMessageGetResponse gmailMessage) {
+    private void createMessageData(MessageInHistoryData historyData, Map<String, String> data, GmailMessageGetResponse gmailMessage, Member owner) {
         String FCM_MSG_ID_KEY = "id";
         String FCM_MSG_THREAD_ID_KEY = "threadId";
         String FCM_MSG_TYPE_KEY = "type";
         String FCM_MSG_VERIFICATION_KEY = "verification";
         String FCM_MSG_LABEL_KEY = "label";
-        String FCM_MSG_DOMAIN_KEY = "domain";
         HistoryType historyType = historyData.getHistoryType();
         // set base info
         data.put(FCM_MSG_ID_KEY, historyData.getId());
@@ -196,19 +199,18 @@ public class PubSubService {
         data.put(FCM_MSG_TYPE_KEY, historyData.getHistoryType().getType());
         if(historyType.equals(HistoryType.MESSAGE_ADDED)){
             // set verification data
-            data.put(FCM_MSG_VERIFICATION_KEY, gmailMessage.getVerification().getVerification().toString());
-            List<String> links = gmailMessage.getVerification().getLinks();
-            List<String> domains = new ArrayList<>();
-            if(!links.isEmpty()){
-                Pattern pattern = Pattern.compile(DOMAIN_PATTERN);
-                for(String link : links){
-                    Matcher matcher = pattern.matcher(link);
-                    if(matcher.find()) {
-                        domains.add(matcher.group(1));
-                    }
-                }
+            Boolean isVerification = gmailMessage.getVerification().getVerification();
+            data.put(FCM_MSG_VERIFICATION_KEY, isVerification.toString());
+            if(isVerification.equals(true)){ // save verification email
+                VerificationEmail verificationEmail = VerificationEmail.builder()
+                        .threadId(historyData.getThreadId())
+                        .messageId(historyData.getId())
+                        .codes(String.join(",",gmailMessage.getVerification().getCodes()))
+                        .links(String.join(",",gmailMessage.getVerification().getLinks()))
+                        .member(owner)
+                        .build();
+                verificationEmailRepository.save(verificationEmail);
             }
-            data.put(FCM_MSG_DOMAIN_KEY, String.join(",", domains));
         }else if(historyType.equals(HistoryType.LABEL_ADDED) || historyType.equals(HistoryType.LABEL_REMOVED)){
             List<String> labelIds = historyData.getLabelIds();
             data.put(FCM_MSG_LABEL_KEY, String.join(",", labelIds));

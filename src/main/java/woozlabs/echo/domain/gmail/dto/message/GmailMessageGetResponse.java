@@ -60,9 +60,6 @@ public class GmailMessageGetResponse implements ResponseDto {
                                 .build()
                         );
                     }
-                }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
-                    String originDate = header.getValue();
-                    changeDateFormat(originDate, gmailMessageGetResponse);
                 }case MESSAGE_PAYLOAD_HEADER_CC_KEY -> {
                     String oneCc = header.getValue();
                     List<List<String>> splitSender = splitCcAndBcc(oneCc);
@@ -105,6 +102,7 @@ public class GmailMessageGetResponse implements ResponseDto {
                 }
             }
         }
+        changeDateFormat(message.getInternalDate(), gmailMessageGetResponse);
         gmailMessageGetResponse.setId(message.getId());
         gmailMessageGetResponse.setThreadId(message.getThreadId());
         gmailMessageGetResponse.setLabelIds(message.getLabelIds());
@@ -151,59 +149,13 @@ public class GmailMessageGetResponse implements ResponseDto {
         info.updateLinks(newInfo.getLinks());
     }
 
-    private static void changeDateFormat(String originDate, GmailMessageGetResponse gmailMessageGetResponse) {
-        Pattern firstPattern = Pattern.compile(
-                DATE_TIMEZONE_PATTERN_1
-        );
-        Pattern secondPattern = Pattern.compile(
-                DATE_TIMEZONE_PATTER_2
-        );
-        Matcher firstMatcher = firstPattern.matcher(originDate);
-        Matcher secondMatcher = secondPattern.matcher(originDate);
-        if (firstMatcher.matches() || secondMatcher.find()) {
-            String datePart = firstMatcher.group(1);
-            String timezonePart = firstMatcher.group(2);
-            datePart = datePart.replaceAll("\\s+", " ");
-            // parsing dateTime
-            DateTimeFormatter inputFormatter;
-            inputFormatter = DateTimeFormatter.ofPattern(
-                    INPUT_GMAIL_DATE_FORMAT_1,
-                    Locale.ENGLISH
-            );
-            LocalDateTime dateTime = LocalDateTime.parse(datePart, inputFormatter);
-            // converting timezone format
-            if (timezonePart.matches(TIMEZONE_PATTERN_1)) {
-                timezonePart = timezonePart.substring(0, 5);
-                convertToIanaTimezone(gmailMessageGetResponse, timezonePart);
-            }else if(timezonePart.matches(TIMEZONE_PATTERN_2)){
-                convertToIanaTimezone(gmailMessageGetResponse, timezonePart);
-            }else{
-                ZoneId zone = ZoneId.of(timezonePart);
-                ZoneOffset offset = zone.getRules().getOffset(java.time.Instant.now());
-                timezonePart = offset.toString().replaceAll(":", "");
-                gmailMessageGetResponse.setTimezone(timezonePart);
-            }
-            ZoneId zoneId = ZoneId.of(timezonePart);
-            ZonedDateTime zonedDateTime = dateTime.atZone(zoneId);
-            DateTimeFormatter outputFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-            gmailMessageGetResponse.setDate(zonedDateTime.format(outputFormatter));
-        } else {
-            gmailMessageGetResponse.setDate(originDate);
-        }
-    }
-
-    private static void convertToIanaTimezone(GmailMessageGetResponse gmailMessageGetResponse, String timezonePart) {
-        try{
-            ZoneOffset offset = ZoneOffset.of(timezonePart);
-            for (String zoneId : ZoneOffset.getAvailableZoneIds()){
-                ZoneId zone = ZoneId.of(zoneId);
-                if(zone.getRules().getOffset(Instant.now()).equals(offset)){
-                    gmailMessageGetResponse.setTimezone(zoneId);
-                    break;
-                }
-            }
-        }catch (Exception e){
-            gmailMessageGetResponse.setTimezone(null);
+    private static void changeDateFormat(Long internalDate, GmailMessageGetResponse gmailMessageGetResponse) {
+        Instant instant = Instant.ofEpochMilli(internalDate);
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+        String iso8601 = localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        if(!iso8601.isEmpty()){
+            gmailMessageGetResponse.setDate(iso8601);
+            gmailMessageGetResponse.setTimezone(MESSAGE_INTERNAL_DATE_TIMEZONE);
         }
     }
 }
