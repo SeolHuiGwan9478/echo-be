@@ -28,4 +28,11 @@ public class SuperAccount extends BaseEntity {
     @CollectionTable(name = "super_account_member_uids", joinColumns = @JoinColumn(name = "super_account_id"))
     @Column(name = "member_uid")
     private List<String> memberUids = new ArrayList<>();
+
+    public void addMember(Member member) {
+        this.members.add(member);
+        if (!this.memberUids.contains(member.getUid())) {
+            this.memberUids.add(member.getUid());
+        }
+    }
 }

@@ -123,8 +123,6 @@ public class AuthService {
         }
     }
 
-
-
     @Transactional
     public void handleGoogleCallback(String code, HttpServletRequest request, HttpServletResponse response) throws FirebaseAuthException {
         Map<String, Object> userInfo = getGoogleUserInfoAndTokens(code);
@@ -139,20 +137,9 @@ public class AuthService {
             Member member = createOrUpdateMember(userInfo, true);
             log.info("Created or updated member with UID: {}", member.getUid());
 
-            SuperAccount superAccount = superAccountRepository.findByMemberUids(member.getUid())
-                    .orElseGet(() -> {
-                        SuperAccount newSuperAccount = new SuperAccount();
-                        newSuperAccount.getMembers().add(member);
-                        newSuperAccount.getMemberUids().add(member.getUid());
-                        return superAccountRepository.save(newSuperAccount);
-                    });
-
-            if (!superAccount.getMembers().contains(member)) {
-                superAccount.getMembers().add(member);
-            }
-            if (!superAccount.getMemberUids().contains(member.getUid())) {
-                superAccount.getMemberUids().add(member.getUid());
-            }
+            SuperAccount superAccount = new SuperAccount();
+            superAccount.addMember(member);
+            superAccountRepository.save(superAccount);
 
             member.setSuperAccount(superAccount);
             memberRepository.save(member);
@@ -176,12 +163,7 @@ public class AuthService {
             newMember.setSuperAccount(superAccount);
             memberRepository.save(newMember);
 
-            if (!superAccount.getMembers().contains(newMember)) {
-                superAccount.getMembers().add(newMember);
-            }
-            if (!superAccount.getMemberUids().contains(newMember.getUid())) {
-                superAccount.getMemberUids().add(newMember.getUid());
-            }
+            superAccount.addMember(newMember);
             superAccountRepository.save(superAccount);
 
             Map<String, Object> customClaims = Map.of("accounts", superAccount.getMemberUids());
