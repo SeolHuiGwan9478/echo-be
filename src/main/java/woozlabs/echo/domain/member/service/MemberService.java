@@ -36,6 +36,7 @@ public class MemberService {
         }
 
         return ProfileResponseDto.builder()
+                .uid(member.getUid())
                 .displayName(member.getDisplayName())
                 .email(member.getEmail())
                 .profileImageUrl(member.getProfileImageUrl())
