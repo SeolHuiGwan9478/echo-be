@@ -32,11 +32,7 @@ public class PubSubController {
         try{
             pubSubService.handleFirebaseCloudMessage(pubsubMessage);
             return new ResponseEntity<>(HttpStatus.OK);
-        }catch (CustomErrorException e){
-            log.error(e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e){
-            log.error(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

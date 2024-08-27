@@ -75,7 +75,7 @@ public class PubSubService {
         Member member = memberRepository.findByEmail(email).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE, ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE.getMessage())
         );
-        if(deliveryAttempt > 2){ // stop pub/sub alert(* case: failed to alert more than three times)
+        if(deliveryAttempt > 5){ // stop pub/sub alert(* case: failed to alert more than three times)
             log.info("Request to stop pub/sub alert");
             gmailServiceImpl.stopPubSub(member.getUid());
             return;
