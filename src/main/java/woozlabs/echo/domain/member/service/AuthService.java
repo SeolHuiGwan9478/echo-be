@@ -128,11 +128,13 @@ public class AuthService {
         Map<String, Object> userInfo = getGoogleUserInfoAndTokens(code);
         String providerId = (String) userInfo.get("id");
 
-        Optional<String> superAccountUidOpt = AuthCookieUtils.getCookieValue(request);
-        String superAccountUid = superAccountUidOpt.orElse(null);
+        Optional<String> superTokenOpt = AuthCookieUtils.getCookieValue(request);
+        String superToken = superTokenOpt.orElse(null);
+
+        String superAccountUid = firebaseTokenVerifier.verifyTokenAndGetUid(superToken);
 
         if (superAccountUid == null) {
-            log.info("Cookie 'superAccountUid' is null. Creating new member and super account.");
+            log.info("Cookie 'superToken' is null. Creating new member and super account.");
 
             Member member = createOrUpdateMember(userInfo, true);
             log.info("Created or updated member with UID: {}", member.getUid());
@@ -147,12 +149,9 @@ public class AuthService {
             Map<String, Object> customClaims = Map.of("accounts", superAccount.getMemberUids());
             setCustomUidClaims(member.getUid(), customClaims);
 
-            AuthCookieUtils.addCookie(response, member.getUid());
-            log.info("New SuperAccount created with ID: {}", superAccount.getId());
             log.info("Member added to SuperAccount. Member UID: {}", member.getUid());
-            log.info("Cookie attribute 'superAccountUid' set to: {}", member.getUid());
         } else {
-            log.info("Cookie 'superAccountUid' found. Adding new member to existing SuperAccount.");
+            log.info("Cookie 'superToken' found. Adding new member to existing SuperAccount.");
 
             SuperAccount superAccount = superAccountRepository.findByMemberUids(superAccountUid)
                     .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SUPER_ACCOUNT));
