@@ -87,9 +87,12 @@ public class PubSubService {
         List<String> fcmTokens = fcmTokenRepository.findByMember(member).stream().map(FcmToken::getFcmToken).toList();
         List<MessageInHistoryData> getHistoryList = getHistoryListById(pubSubHistory, newHistoryId, gmailService);
         if(getHistoryList.isEmpty()) return; // watch message
+        processForwardedMessage(getHistoryList);
         // send multicast messages
-        getHistoryList.forEach((historyData) -> {
+        for(MessageInHistoryData historyData : getHistoryList){
             try{
+                // process deleted email
+                if(historyData.getHistoryType().equals(HistoryType.MESSAGE_DELETED)) continue;
                 // get detailed message info
                 GmailMessageGetResponse gmailMessage = gmailServiceImpl.getUserEmailMessage(member.getUid(), historyData.getId());
                 String from = gmailMessage.getFrom().getEmail();
@@ -112,7 +115,21 @@ public class PubSubService {
             } catch (Exception e) {
                 throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST.getMessage());
             }
-        });
+        }
+    }
+
+    private static void processForwardedMessage(List<MessageInHistoryData> getHistoryList) {
+        // process forwarded email
+        if(getHistoryList.size() == 3){
+            HistoryType firstType = getHistoryList.get(0).getHistoryType();
+            HistoryType secondType = getHistoryList.get(1).getHistoryType();
+            HistoryType thirdType = getHistoryList.get(2).getHistoryType();
+            if(firstType.equals(HistoryType.MESSAGE_ADDED) &&
+                    secondType.equals(HistoryType.MESSAGE_DELETED) &&
+                    thirdType.equals(HistoryType.MESSAGE_ADDED)){
+                getHistoryList.subList(0,2).clear();
+            }
+        }
     }
 
     @Transactional
