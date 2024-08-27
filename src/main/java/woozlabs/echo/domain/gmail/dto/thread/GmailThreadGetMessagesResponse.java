@@ -5,6 +5,7 @@ import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import lombok.Data;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
+import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 
 import java.math.BigInteger;
@@ -58,9 +59,6 @@ public class GmailThreadGetMessagesResponse {
                                 .build()
                         );
                     }
-                }case THREAD_PAYLOAD_HEADER_DATE_KEY -> {
-                    String originDate = header.getValue();
-                    changeDateFormat(originDate, gmailThreadGetMessages);
                 }case THREAD_PAYLOAD_HEADER_CC_KEY -> {
                     String oneCc = header.getValue();
                     List<List<String>> splitSender = splitCcAndBcc(oneCc);
@@ -100,100 +98,23 @@ public class GmailThreadGetMessagesResponse {
                 }
             }
         }
+        changeDateFormat(message.getInternalDate(), gmailThreadGetMessages);
         gmailThreadGetMessages.setId(message.getId());
         gmailThreadGetMessages.setThreadId(message.getThreadId());
         gmailThreadGetMessages.setLabelIds(message.getLabelIds());
         gmailThreadGetMessages.setSnippet(message.getSnippet());
         gmailThreadGetMessages.setHistoryId(message.getHistoryId());
         gmailThreadGetMessages.setPayload(convertedPayload);
-        // verification code
         return gmailThreadGetMessages;
     }
 
-//    private static ExtractVerificationInfo findVerificationEmail(GmailThreadGetPayload payload, GmailUtility gmailUtility){
-//        // payload body check
-//        String payloadBody = payload.getBody().getData();
-//        ExtractVerificationInfo verificationInfo;
-//        if(payload.getMimeType().equals("text/html")) verificationInfo = gmailUtility.extractVerification(payloadBody);
-//        else verificationInfo = new ExtractVerificationInfo();
-//        List<GmailThreadGetPart> parts = payload.getParts();
-//        for(GmailThreadGetPart part : parts){
-//            if(part.getMimeType().equals("text/html")) findVerificationInfoInParts(part, verificationInfo, gmailUtility);
-//        }
-//        return verificationInfo;
-//    }
-//
-//    private static void findVerificationInfoInParts(GmailThreadGetPart inputPart, ExtractVerificationInfo info, GmailUtility gmailUtility){
-//        List<GmailThreadGetPart> parts = inputPart.getParts();
-//        if(parts.isEmpty()){
-//            String partBody = inputPart.getBody().getData();
-//            ExtractVerificationInfo newInfo = gmailUtility.extractVerification(partBody);
-//            info.updateCodes(newInfo.getCodes());
-//            info.updateLinks(newInfo.getLinks());
-//            return;
-//        }
-//        for(GmailThreadGetPart part : parts){
-//            findVerificationInfoInParts(part, info, gmailUtility);
-//        }
-//        String partBody = inputPart.getBody().getData();
-//        ExtractVerificationInfo newInfo = gmailUtility.extractVerification(partBody);
-//        info.updateCodes(newInfo.getCodes());
-//        info.updateLinks(newInfo.getLinks());
-//    }
-
-    private static void changeDateFormat(String originDate, GmailThreadGetMessagesResponse gmailThreadGetMessages) {
-        Pattern firstPattern = Pattern.compile(
-                DATE_TIMEZONE_PATTERN_1
-        );
-        Pattern secondPattern = Pattern.compile(
-                DATE_TIMEZONE_PATTER_2
-        );
-        Matcher firstMatcher = firstPattern.matcher(originDate);
-        Matcher secondMatcher = secondPattern.matcher(originDate);
-        if (firstMatcher.matches() || secondMatcher.find()) {
-            String datePart = firstMatcher.group(1);
-            String timezonePart = firstMatcher.group(2);
-            datePart = datePart.replaceAll("\\s+", " ");
-            // parsing dateTime
-            DateTimeFormatter inputFormatter;
-            inputFormatter = DateTimeFormatter.ofPattern(
-                    INPUT_GMAIL_DATE_FORMAT_1,
-                    Locale.ENGLISH
-            );
-            LocalDateTime dateTime = LocalDateTime.parse(datePart, inputFormatter);
-            // converting timezone format
-            if (timezonePart.matches(TIMEZONE_PATTERN_1)) {
-                timezonePart = timezonePart.substring(0, 5);
-                convertToIanaTimezone(gmailThreadGetMessages, timezonePart);
-            }else if(timezonePart.matches(TIMEZONE_PATTERN_2)){
-                convertToIanaTimezone(gmailThreadGetMessages, timezonePart);
-            }else{
-                ZoneId zone = ZoneId.of(timezonePart);
-                ZoneOffset offset = zone.getRules().getOffset(java.time.Instant.now());
-                timezonePart = offset.toString().replaceAll(":", "");
-                gmailThreadGetMessages.setTimezone(timezonePart);
-            }
-            ZoneId zoneId = ZoneId.of(timezonePart);
-            ZonedDateTime zonedDateTime = dateTime.atZone(zoneId);
-            DateTimeFormatter outputFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-            gmailThreadGetMessages.setDate(zonedDateTime.format(outputFormatter));
-        } else {
-            gmailThreadGetMessages.setDate(originDate);
-        }
-    }
-
-    private static void convertToIanaTimezone(GmailThreadGetMessagesResponse gmailThreadGetMessages, String timezonePart) {
-        try{
-            ZoneOffset offset = ZoneOffset.of(timezonePart);
-            for (String zoneId : ZoneOffset.getAvailableZoneIds()){
-                ZoneId zone = ZoneId.of(zoneId);
-                if(zone.getRules().getOffset(Instant.now()).equals(offset)){
-                    gmailThreadGetMessages.setTimezone(zoneId);
-                    break;
-                }
-            }
-        }catch (Exception e){
-            gmailThreadGetMessages.setTimezone(null);
+    private static void changeDateFormat(Long internalDate, GmailThreadGetMessagesResponse gmailThreadGetMessages) {
+        Instant instant = Instant.ofEpochMilli(internalDate);
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+        String iso8601 = localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        if(!iso8601.isEmpty()){
+            gmailThreadGetMessages.setDate(iso8601);
+            gmailThreadGetMessages.setTimezone(MESSAGE_INTERNAL_DATE_TIMEZONE);
         }
     }
 }
