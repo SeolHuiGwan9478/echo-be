@@ -21,5 +21,5 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     List<Account> findAllByMember(Member member);
 
     @Query("SELECT m FROM Account m WHERE m.accessTokenFetchedAt <= :cutoffTime")
-    List<Account> findMembersByCutoffTime(@Param("cutoffTime") LocalDateTime cutoffTime);
+    List<Account> findAccountsByCutoffTime(@Param("cutoffTime") LocalDateTime cutoffTime);
 }
