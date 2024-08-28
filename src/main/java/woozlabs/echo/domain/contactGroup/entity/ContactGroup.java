@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
 import java.util.ArrayList;
@@ -23,22 +23,22 @@ public class ContactGroup extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
-    private Member owner;
+    private Account owner;
 
     @OneToMany(mappedBy = "contactGroup", cascade = CascadeType.ALL)
-    private List<MemberContactGroup> memberContactGroups = new ArrayList<>();
+    private List<AccountContactGroup> accountContactGroups = new ArrayList<>();
 
     @ElementCollection
     @CollectionTable(name = "contactGroup_emails", joinColumns = @JoinColumn(name = "contactGroup_id"))
     @Column(name = "email")
     private List<String> emails = new ArrayList<>();
 
-    public void addMember(Member member) {
-        MemberContactGroup memberContactGroup = new MemberContactGroup();
-        memberContactGroup.setContactGroup(this);
-        memberContactGroup.setMember(member);
-        this.memberContactGroups.add(memberContactGroup);
-        member.getMemberContactGroups().add(memberContactGroup);
+    public void addAccount(Account account) {
+        AccountContactGroup accountContactGroup = new AccountContactGroup();
+        accountContactGroup.setContactGroup(this);
+        accountContactGroup.setAccount(account);
+        this.accountContactGroups.add(accountContactGroup);
+        account.getAccountContactGroups().add(accountContactGroup);
     }
 
     public void addEmail(String email) {

@@ -25,9 +25,9 @@ import woozlabs.echo.domain.gmail.repository.PubSubHistoryRepository;
 import woozlabs.echo.domain.gmail.repository.VerificationEmailRepository;
 import woozlabs.echo.domain.gmail.validator.PubSubValidator;
 import woozlabs.echo.domain.gmail.entity.FcmToken;
-import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.gmail.repository.FcmTokenRepository;
-import woozlabs.echo.domain.member.repository.MemberRepository;
+import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
@@ -57,7 +57,7 @@ public class PubSubService {
     // injection & init
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private final ObjectMapper om;
-    private final MemberRepository memberRepository;
+    private final AccountRepository accountRepository;
     private final FcmTokenRepository fcmTokenRepository;
     private final PubSubHistoryRepository pubSubHistoryRepository;
     private final VerificationEmailRepository verificationEmailRepository;
@@ -72,19 +72,21 @@ public class PubSubService {
         String email = notification.getEmailAddress();
         int deliveryAttempt = pubsubMessage.getDeliveryAttempt();
         BigInteger newHistoryId = new BigInteger(notification.getHistoryId());
-        Member member = memberRepository.findByEmail(email).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE, ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE.getMessage())
         );
         if(deliveryAttempt > 5){ // stop pub/sub alert(* case: failed to alert more than three times)
             log.info("Request to stop pub/sub alert");
+            gmailServiceImpl.stopPubSub(account.getUid());
+        }
+        PubSubHistory pubSubHistory = pubSubHistoryRepository.findByAccount(account).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR)
             gmailServiceImpl.stopPubSub(member.getUid());
             return;
         }
         PubSubHistory pubSubHistory = pubSubHistoryRepository.findByMember(member).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR, ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR.getMessage())
         );
-        Gmail gmailService = createGmailService(member.getAccessToken());
-        List<String> fcmTokens = fcmTokenRepository.findByMember(member).stream().map(FcmToken::getFcmToken).toList();
+        Gmail gmailService = createGmailService(account.getAccessToken());
+        List<String> fcmTokens = fcmTokenRepository.findByAccount(account).stream().map(FcmToken::getFcmToken).toList();
         List<MessageInHistoryData> getHistoryList = getHistoryListById(pubSubHistory, newHistoryId, gmailService);
         if(getHistoryList.isEmpty()) return; // watch message
         processForwardedMessage(getHistoryList);
@@ -94,7 +96,7 @@ public class PubSubService {
                 // process deleted email
                 if(historyData.getHistoryType().equals(HistoryType.MESSAGE_DELETED)) continue;
                 // get detailed message info
-                GmailMessageGetResponse gmailMessage = gmailServiceImpl.getUserEmailMessage(member.getUid(), historyData.getId());
+                GmailMessageGetResponse gmailMessage = gmailServiceImpl.getUserEmailMessage(account.getUid(), historyData.getId());
                 String from = gmailMessage.getFrom().getEmail();
                 String subject = gmailMessage.getSubject();
                 Map<String, String> data = new HashMap<>();
@@ -134,16 +136,16 @@ public class PubSubService {
 
     @Transactional
     public FcmTokenResponse saveFcmToken(String uid, FcmTokenRequest dto){
-        Member member = memberRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
-        Optional<FcmToken> findFcmToken = fcmTokenRepository.findByMemberAndMachineUuid(member, dto.getMachineUuid());
+        Account account = accountRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+        Optional<FcmToken> findFcmToken = fcmTokenRepository.findByAccountAndMachineUuid(account, dto.getMachineUuid());
         if(findFcmToken.isEmpty()){
-            List<FcmToken> tokens = fcmTokenRepository.findByMember(member);
+            List<FcmToken> tokens = fcmTokenRepository.findByAccount(account);
             pubSubValidator.validateSaveFcmToken(tokens, dto.getFcmToken());
             FcmToken newFcmToken = FcmToken.builder()
                     .fcmToken(dto.getFcmToken())
                     .machineUuid(dto.getMachineUuid())
-                    .member(member).build();
+                    .account(account).build();
             fcmTokenRepository.save(newFcmToken);
             return new FcmTokenResponse(newFcmToken.getId());
         }

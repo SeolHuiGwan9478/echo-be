@@ -9,17 +9,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import woozlabs.echo.domain.echo.dto.emailTemplate.CreateEmailTemplateRequest;
 import woozlabs.echo.domain.echo.dto.emailTemplate.EmailTemplateResponse;
 import woozlabs.echo.domain.echo.dto.emailTemplate.UpdateEmailTemplateRequest;
-import woozlabs.echo.domain.echo.entity.EmailRecipient;
 import woozlabs.echo.domain.echo.entity.EmailTemplate;
 import woozlabs.echo.domain.echo.repository.EmailTemplateRepository;
-import woozlabs.echo.domain.member.entity.Member;
-import woozlabs.echo.domain.member.repository.MemberRepository;
+import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.domain.member.repository.AccountRepository;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -34,27 +32,27 @@ class EmailTemplateServiceTest {
 
     // Mock 객체 생성
     @Mock
-    private MemberRepository memberRepository;
+    private AccountRepository accountRepository;
 
     // 생성한 위의 Mock 객체들을 EmailTemplateService에 주입
     @InjectMocks
     private EmailTemplateService emailTemplateService;
 
-    private Member member;
+    private Account account;
     private EmailTemplate emailTemplate;
 
     @BeforeEach
     void setUp() {
-        member = new Member();
-        member.setId(1L);
-        member.setUid("1234567891");
+        account = new Account();
+        account.setId(1L);
+        account.setUid("1234567891");
 
         emailTemplate = new EmailTemplate();
         emailTemplate.setId(1L);
         emailTemplate.setTemplateName("Template1");
         emailTemplate.setSubject("Subject1");
         emailTemplate.setBody("Body1");
-        emailTemplate.setMember(member);
+        emailTemplate.setAccount(account);
     }
 
     @Test
@@ -64,8 +62,8 @@ class EmailTemplateServiceTest {
         templates.add(emailTemplate);
 
         // when
-        when(memberRepository.findByUid("1234567891")).thenReturn(Optional.of(member));
-        when(emailTemplateRepository.findByMember(member)).thenReturn(templates);
+        when(accountRepository.findByUid("1234567891")).thenReturn(Optional.of(account));
+        when(emailTemplateRepository.findByMember(account)).thenReturn(templates);
 
         // then
         List<EmailTemplateResponse> responses = emailTemplateService.getAllTemplates("1234567891");
@@ -89,7 +87,7 @@ class EmailTemplateServiceTest {
         request.setBcc(Arrays.asList("bcc1@example.com", "bcc2@example.com"));
         request.setBody("New Body");
 
-        when(memberRepository.findByUid("1234567891")).thenReturn(Optional.of(member));
+        when(accountRepository.findByUid("1234567891")).thenReturn(Optional.of(account));
 
         // when
         emailTemplateService.createTemplate("1234567891", request);
@@ -99,7 +97,7 @@ class EmailTemplateServiceTest {
                 template.getTemplateName().equals("New Template") &&
                 template.getSubject().equals("New Subject") &&
                 template.getBody().equals("New Body") &&
-                template.getMember().equals(member) &&
+                template.getAccount().equals(account) &&
                 template.getRecipients().size() == 6 &&
                 template.getToRecipients().size() == 2 &&
                 template.getCcRecipients().size() == 2 &&
@@ -129,10 +127,10 @@ class EmailTemplateServiceTest {
         existingTemplate.setTemplateName("Old Template");
         existingTemplate.setSubject("Old Subject");
         existingTemplate.setBody("Old Body");
-        existingTemplate.setMember(member);
+        existingTemplate.setAccount(account);
 
         // when
-        when(memberRepository.findByUid("1234567891")).thenReturn(Optional.of(member));
+        when(accountRepository.findByUid("1234567891")).thenReturn(Optional.of(account));
         when(emailTemplateRepository.findById(3L)).thenReturn(Optional.of(existingTemplate));
 
         emailTemplateService.updateTemplate("1234567891", 3L, request);
@@ -142,7 +140,7 @@ class EmailTemplateServiceTest {
                 template.getTemplateName().equals("Updated Template") &&
                 template.getSubject().equals("Updated Subject") &&
                 template.getBody().equals("Updated Body") &&
-                template.getMember().equals(member) &&
+                template.getAccount().equals(account) &&
                 template.getRecipients().size() == 6 &&
                 template.getToRecipients().size() == 2 &&
                 template.getCcRecipients().size() == 2 &&
@@ -167,9 +165,9 @@ class EmailTemplateServiceTest {
         existingTemplate.setTemplateName("Old Template");
         existingTemplate.setSubject("Old Subject");
         existingTemplate.setBody("Old Body");
-        existingTemplate.setMember(member);
+        existingTemplate.setAccount(account);
 
-        when(memberRepository.findByUid("1234567891")).thenReturn(Optional.of(member));
+        when(accountRepository.findByUid("1234567891")).thenReturn(Optional.of(account));
         when(emailTemplateRepository.findById(templateId)).thenReturn(Optional.of(existingTemplate));
 
         // when

@@ -1,15 +1,16 @@
 package woozlabs.echo.domain.member.controller;
 
 import com.google.firebase.auth.FirebaseAuthException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import woozlabs.echo.domain.member.service.AuthService;
 import woozlabs.echo.global.aop.annotations.VerifyToken;
-import woozlabs.echo.global.exception.CustomErrorException;
-import woozlabs.echo.global.exception.ErrorCode;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -20,18 +21,9 @@ public class AuthController {
 
     @GetMapping("/google/callback")
     public void handleOAuthCallback(@RequestParam("code") String code,
-                                    @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-                                    HttpServletResponse response) {
-        try {
-            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-                String idToken = authorizationHeader.replace("Bearer ", "");
-                authService.addAccount(code, idToken, response);
-            } else {
-                authService.signIn(code, response);
-            }
-        } catch (FirebaseAuthException e) {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_VERIFY_ID_TOKEN, e.getMessage());
-        }
+                                    HttpServletRequest request,
+                                    HttpServletResponse response) throws FirebaseAuthException {
+        authService.handleGoogleCallback(code, request, response);
     }
 
     @GetMapping("/verify-token")

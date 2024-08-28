@@ -8,7 +8,7 @@ import woozlabs.echo.domain.sharedEmail.entity.SharedEmail;
 import woozlabs.echo.domain.sharedEmail.entity.Thread;
 import woozlabs.echo.domain.sharedEmail.repository.SharedInboxRepository;
 import woozlabs.echo.domain.sharedEmail.repository.ThreadRepository;
-import woozlabs.echo.domain.team.entity.TeamMember;
+import woozlabs.echo.domain.team.entity.TeamAccount;
 import woozlabs.echo.domain.team.service.TeamService;
 import woozlabs.echo.domain.team.utils.AuthorizationUtil;
 import woozlabs.echo.global.exception.CustomErrorException;
@@ -35,8 +35,8 @@ public class SharedInboxService {
         SharedEmail sharedEmail = sharedInboxRepository.findByThreadId(threadId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL));
 
-        TeamMember teamMember =  teamService.getTeamMember(uid, Long.parseLong(sharedEmail.getTeamId()));
-        if (!AuthorizationUtil.canViewSharedEmail(teamMember, sharedEmail.getShareStatus())) {
+        TeamAccount teamAccount =  teamService.getTeamMember(uid, Long.parseLong(sharedEmail.getTeamId()));
+        if (!AuthorizationUtil.canViewSharedEmail(teamAccount, sharedEmail.getShareStatus())) {
             throw new CustomErrorException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
 
@@ -45,8 +45,8 @@ public class SharedInboxService {
 
     @Transactional
     public void shareEmail(String sharedByUid, ShareEmailRequestDto shareEmailRequestDto) {
-        TeamMember teamMember = teamService.getTeamMember(sharedByUid, Long.parseLong(shareEmailRequestDto.getTeamId()));
-        if (!AuthorizationUtil.canSharedEmail(teamMember)) {
+        TeamAccount teamAccount = teamService.getTeamMember(sharedByUid, Long.parseLong(shareEmailRequestDto.getTeamId()));
+        if (!AuthorizationUtil.canSharedEmail(teamAccount)) {
             throw new CustomErrorException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
 

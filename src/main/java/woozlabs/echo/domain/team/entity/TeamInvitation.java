@@ -5,7 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.Account;
 
 import java.time.LocalDateTime;
 
@@ -23,7 +23,7 @@ public class TeamInvitation {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inviter_id")
-    private Member inviter;
+    private Account inviter;
 
     private String inviteeEmail;
 
@@ -31,7 +31,7 @@ public class TeamInvitation {
     private InvitationStatus status;
 
     @Enumerated(EnumType.STRING)
-    private TeamMemberRole role;
+    private Role role;
 
     private String token;
     private LocalDateTime expiresAt;
@@ -55,7 +55,7 @@ public class TeamInvitation {
     }
 
     @Builder
-    public TeamInvitation(Team team, Member inviter, String inviteeEmail, String token, LocalDateTime expiresAt, LocalDateTime sentAt, TeamMemberRole inviteeRole) {
+    public TeamInvitation(Team team, Account inviter, String inviteeEmail, String token, LocalDateTime expiresAt, LocalDateTime sentAt, Role inviteeRole) {
         this.team = team;
         this.inviter = inviter;
         this.inviteeEmail = inviteeEmail;

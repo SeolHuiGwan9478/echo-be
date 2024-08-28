@@ -7,8 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.contactGroup.dto.ContactGroupResponse;
 import woozlabs.echo.domain.contactGroup.entity.ContactGroup;
 import woozlabs.echo.domain.contactGroup.repository.ContactGroupRepository;
-import woozlabs.echo.domain.member.entity.Member;
-import woozlabs.echo.domain.member.repository.MemberRepository;
+import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
@@ -22,18 +22,18 @@ import java.util.stream.Collectors;
 public class ContactGroupService {
 
     private final ContactGroupRepository contactGroupRepository;
-    private final MemberRepository memberRepository;
+    private final AccountRepository accountRepository;
 
     @Transactional
     public void createContactGroup(String ownerUid, String contactGroupName) {
-        Member owner = memberRepository.findByUid(ownerUid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        Account owner = accountRepository.findByUid(ownerUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         ContactGroup contactGroup = new ContactGroup();
         contactGroup.setName(contactGroupName);
         contactGroup.setOwner(owner);
 
-        contactGroup.addMember(owner);
+        contactGroup.addAccount(owner);
         contactGroupRepository.save(contactGroup);
     }
 
@@ -49,8 +49,8 @@ public class ContactGroupService {
     }
 
     public List<ContactGroupResponse> getContactGroupsByOwner(String ownerUid) {
-        Member owner = memberRepository.findByUid(ownerUid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        Account owner = accountRepository.findByUid(ownerUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         List<ContactGroup> contactGroups = contactGroupRepository.findByOwner(owner);
         return contactGroups.stream()

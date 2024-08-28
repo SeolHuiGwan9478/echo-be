@@ -2,7 +2,7 @@ package woozlabs.echo.domain.gmail.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.Account;
 
 @Entity
 @Getter
@@ -14,8 +14,8 @@ public class FcmToken {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;
+    @JoinColumn(name = "account_id")
+    private Account account;
 
     private String fcmToken;
     private String machineUuid;

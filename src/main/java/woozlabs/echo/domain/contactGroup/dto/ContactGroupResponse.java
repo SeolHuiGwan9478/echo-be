@@ -15,12 +15,12 @@ import java.util.List;
 public class ContactGroupResponse {
 
     private String contactGroupName;
-    private ContactGroupToMember owner;
+    private ContactGroupToAccount owner;
     private List<String> memberEmails;
 
     public ContactGroupResponse(ContactGroup contactGroup) {
         this.contactGroupName = contactGroup.getName();
-        this.owner = new ContactGroupToMember(contactGroup.getOwner());
+        this.owner = new ContactGroupToAccount(contactGroup.getOwner());
         this.memberEmails = contactGroup.getEmails();
     }
 }

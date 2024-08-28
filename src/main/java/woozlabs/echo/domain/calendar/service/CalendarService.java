@@ -16,8 +16,8 @@ import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.calendar.dto.CalendarListData;
 import woozlabs.echo.domain.calendar.dto.CalendarListResponse;
 import woozlabs.echo.domain.calendar.dto.UnAvailableDatesResponse;
-import woozlabs.echo.domain.member.entity.Member;
-import woozlabs.echo.domain.member.repository.MemberRepository;
+import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
@@ -33,7 +33,7 @@ public class CalendarService {
     private static final String CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar";
     private final String PRIMARY_CALENDAR_ID = "primary";
     private final String DATES_CONNECTION_CHAR = " ~ ";
-    private final MemberRepository memberRepository;
+    private final AccountRepository accountRepository;
 
     public CalendarListResponse getCalendars(String uid) throws GeneralSecurityException, IOException {
         Calendar calendarService = getCalendarService(uid);
@@ -69,9 +69,9 @@ public class CalendarService {
     }
 
     private Calendar getCalendarService(String uid) throws GeneralSecurityException, IOException {
-        Member member = memberRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
-        String accessToken = member.getAccessToken();
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+        String accessToken = account.getAccessToken();
         GoogleCredentials credentials = GoogleCredentials.create(new AccessToken(accessToken, null))
                 .createScoped(Collections.singleton(CALENDAR_SCOPE));
         return new Calendar.Builder(

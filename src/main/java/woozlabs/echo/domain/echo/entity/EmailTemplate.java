@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.Account;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +29,8 @@ public class EmailTemplate {
     private String body;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;
+    @JoinColumn(name = "account_id")
+    private Account account;
 
     public List<EmailRecipient> getToRecipients() {
         return recipients.stream()

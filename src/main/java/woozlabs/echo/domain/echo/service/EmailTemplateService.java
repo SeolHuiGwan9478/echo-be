@@ -9,8 +9,8 @@ import woozlabs.echo.domain.echo.dto.emailTemplate.UpdateEmailTemplateRequest;
 import woozlabs.echo.domain.echo.entity.EmailRecipient;
 import woozlabs.echo.domain.echo.entity.EmailTemplate;
 import woozlabs.echo.domain.echo.repository.EmailTemplateRepository;
-import woozlabs.echo.domain.member.entity.Member;
-import woozlabs.echo.domain.member.repository.MemberRepository;
+import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
@@ -23,12 +23,12 @@ import java.util.stream.Collectors;
 public class EmailTemplateService {
 
     private final EmailTemplateRepository emailTemplateRepository;
-    private final MemberRepository memberRepository;
+    private final AccountRepository accountRepository;
     public List<EmailTemplateResponse> getAllTemplates(String uid) {
-        Member member = memberRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
-        List<EmailTemplate> emailTemplates = emailTemplateRepository.findByMember(member);
+        List<EmailTemplate> emailTemplates = emailTemplateRepository.findByAccount(account);
         return emailTemplates.stream()
                 .map(EmailTemplateResponse::new)
                 .collect(Collectors.toList());
@@ -36,14 +36,14 @@ public class EmailTemplateService {
 
     @Transactional
     public void createTemplate(String uid, CreateEmailTemplateRequest createEmailTemplateRequest) {
-        Member member = memberRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         EmailTemplate emailTemplate = new EmailTemplate();
         emailTemplate.setTemplateName(createEmailTemplateRequest.getTemplateName());
         emailTemplate.setSubject(createEmailTemplateRequest.getSubject());
         emailTemplate.setBody(createEmailTemplateRequest.getBody());
-        emailTemplate.setMember(member);
+        emailTemplate.setAccount(account);
 
         createEmailTemplateRequest.getTo().forEach(email ->
                 emailTemplate.addRecipient(email, EmailRecipient.RecipientType.TO));
@@ -57,13 +57,13 @@ public class EmailTemplateService {
 
     @Transactional
     public void updateTemplate(String uid, Long templateId, UpdateEmailTemplateRequest updateEmailTemplateRequest) {
-        Member member = memberRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         EmailTemplate emailTemplate = emailTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_EMAIL_TEMPLATE));
 
-        if (!emailTemplate.getMember().equals(member)) {
+        if (!emailTemplate.getAccount().equals(account)) {
             throw new CustomErrorException(ErrorCode.UNAUTHORIZED_ACCESS_TO_TEMPLATE);
         }
 
@@ -85,13 +85,13 @@ public class EmailTemplateService {
 
     @Transactional
     public void deleteTemplate(String uid, Long templateId) {
-        Member member = memberRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         EmailTemplate emailTemplate = emailTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_EMAIL_TEMPLATE));
 
-        if (!emailTemplate.getMember().equals(member)) {
+        if (!emailTemplate.getAccount().equals(account)) {
             throw new CustomErrorException(ErrorCode.UNAUTHORIZED_ACCESS_TO_TEMPLATE);
         }
 

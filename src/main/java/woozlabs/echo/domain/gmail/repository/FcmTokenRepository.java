@@ -4,15 +4,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import woozlabs.echo.domain.gmail.entity.FcmToken;
-import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.Account;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface FcmTokenRepository extends JpaRepository<FcmToken, Long> {
-    List<FcmToken> findByMember(Member member);
-    Optional<FcmToken> findByMemberAndMachineUuid(Member member, String machineUuid);
+    List<FcmToken> findByAccount(Account account);
+    Optional<FcmToken> findByAccountAndMachineUuid(Account account, String machineUuid);
 
-    @Query("select count(fcm) from FcmToken fcm where fcm.member = :member")
-    Long findTokenCountByMember(@Param("member") Member member);
+    @Query("select count(fcm) from FcmToken fcm where fcm.account = :account")
+    Long findTokenCountByAccount(@Param("account") Account account);
 }

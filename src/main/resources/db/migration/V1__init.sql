@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS `contact_group` (
     `owner_id` BIGINT,
     `name` VARCHAR(255),
     PRIMARY KEY (`id`),
-    FOREIGN KEY (`owner_id`) REFERENCES `member` (`id`)
+    FOREIGN KEY (`owner_id`) REFERENCES `account` (`id`)
     ) ENGINE=InnoDB;
 
 -- Contact Group Emails
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `email_template` (
     `subject` VARCHAR(255),
     `template_name` VARCHAR(255),
     PRIMARY KEY (`id`),
-    FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
+    FOREIGN KEY (`member_id`) REFERENCES `account` (`id`)
     ) ENGINE=InnoDB;
 
 -- FCM Token
@@ -45,11 +45,11 @@ CREATE TABLE IF NOT EXISTS `fcm_token` (
     `fcm_token` VARCHAR(255),
     `machine_uuid` VARCHAR(255),
     PRIMARY KEY (`id`),
-    FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
+    FOREIGN KEY (`member_id`) REFERENCES `account` (`id`)
     ) ENGINE=InnoDB;
 
--- Member
-CREATE TABLE IF NOT EXISTS `member` (
+-- Account
+CREATE TABLE IF NOT EXISTS `account` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `is_primary` BIT NOT NULL,
     `access_token_fetched_at` DATETIME(6),
@@ -68,14 +68,14 @@ CREATE TABLE IF NOT EXISTS `member` (
     FOREIGN KEY (`super_account_id`) REFERENCES `super_account` (`id`)
     ) ENGINE=InnoDB;
 
--- Member Contact Group
+-- Account Contact Group
 CREATE TABLE IF NOT EXISTS `member_contact_group` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `contact_group_id` BIGINT,
     `member_id` BIGINT,
     PRIMARY KEY (`id`),
     FOREIGN KEY (`contact_group_id`) REFERENCES `contact_group` (`id`),
-    FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
+    FOREIGN KEY (`member_id`) REFERENCES `account` (`id`)
     ) ENGINE=InnoDB;
 
 -- Pub Sub History
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS `pub_sub_history` (
     `member_id` BIGINT,
     PRIMARY KEY (`id`),
     UNIQUE (`member_id`),
-    FOREIGN KEY (`member_id`) REFERENCES `member` (`id`) ON DELETE CASCADE
+    FOREIGN KEY (`member_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB;
 
 -- Signature
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `signature` (
     `content` TINYTEXT,
     `type` ENUM('MEMBER','TEAM'),
     PRIMARY KEY (`id`),
-    FOREIGN KEY (`owner_id`) REFERENCES `member` (`id`)
+    FOREIGN KEY (`owner_id`) REFERENCES `account` (`id`)
     ) ENGINE=InnoDB;
 
 -- Super Account
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS `super_account` (
     PRIMARY KEY (`id`)
     ) ENGINE=InnoDB;
 
--- Super Account Member UIDs
+-- Super Account Account UIDs
 CREATE TABLE IF NOT EXISTS `super_account_member_uids` (
     `super_account_id` BIGINT NOT NULL,
     `member_uid` VARCHAR(255),
@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS `team` (
     `creator_id` BIGINT,
     `name` VARCHAR(255),
     PRIMARY KEY (`id`),
-    FOREIGN KEY (`creator_id`) REFERENCES `member` (`id`)
+    FOREIGN KEY (`creator_id`) REFERENCES `account` (`id`)
     ) ENGINE=InnoDB;
 
 -- Team Invitation
@@ -141,18 +141,18 @@ CREATE TABLE IF NOT EXISTS `team_invitation` (
     `role` ENUM('ADMIN','EDITOR','PUBLIC_VIEWER','VIEWER'),
     `status` ENUM('ACCEPTED','EXPIRED','PENDING','REJECTED'),
     PRIMARY KEY (`id`),
-    FOREIGN KEY (`inviter_id`) REFERENCES `member` (`id`),
+    FOREIGN KEY (`inviter_id`) REFERENCES `account` (`id`),
     FOREIGN KEY (`team_id`) REFERENCES `team` (`id`)
     ) ENGINE=InnoDB;
 
--- Team Member
+-- Team Account
 CREATE TABLE IF NOT EXISTS `team_member` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `member_id` BIGINT,
     `team_id` BIGINT,
     `role` ENUM('ADMIN','EDITOR','PUBLIC_VIEWER','VIEWER'),
     PRIMARY KEY (`id`),
-    FOREIGN KEY (`member_id`) REFERENCES `member` (`id`),
+    FOREIGN KEY (`member_id`) REFERENCES `account` (`id`),
     FOREIGN KEY (`team_id`) REFERENCES `team` (`id`)
     ) ENGINE=InnoDB;
 
@@ -163,5 +163,5 @@ CREATE TABLE IF NOT EXISTS `user_sidebar_config` (
     `sidebar_config` TEXT,
     PRIMARY KEY (`id`),
     UNIQUE (`member_id`),
-    FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
+    FOREIGN KEY (`member_id`) REFERENCES `account` (`id`)
     ) ENGINE=InnoDB;

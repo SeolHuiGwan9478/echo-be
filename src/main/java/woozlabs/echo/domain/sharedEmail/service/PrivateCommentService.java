@@ -12,7 +12,7 @@ import woozlabs.echo.domain.sharedEmail.entity.UserPublicKey;
 import woozlabs.echo.domain.sharedEmail.repository.PrivateCommentRepository;
 import woozlabs.echo.domain.sharedEmail.repository.SharedInboxRepository;
 import woozlabs.echo.domain.sharedEmail.repository.UserPublicKeyRepository;
-import woozlabs.echo.domain.team.entity.TeamMember;
+import woozlabs.echo.domain.team.entity.TeamAccount;
 import woozlabs.echo.domain.team.repository.TeamMemberRepository;
 import woozlabs.echo.domain.team.service.TeamService;
 import woozlabs.echo.domain.team.utils.AuthorizationUtil;
@@ -38,8 +38,8 @@ public class PrivateCommentService {
         SharedEmail sharedEmail = sharedInboxRepository.findById(sharedEmailId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL));
 
-        TeamMember teamMember = teamService.getTeamMember(uid, Long.parseLong(sharedEmail.getTeamId()));
-        if (!AuthorizationUtil.canViewSharedEmail(teamMember, sharedEmail.getShareStatus())) {
+        TeamAccount teamAccount = teamService.getTeamMember(uid, Long.parseLong(sharedEmail.getTeamId()));
+        if (!AuthorizationUtil.canViewSharedEmail(teamAccount, sharedEmail.getShareStatus())) {
             throw new CustomErrorException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
 
@@ -55,8 +55,8 @@ public class PrivateCommentService {
         SharedEmail sharedEmail = sharedInboxRepository.findById(privateCommentCreateDto.getSharedEmailId())
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL));
 
-        TeamMember teamMember = teamService.getTeamMember(uid, Long.parseLong(sharedEmail.getTeamId()));
-        if (!AuthorizationUtil.canViewSharedEmail(teamMember, sharedEmail.getShareStatus())) {
+        TeamAccount teamAccount = teamService.getTeamMember(uid, Long.parseLong(sharedEmail.getTeamId()));
+        if (!AuthorizationUtil.canViewSharedEmail(teamAccount, sharedEmail.getShareStatus())) {
             throw new CustomErrorException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
 
@@ -85,11 +85,11 @@ public class PrivateCommentService {
         SharedEmail sharedEmail = sharedInboxRepository.findById(sharedEmailId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL));
 
-        List<TeamMember> teamMembers = teamMemberRepository.findByTeamId(Long.parseLong(sharedEmail.getTeamId()));
+        List<TeamAccount> teamAccounts = teamMemberRepository.findByTeamId(Long.parseLong(sharedEmail.getTeamId()));
 
-        return teamMembers.stream()
+        return teamAccounts.stream()
                 .map(member -> {
-                    UserPublicKey publicKey = userPublicKeyRepository.findByUid(member.getMember().getUid());
+                    UserPublicKey publicKey = userPublicKeyRepository.findByUid(member.getAccount().getUid());
                     return new UserPublicKeyDto(publicKey);
                 })
                 .collect(Collectors.toList());

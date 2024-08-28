@@ -11,8 +11,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import woozlabs.echo.domain.contactGroup.dto.ContactGroupResponse;
 import woozlabs.echo.domain.contactGroup.entity.ContactGroup;
 import woozlabs.echo.domain.contactGroup.repository.ContactGroupRepository;
-import woozlabs.echo.domain.member.entity.Member;
-import woozlabs.echo.domain.member.repository.MemberRepository;
+import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.domain.member.repository.AccountRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,21 +31,21 @@ class ContactGroupServiceTest {
     private ContactGroupRepository contactGroupRepository;
 
     @Mock
-    private MemberRepository memberRepository;
+    private AccountRepository accountRepository;
 
-    private Member mockMember;
+    private Account mockAccount;
     private ContactGroup mockContactGroup;
 
     @BeforeEach
     void setUp() {
-        mockMember = new Member();
-        mockMember.setId(1L);
-        mockMember.setUid("1234567891");
+        mockAccount = new Account();
+        mockAccount.setId(1L);
+        mockAccount.setUid("1234567891");
 
         mockContactGroup = new ContactGroup();
         mockContactGroup.setId(1L);
         mockContactGroup.setName("Test ContactGroup");
-        mockContactGroup.setOwner(mockMember);
+        mockContactGroup.setOwner(mockAccount);
     }
 
     @Test
@@ -55,7 +55,7 @@ class ContactGroupServiceTest {
         String ownerUid = "123456891";
         String contactGroupName = "New Group";
 
-        doReturn(Optional.of(mockMember)).when(memberRepository).findByUid(ownerUid);
+        doReturn(Optional.of(mockAccount)).when(accountRepository).findByUid(ownerUid);
 
         // when
         contactGroupService.createContactGroup(ownerUid, contactGroupName);
@@ -67,10 +67,10 @@ class ContactGroupServiceTest {
         ContactGroup savedGroup = contactGroupCaptor.getValue();
 
         assertThat(savedGroup.getName()).isEqualTo(contactGroupName);
-        assertThat(savedGroup.getOwner()).isEqualTo(mockMember);
+        assertThat(savedGroup.getOwner()).isEqualTo(mockAccount);
 
-        // Verify memberRepository.findByUid 호출 여부 검증
-        verify(memberRepository, times(1)).findByUid(ownerUid);
+        // Verify accountRepository.findByUid 호출 여부 검증
+        verify(accountRepository, times(1)).findByUid(ownerUid);
 
         // Verify contactGroupRepository.save 호출 여부 검증
         verify(contactGroupRepository, times(1)).save(any(ContactGroup.class));
@@ -99,8 +99,8 @@ class ContactGroupServiceTest {
         String ownerUid = "123456891";
         List<ContactGroup> mockContactGroups = List.of(mockContactGroup);
 
-        doReturn(Optional.of(mockMember)).when(memberRepository).findByUid(ownerUid);
-        doReturn(mockContactGroups).when(contactGroupRepository).findByOwner(mockMember);
+        doReturn(Optional.of(mockAccount)).when(accountRepository).findByUid(ownerUid);
+        doReturn(mockContactGroups).when(contactGroupRepository).findByOwner(mockAccount);
 
         // when
         List<ContactGroupResponse> contactGroupResponses = contactGroupService.getContactGroupsByOwner(ownerUid);
@@ -108,7 +108,7 @@ class ContactGroupServiceTest {
         // then
         assertThat(contactGroupResponses).hasSize(1);
 
-        verify(memberRepository, times(1)).findByUid(ownerUid);
-        verify(contactGroupRepository, times(1)).findByOwner(mockMember);
+        verify(accountRepository, times(1)).findByUid(ownerUid);
+        verify(contactGroupRepository, times(1)).findByOwner(mockAccount);
     }
 }

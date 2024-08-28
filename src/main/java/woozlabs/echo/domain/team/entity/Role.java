@@ -1,6 +1,6 @@
 package woozlabs.echo.domain.team.entity;
 
-public enum TeamMemberRole {
+public enum Role {
     ADMIN,
     EDITOR,
     VIEWER,

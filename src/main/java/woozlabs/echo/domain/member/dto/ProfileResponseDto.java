@@ -11,7 +11,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ProfileResponseDto {
 
+    private String uid;
+    private String provider;
     private String displayName;
-    private String email;
     private String profileImageUrl;
+    private String email;
+    private boolean isPrimary;
+    private String language;
 }
