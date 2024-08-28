@@ -28,7 +28,7 @@ public class AccessTokenScheduler {
     @Transactional(readOnly = true)
     public void checkAndRefreshTokens() {
         LocalDateTime cutoffTime = LocalDateTime.now().minus(50, ChronoUnit.MINUTES);
-        List<Account> accounts = accountRepository.findMembersByCutoffTime(cutoffTime);
+        List<Account> accounts = accountRepository.findAccountsByCutoffTime(cutoffTime);
         for (Account account : accounts) {
             refreshToken(account);
         }

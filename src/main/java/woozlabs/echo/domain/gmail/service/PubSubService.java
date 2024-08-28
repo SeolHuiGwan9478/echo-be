@@ -72,6 +72,8 @@ public class PubSubService {
         String email = notification.getEmailAddress();
         int deliveryAttempt = pubsubMessage.getDeliveryAttempt();
         BigInteger newHistoryId = new BigInteger(notification.getHistoryId());
+        Account account = accountRepository.findByEmail(email).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE, ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE.getMessage())
         );
         if(deliveryAttempt > 5){ // stop pub/sub alert(* case: failed to alert more than three times)
             log.info("Request to stop pub/sub alert");
@@ -79,11 +81,6 @@ public class PubSubService {
         }
         PubSubHistory pubSubHistory = pubSubHistoryRepository.findByAccount(account).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR)
-            gmailServiceImpl.stopPubSub(member.getUid());
-            return;
-        }
-        PubSubHistory pubSubHistory = pubSubHistoryRepository.findByMember(member).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR, ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR.getMessage())
         );
         Gmail gmailService = createGmailService(account.getAccessToken());
         List<String> fcmTokens = fcmTokenRepository.findByAccount(account).stream().map(FcmToken::getFcmToken).toList();
@@ -100,7 +97,7 @@ public class PubSubService {
                 String from = gmailMessage.getFrom().getEmail();
                 String subject = gmailMessage.getSubject();
                 Map<String, String> data = new HashMap<>();
-                createMessageData(historyData, data, gmailMessage, member);
+                createMessageData(historyData, data, gmailMessage, account);
                 // create firebase message
                 MulticastMessage message = MulticastMessage.builder()
                         .setNotification(Notification.builder()
@@ -205,7 +202,7 @@ public class PubSubService {
         return new HttpCredentialsAdapter(googleCredentials);
     }
 
-    private void createMessageData(MessageInHistoryData historyData, Map<String, String> data, GmailMessageGetResponse gmailMessage, Member owner) {
+    private void createMessageData(MessageInHistoryData historyData, Map<String, String> data, GmailMessageGetResponse gmailMessage, Account owner) {
         String FCM_MSG_ID_KEY = "id";
         String FCM_MSG_THREAD_ID_KEY = "threadId";
         String FCM_MSG_TYPE_KEY = "type";
@@ -226,7 +223,7 @@ public class PubSubService {
                         .messageId(historyData.getId())
                         .codes(String.join(",",gmailMessage.getVerification().getCodes()))
                         .links(String.join(",",gmailMessage.getVerification().getLinks()))
-                        .member(owner)
+                        .account(owner)
                         .build();
                 verificationEmailRepository.save(verificationEmail);
             }
