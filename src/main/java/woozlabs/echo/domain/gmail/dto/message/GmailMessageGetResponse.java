@@ -105,22 +105,21 @@ public class GmailMessageGetResponse implements ResponseDto {
                 }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
                     String date = header.getValue();
                     List<Pattern> patterns = List.of(
-                            Pattern.compile("\\s*(.*)\\s*\\(([A-Z]{3,4})\\)$"),
-                            Pattern.compile("\\s*(.*)\\s*([A-Z]{3,4})$"),
-                            Pattern.compile("\\s*(.*)\\s*([+-]\\d{4})$")
+                            Pattern.compile("\\(([A-Z]{3,4})\\)$"),
+                            Pattern.compile("([A-Z]{3,4})$"),
+                            Pattern.compile("([+-]\\d{4})$")
                     );
                     for (Pattern pattern : patterns) {
                         Matcher matcher = pattern.matcher(date);
                         if (matcher.find()) {
-                            gmailMessageGetResponse.setDate(matcher.group(1).replaceAll("\\s{2,}", " ").trim());
-                            gmailMessageGetResponse.setTimezone(matcher.group(2));
+                            gmailMessageGetResponse.setTimezone(matcher.group(1));
                             break;
                         }
                     }
                 }
             }
         }
-        //changeDateFormat(message.getInternalDate(), gmailMessageGetResponse);
+        changeDateFormat(message.getInternalDate(), gmailMessageGetResponse);
         gmailMessageGetResponse.setId(message.getId());
         gmailMessageGetResponse.setThreadId(message.getThreadId());
         gmailMessageGetResponse.setLabelIds(message.getLabelIds());
@@ -168,11 +167,12 @@ public class GmailMessageGetResponse implements ResponseDto {
     }
 
     private static void changeDateFormat(Long internalDate, GmailMessageGetResponse gmailMessageGetResponse) {
-        Instant instant = Instant.ofEpochMilli(internalDate);
-        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
-        String iso8601 = localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        if(!iso8601.isEmpty()){
-            gmailMessageGetResponse.setDate(iso8601);
-        }
+        gmailMessageGetResponse.setDate(internalDate.toString());
+//        Instant instant = Instant.ofEpochMilli(internalDate);
+//        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+//        String iso8601 = localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+//        if(!iso8601.isEmpty()){
+//            gmailMessageGetResponse.setDate(iso8601);
+//        }
     }
 }
