@@ -46,7 +46,7 @@ public class TeamService {
 
     public TeamAccount getTeamMember(String uid, Long teamId) {
         Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         return teamMemberRepository.findByAccountAndTeamId(account, teamId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_TEAM_MEMBER));
@@ -55,7 +55,7 @@ public class TeamService {
     @Transactional
     public void createTeam(String uid, CreateTeamRequestDto createTeamRequestDto) {
         Account creator = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         Team team = Team.builder()
                 .name(createTeamRequestDto.getName())
@@ -75,7 +75,7 @@ public class TeamService {
     @Transactional
     public void inviteToTeam(String inviterUid, Long teamId, TeamInvitationRequestDto requestDto) {
         Account inviter = accountRepository.findByUid(inviterUid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_TEAM));
@@ -122,7 +122,7 @@ public class TeamService {
         }
 
         Account invitee = accountRepository.findByUid(inviteeUid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         TeamAccount newTeamAccount = TeamAccount.builder()
                 .team(teamInvitation.getTeam())

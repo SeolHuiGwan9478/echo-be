@@ -70,7 +70,7 @@ public class CalendarService {
 
     private Calendar getCalendarService(String uid) throws GeneralSecurityException, IOException {
         Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         GoogleCredentials credentials = GoogleCredentials.create(new AccessToken(accessToken, null))
                 .createScoped(Collections.singleton(CALENDAR_SCOPE));

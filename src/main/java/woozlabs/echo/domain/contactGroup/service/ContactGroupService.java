@@ -27,7 +27,7 @@ public class ContactGroupService {
     @Transactional
     public void createContactGroup(String ownerUid, String contactGroupName) {
         Account owner = accountRepository.findByUid(ownerUid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         ContactGroup contactGroup = new ContactGroup();
         contactGroup.setName(contactGroupName);
@@ -50,7 +50,7 @@ public class ContactGroupService {
 
     public List<ContactGroupResponse> getContactGroupsByOwner(String ownerUid) {
         Account owner = accountRepository.findByUid(ownerUid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         List<ContactGroup> contactGroups = contactGroupRepository.findByOwner(owner);
         return contactGroups.stream()

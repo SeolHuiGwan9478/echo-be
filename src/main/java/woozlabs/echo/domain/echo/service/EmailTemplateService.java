@@ -26,7 +26,7 @@ public class EmailTemplateService {
     private final AccountRepository accountRepository;
     public List<EmailTemplateResponse> getAllTemplates(String uid) {
         Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         List<EmailTemplate> emailTemplates = emailTemplateRepository.findByAccount(account);
         return emailTemplates.stream()
@@ -37,7 +37,7 @@ public class EmailTemplateService {
     @Transactional
     public void createTemplate(String uid, CreateEmailTemplateRequest createEmailTemplateRequest) {
         Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         EmailTemplate emailTemplate = new EmailTemplate();
         emailTemplate.setTemplateName(createEmailTemplateRequest.getTemplateName());
@@ -58,7 +58,7 @@ public class EmailTemplateService {
     @Transactional
     public void updateTemplate(String uid, Long templateId, UpdateEmailTemplateRequest updateEmailTemplateRequest) {
         Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         EmailTemplate emailTemplate = emailTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_EMAIL_TEMPLATE));
@@ -86,7 +86,7 @@ public class EmailTemplateService {
     @Transactional
     public void deleteTemplate(String uid, Long templateId) {
         Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         EmailTemplate emailTemplate = emailTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_EMAIL_TEMPLATE));

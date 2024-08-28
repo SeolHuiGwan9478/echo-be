@@ -67,7 +67,7 @@ public class PubSubService {
         int deliveryAttempt = pubsubMessage.getDeliveryAttempt();
         BigInteger newHistoryId = new BigInteger(notification.getHistoryId());
         Account account = accountRepository.findByEmail(email).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE)
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE)
         );
         if(deliveryAttempt > 3){ // stop pub/sub alert(* case: failed to alert more than three times)
             log.info("Request to stop pub/sub alert");
@@ -111,7 +111,7 @@ public class PubSubService {
     @Transactional
     public FcmTokenResponse saveFcmToken(String uid, FcmTokenRequest dto){
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         Optional<FcmToken> findFcmToken = fcmTokenRepository.findByAccountAndMachineUuid(account, dto.getMachineUuid());
         if(findFcmToken.isEmpty()){
             List<FcmToken> tokens = fcmTokenRepository.findByAccount(account);

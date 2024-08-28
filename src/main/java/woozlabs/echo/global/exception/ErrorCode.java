@@ -23,7 +23,7 @@ public enum ErrorCode {
     EXCEED_FCM_TOKEN_SIZE_ERR(400, "Exceed maximum token size"),
 
     // account
-    NOT_FOUND_MEMBER_ERROR_MESSAGE(404, "Not found: Account"),
+    NOT_FOUND_ACCOUNT_ERROR_MESSAGE(404, "Not found: Account"),
     NOT_VERIFY_ID_TOKEN(401, "ID token is incorrect"),
     NOT_FOUND_SUPER_ACCOUNT(404, "Super account not found"),
     NOT_FOUND_VERIFY_TOKEN(404, "Not found verifyToken"),

@@ -63,7 +63,7 @@ public class UserSideBarConfigService {
 
     public SidebarNavAccountDto getAccountsNavSpace(String uid) {
         Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         UserSidebarConfig userSidebarConfig = userSideBarConfigRepository.findByAccount(account)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SIDE_BAR_CONFIG));
@@ -73,7 +73,7 @@ public class UserSideBarConfigService {
 
     public List<SidebarNavAccountDto> getAllAccountsNavSpace(String uid) {
         Account primaryAccount = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         List<Account> linkedAccounts = accountRepository.findAllByMember(primaryAccount.getMember());
         return linkedAccounts.stream()
@@ -87,11 +87,11 @@ public class UserSideBarConfigService {
     @Transactional
     public void saveConfig(String uid, List<SidebarNavAccountDto> dtos) {
         Account primaryAccount = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         for (SidebarNavAccountDto dto : dtos) {
             Account dtoAccount = accountRepository.findByUid(dto.getAccountUid())
-                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE, "Account not found for accountUid: " + dto.getAccountUid()));
+                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE, "Account not found for accountUid: " + dto.getAccountUid()));
 
             if (!dtoAccount.getMember().equals(primaryAccount.getMember())) {
                 throw new CustomErrorException(ErrorCode.INVALID_ACCOUNT_UID, "Account UID " + dto.getAccountUid() + " is not linked to the primary account's super account.");

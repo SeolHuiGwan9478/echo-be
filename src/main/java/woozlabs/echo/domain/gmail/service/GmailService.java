@@ -89,7 +89,7 @@ public class GmailService {
 
     public GmailThreadListResponse getQueryUserEmailThreads(String uid, String pageToken, String q) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         ListThreadsResponse response = getQueryListThreadsResponse(pageToken, q, gmailService);
@@ -105,7 +105,7 @@ public class GmailService {
 
     public GmailDraftListResponse getUserEmailDrafts(String uid, String pageToken, String q) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE)
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE)
         );
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
@@ -122,7 +122,7 @@ public class GmailService {
     public GmailThreadGetResponse getUserEmailThread(String uid, String id) throws Exception{
         try {
             Account account = accountRepository.findByUid(uid).orElseThrow(
-                    () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                    () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
             String accessToken = account.getAccessToken();
             Gmail gmailService = createGmailService(accessToken);
             GmailThreadGetResponse gmailThreadGetResponse = new GmailThreadGetResponse();
@@ -178,7 +178,7 @@ public class GmailService {
 
     public GmailThreadTrashResponse trashUserEmailThread(String uid, String id) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Thread trashedThread = gmailService.users().threads().trash(USER_ID, id)
@@ -189,7 +189,7 @@ public class GmailService {
 
     public GmailThreadDeleteResponse deleteUserEmailThread(String uid, String id) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         gmailService.users().threads().delete(USER_ID, id)
@@ -200,7 +200,7 @@ public class GmailService {
 
     public GmailThreadSearchListResponse searchUserEmailThreads(String uid, GmailSearchParams params) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         ListThreadsResponse response = getSearchListThreadsResponse(params, gmailService);
@@ -215,7 +215,7 @@ public class GmailService {
 
     public GmailMessageGetResponse getUserEmailMessage(String uid, String messageId) throws Exception {
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
@@ -224,7 +224,7 @@ public class GmailService {
 
     public GmailMessageAttachmentResponse getAttachment(String uid, String messageId, String id) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         MessagePartBody attachment = gmailService.users().messages()
@@ -239,7 +239,7 @@ public class GmailService {
 
     public GmailMessageSendResponse sendUserEmailMessage(String uid, GmailMessageSendRequest request) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Profile profile = gmailService.users().getProfile(USER_ID).execute();
@@ -257,7 +257,7 @@ public class GmailService {
 
     public GmailThreadTotalCountResponse getUserEmailThreadsTotalCount(String uid, String label) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         int totalCount = getTotalCountThreads(gmailService, label);
@@ -268,7 +268,7 @@ public class GmailService {
 
     public GmailDraftSendResponse sendUserEmailDraft(String uid, GmailDraftCommonRequest request) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Profile profile = gmailService.users().getProfile(USER_ID).execute();
@@ -289,7 +289,7 @@ public class GmailService {
 
     public GmailDraftGetResponse getUserEmailDraft(String uid, String id) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Draft draft = getOneDraftResponse(id, gmailService);
@@ -302,7 +302,7 @@ public class GmailService {
 
     public GmailDraftUpdateResponse updateUserEmailDraft(String uid, String id, GmailDraftCommonRequest request) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Profile profile = gmailService.users().getProfile(USER_ID).execute();
@@ -322,7 +322,7 @@ public class GmailService {
 
     public GmailDraftCreateResponse createUserEmailDraft(String uid, GmailDraftCommonRequest request) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         Profile profile = gmailService.users().getProfile(USER_ID).execute();
@@ -342,7 +342,7 @@ public class GmailService {
 
     public GmailThreadUpdateResponse updateUserEmailThread(String uid, String id, GmailThreadUpdateRequest request) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         ModifyThreadRequest modifyThreadRequest = new ModifyThreadRequest();
@@ -358,7 +358,7 @@ public class GmailService {
     @Transactional
     public PubSubWatchResponse subscribePubSub(String uid, PubSubWatchRequest dto) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         List<FcmToken> fcmTokens = fcmTokenRepository.findByAccount(account);
         pubSubValidator.validateWatch(fcmTokens);
         String accessToken = account.getAccessToken();
@@ -385,7 +385,7 @@ public class GmailService {
 
     public void stopPubSub(String uid) throws Exception {
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE
                         , ErrorCode.NOT_FOUND_ACCESS_TOKEN.getMessage())
         );
         String accessToken = account.getAccessToken();
@@ -395,7 +395,7 @@ public class GmailService {
 
     public GmailHistoryListResponse getHistories(String uid, String historyId, String pageToken) throws Exception {
         Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         ListHistoryResponse historyResponse = gmailService
