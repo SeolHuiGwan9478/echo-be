@@ -1,12 +1,14 @@
 package woozlabs.echo.domain.member.dto;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 import woozlabs.echo.domain.member.entity.Theme;
 
-@Data
+@Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AppearanceDto {
+
     private Theme theme; // 'light' | 'dark' | 'system'
 }
 

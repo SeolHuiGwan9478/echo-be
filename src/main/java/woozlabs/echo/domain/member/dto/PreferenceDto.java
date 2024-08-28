@@ -1,10 +1,11 @@
 package woozlabs.echo.domain.member.dto;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PreferenceDto {
 
     private String lang; // 'en' or 'ko'...
