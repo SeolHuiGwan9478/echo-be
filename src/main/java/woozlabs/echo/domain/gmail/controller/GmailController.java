@@ -43,10 +43,8 @@ public class GmailController {
             GmailThreadListResponse response = gmailService.getQueryUserEmailThreads(uid, pageToken, q);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (IOException e){
-            log.error(e.getMessage());
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
-            log.error(e.getMessage());
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }
     }

@@ -66,7 +66,9 @@ public class GmailUtility {
         String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
         if(!isVerificationEmail(decodedContent)) return extractVerificationInfo; // check verification email
         links.addAll(getVerificationLink(decodedContent));
-        codes.addAll(getVerificationCode(decodedContent));
+        if(links.isEmpty()){
+            codes.addAll(getVerificationCode(decodedContent));
+        }
         if(!codes.isEmpty() || !links.isEmpty()){
             extractVerificationInfo.setVerification(Boolean.TRUE);
         }
@@ -109,21 +111,26 @@ public class GmailUtility {
 
     private List<String> getVerificationCode(String decodedContent){
         Document doc = Jsoup.parse(decodedContent, "UTF-8");
-        doc.select("tbdoy tr, td, th, thead, tfoot").unwrap(); // unwrap
+        doc.select("tbody, tr, thead, tfoot, table").unwrap(); // unwrap
+        List<String> regexCodes = new ArrayList<>();
         List<String> codes = new ArrayList<>();
         List<String> contents = new ArrayList<>();
         for(String keyword : keywords){
-            for(Element element : doc.getAllElements()){
-                List<Element> elements = new ArrayList<>();
-                if(element.ownText().toLowerCase().contains(keyword)
-                        && !contents.contains(element.text())){
+            List<Element> elements = new ArrayList<>();
+            for(Element element : doc.getAllElements()) {
+                if (element.text().toLowerCase().contains(keyword)
+                        && !contents.contains(element.text())) {
                     elements.add(element);
+                    regexCodes.addAll(extractVerificationCode(element.text()));
                     contents.add(element.text());
                 }
-                if(elements.isEmpty()) continue;
-                Elements convertElements = new Elements(elements);
-                codes.addAll(extractCoreContentCode(convertElements));
             }
+            if(elements.isEmpty()) continue;
+            Elements convertElements = new Elements(elements);
+            codes.addAll(extractCoreContentCode(convertElements));
+        }
+        if(!regexCodes.isEmpty()){
+            return regexCodes.stream().distinct().toList();
         }
         return codes.stream().distinct().toList();
     }
@@ -186,22 +193,22 @@ public class GmailUtility {
         List<Element> elementsToRemove = new ArrayList<>();
         List<String> verificationInfo = new ArrayList<>();
         for (Element coreElement : coreElements){
-            if(coreElement.text().isEmpty()){ // empty tag
-                elementsToRemove.add(coreElement);
-            }else if(coreElement.is("style, script, head, title, meta, img, br")){ // necessary removal tags
-                elementsToRemove.add(coreElement);
-            }else{
-                coreElement.clearAttributes();
-            }
+            coreElement.getAllElements().forEach((element) -> {
+                if(element.text().isEmpty()){ // empty tag
+                    element.remove();
+                }else if(element.is("style, script, head, title, meta, img, br")){ // necessary removal tags
+                    element.remove();
+                }else{
+                    element.clearAttributes();
+                }
+            });
         }
-        for(Element element : elementsToRemove){
-            coreElements.remove(element);
-        }
-
         for(Element coreElement : coreElements){
             // numbering 4-digits
-            coreElement.attr("id", String.format("%04d", attrId));
-            attrId += 1;
+            for(Element element : coreElement.getAllElements()) {
+                element.attr("id", String.format("%04d", attrId));
+                attrId += 1;
+            }
         }
 
         // running gpt
@@ -234,7 +241,7 @@ public class GmailUtility {
                 elementsToRemove.add(coreElement);
             }else if(coreElement.is("style, script, head, title, meta, img, br")){ // necessary removal tags
                 elementsToRemove.add(coreElement);
-            }else{
+            } else{
                 if(coreElement.hasAttr("href")){
                     String url = coreElement.attr("href");
                     coreElement.clearAttributes();

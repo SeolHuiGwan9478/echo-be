@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 @Data
-public class GmailThreadListThreads implements Comparable<GmailThreadListThreads> {
+public class GmailThreadListThreads {
     private String id;
     private String subject;
     private String snippet;
@@ -22,15 +22,6 @@ public class GmailThreadListThreads implements Comparable<GmailThreadListThreads
     private int attachmentSize;
     private List<GmailThreadListAttachments> attachments;
     private List<GmailThreadGetMessagesResponse> messages;
-
-    @Override
-    public int compareTo(GmailThreadListThreads o) {
-        OffsetDateTime offsetDateTime = OffsetDateTime.parse(this.date);
-        OffsetDateTime otherOffsetDateTime = OffsetDateTime.parse(o.getDate());
-        if (offsetDateTime.isBefore(otherOffsetDateTime)) return 1;
-        else if (offsetDateTime.isAfter(otherOffsetDateTime)) return -1;
-        else return 0;
-    }
 
     public void addLabel(String newLabel){
         this.labelIds.add(newLabel);

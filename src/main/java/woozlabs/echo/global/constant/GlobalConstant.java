@@ -22,6 +22,7 @@ public final class GlobalConstant {
     public static final String MESSAGE_PAYLOAD_HEADER_CC_KEY = "Cc";
     public static final String MESSAGE_PAYLOAD_HEADER_BCC_KEY = "Bcc";
     public static final String MESSAGE_PAYLOAD_HEADER_TO_KEY = "To";
+    public static final String MESSAGE_INTERNAL_DATE_TIMEZONE = "UTC";
     // Gmail threads
     public static final String THREAD_PAYLOAD_HEADER_SUBJECT_KEY = "Subject";
     public static final String THREAD_PAYLOAD_HEADER_FROM_KEY = "From";
