@@ -18,8 +18,13 @@ public class AuthCookieUtils {
     }
 
     public static Optional<String> getCookieValue(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return Optional.empty();
+        }
+
         return Arrays.stream(request.getCookies())
-                .filter(cookie -> "super_account".equals(cookie.getName()))
+                .filter(cookie -> "member_token".equals(cookie.getName()))
                 .map(Cookie::getValue)
                 .findFirst();
     }

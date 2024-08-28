@@ -7,13 +7,16 @@ import lombok.Data;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.global.dto.ResponseDto;
+import woozlabs.echo.global.exception.CustomErrorException;
 
 import java.math.BigInteger;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.zone.ZoneRules;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -99,10 +102,25 @@ public class GmailMessageGetResponse implements ResponseDto {
                 }case MESSAGE_PAYLOAD_HEADER_SUBJECT_KEY -> {
                     String subject = header.getValue();
                     gmailMessageGetResponse.setSubject(subject);
+                }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
+                    String date = header.getValue();
+                    List<Pattern> patterns = List.of(
+                            Pattern.compile("\\s*(.*)\\s*\\(([A-Z]{3,4})\\)$"),
+                            Pattern.compile("\\s*(.*)\\s*([A-Z]{3,4})$"),
+                            Pattern.compile("\\s*(.*)\\s*([+-]\\d{4})$")
+                    );
+                    for (Pattern pattern : patterns) {
+                        Matcher matcher = pattern.matcher(date);
+                        if (matcher.find()) {
+                            gmailMessageGetResponse.setDate(matcher.group(1).replaceAll("\\s{2,}", " ").trim());
+                            gmailMessageGetResponse.setTimezone(matcher.group(2));
+                            break;
+                        }
+                    }
                 }
             }
         }
-        changeDateFormat(message.getInternalDate(), gmailMessageGetResponse);
+        //changeDateFormat(message.getInternalDate(), gmailMessageGetResponse);
         gmailMessageGetResponse.setId(message.getId());
         gmailMessageGetResponse.setThreadId(message.getThreadId());
         gmailMessageGetResponse.setLabelIds(message.getLabelIds());
@@ -155,7 +173,6 @@ public class GmailMessageGetResponse implements ResponseDto {
         String iso8601 = localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         if(!iso8601.isEmpty()){
             gmailMessageGetResponse.setDate(iso8601);
-            gmailMessageGetResponse.setTimezone(MESSAGE_INTERNAL_DATE_TIMEZONE);
         }
     }
 }
