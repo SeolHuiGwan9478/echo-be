@@ -4,13 +4,13 @@ import com.google.firebase.auth.FirebaseAuthException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import woozlabs.echo.domain.member.service.AuthService;
 import woozlabs.echo.global.aop.annotations.VerifyToken;
-import woozlabs.echo.global.exception.CustomErrorException;
-import woozlabs.echo.global.exception.ErrorCode;
 
 @RestController
 @RequestMapping("/api/auth")
