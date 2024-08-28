@@ -10,9 +10,8 @@ import woozlabs.echo.domain.echo.dto.userSideBar.SidebarNavAccountDto;
 import woozlabs.echo.domain.echo.dto.userSideBar.SpaceDto;
 import woozlabs.echo.domain.echo.entity.UserSidebarConfig;
 import woozlabs.echo.domain.echo.repository.UserSideBarConfigRepository;
-import woozlabs.echo.domain.member.entity.Member;
-import woozlabs.echo.domain.member.entity.SuperAccount;
-import woozlabs.echo.domain.member.repository.MemberRepository;
+import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
@@ -27,7 +26,7 @@ import java.util.stream.Collectors;
 public class UserSideBarConfigService {
 
     private final UserSideBarConfigRepository userSideBarConfigRepository;
-    private final MemberRepository memberRepository;
+    private final AccountRepository accountRepository;
     private final ObjectMapper objectMapper;
 
     /**
@@ -35,7 +34,7 @@ public class UserSideBarConfigService {
      */
     private SidebarNavAccountDto convertToDto(UserSidebarConfig userSidebarConfig) {
         SidebarNavAccountDto dto = new SidebarNavAccountDto();
-        dto.setAccountUid(userSidebarConfig.getMember().getUid());
+        dto.setAccountUid(userSidebarConfig.getAccount().getUid());
         try {
             List<SpaceDto> spaces = objectMapper.readValue(userSidebarConfig.getSidebarConfig(), new TypeReference<List<SpaceDto>>() {});
             dto.setSpaces(spaces);
@@ -49,9 +48,9 @@ public class UserSideBarConfigService {
     /**
      * 요청 Body로 들어온 JSON을 직렬화 후 처리
      */
-    private UserSidebarConfig convertToEntity(SidebarNavAccountDto dto, Member member) {
+    private UserSidebarConfig convertToEntity(SidebarNavAccountDto dto, Account account) {
         UserSidebarConfig config = new UserSidebarConfig();
-        config.setMember(member);
+        config.setAccount(account);
         try {
             String sidebarConfigJson = objectMapper.writeValueAsString(dto.getSpaces());
             config.setSidebarConfig(sidebarConfigJson);
@@ -63,22 +62,22 @@ public class UserSideBarConfigService {
     }
 
     public SidebarNavAccountDto getAccountsNavSpace(String uid) {
-        Member member = memberRepository.findByUid(uid)
+        Account account = accountRepository.findByUid(uid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
 
-        UserSidebarConfig userSidebarConfig = userSideBarConfigRepository.findByMember(member)
+        UserSidebarConfig userSidebarConfig = userSideBarConfigRepository.findByAccount(account)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SIDE_BAR_CONFIG));
 
         return convertToDto(userSidebarConfig);
     }
 
     public List<SidebarNavAccountDto> getAllAccountsNavSpace(String uid) {
-        Member primaryMember = memberRepository.findByUid(uid)
+        Account primaryAccount = accountRepository.findByUid(uid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
 
-        List<Member> linkedMembers = memberRepository.findAllBySuperAccount(primaryMember.getSuperAccount());
-        return linkedMembers.stream()
-                .map(member -> userSideBarConfigRepository.findByMember(member)
+        List<Account> linkedAccounts = accountRepository.findAllByMember(primaryAccount.getMember());
+        return linkedAccounts.stream()
+                .map(member -> userSideBarConfigRepository.findByAccount(member)
                         .map(this::convertToDto)
                         .orElse(null))
                 .filter(dto -> dto != null)
@@ -87,25 +86,25 @@ public class UserSideBarConfigService {
 
     @Transactional
     public void saveConfig(String uid, List<SidebarNavAccountDto> dtos) {
-        Member primaryMember = memberRepository.findByUid(uid)
+        Account primaryAccount = accountRepository.findByUid(uid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
 
         for (SidebarNavAccountDto dto : dtos) {
-            Member dtoMember = memberRepository.findByUid(dto.getAccountUid())
-                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE, "Member not found for accountUid: " + dto.getAccountUid()));
+            Account dtoAccount = accountRepository.findByUid(dto.getAccountUid())
+                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE, "Account not found for accountUid: " + dto.getAccountUid()));
 
-            if (!dtoMember.getSuperAccount().equals(primaryMember.getSuperAccount())) {
+            if (!dtoAccount.getMember().equals(primaryAccount.getMember())) {
                 throw new CustomErrorException(ErrorCode.INVALID_ACCOUNT_UID, "Account UID " + dto.getAccountUid() + " is not linked to the primary account's super account.");
             }
 
-            UserSidebarConfig existingConfig = userSideBarConfigRepository.findByMember(dtoMember)
+            UserSidebarConfig existingConfig = userSideBarConfigRepository.findByAccount(dtoAccount)
                     .orElse(new UserSidebarConfig());
 
-            UserSidebarConfig newConfig = convertToEntity(dto, dtoMember);
+            UserSidebarConfig newConfig = convertToEntity(dto, dtoAccount);
             existingConfig.setSidebarConfig(newConfig.getSidebarConfig());
 
-            existingConfig.setMember(dtoMember);
-            log.info("Saving sidebar config for member: {}", dtoMember.getUid());
+            existingConfig.setAccount(dtoAccount);
+            log.info("Saving sidebar config for account: {}", dtoAccount.getUid());
             userSideBarConfigRepository.save(existingConfig);
         }
     }

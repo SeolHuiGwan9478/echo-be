@@ -22,8 +22,8 @@ public enum ErrorCode {
     DUPLICATE_FCM_TOKEN_ERR(400,"Is already exist this token"),
     EXCEED_FCM_TOKEN_SIZE_ERR(400, "Exceed maximum token size"),
 
-    // member
-    NOT_FOUND_MEMBER_ERROR_MESSAGE(404, "Not found: Member"),
+    // account
+    NOT_FOUND_MEMBER_ERROR_MESSAGE(404, "Not found: Account"),
     NOT_VERIFY_ID_TOKEN(401, "ID token is incorrect"),
     NOT_FOUND_SUPER_ACCOUNT(404, "Super account not found"),
     NOT_FOUND_VERIFY_TOKEN(404, "Not found verifyToken"),
@@ -32,7 +32,7 @@ public enum ErrorCode {
     FAILED_TO_REDIRECT_GOOGLE_USER_INFO(500, "Failed to redirect Google user info"),
     FAILED_TO_REFRESH_GOOGLE_TOKEN(500, "Failed to refresh google token"),
     FAILED_TO_FETCH_GOOGLE_TOKENS(500, "Failed to get Google access tokens"),
-    INVALID_FIELD_TYPE_ERROR_MESSAGE(400, "Invalid Member Field Type"),
+    INVALID_FIELD_TYPE_ERROR_MESSAGE(400, "Invalid Account Field Type"),
     INVALID_SESSION(400, "Session is empty or invalid"),
 
     // token
@@ -87,7 +87,7 @@ public enum ErrorCode {
     FAILED_TO_INVITATION_MAIL(500, "Failed to send email"),
     NOT_FOUND_INVITATION_TOKEN(404, "Not Found: Invitation Token"),
     INVITATION_EXPIRED(400, "The team invitation approval deadline has expired"),
-    NOT_FOUND_TEAM_MEMBER(404, "The Member can't be found in the team"),
+    NOT_FOUND_TEAM_MEMBER(404, "The Account can't be found in the team"),
     NOT_FOUND_SHARED_EMAIL(404, "Not Found: Shared Email"),
     UNAUTHORIZED_ACCESS(401, "You can't access this feature with this privilege"),
 

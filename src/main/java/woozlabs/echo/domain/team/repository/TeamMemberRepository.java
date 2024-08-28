@@ -1,15 +1,15 @@
 package woozlabs.echo.domain.team.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import woozlabs.echo.domain.member.entity.Member;
-import woozlabs.echo.domain.team.entity.TeamMember;
+import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.domain.team.entity.TeamAccount;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
+public interface TeamMemberRepository extends JpaRepository<TeamAccount, Long> {
 
-    Optional<TeamMember> findByMemberAndTeamId(Member member, Long teamId);
+    Optional<TeamAccount> findByAccountAndTeamId(Account account, Long teamId);
 
-    List<TeamMember> findByTeamId(Long teamId);
+    List<TeamAccount> findByTeamId(Long teamId);
 }

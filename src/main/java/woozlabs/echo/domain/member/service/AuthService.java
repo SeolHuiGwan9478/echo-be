@@ -4,16 +4,15 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
-import woozlabs.echo.domain.member.entity.SuperAccount;
+import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.entity.Role;
-import woozlabs.echo.domain.member.repository.SuperAccountRepository;
+import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.domain.member.utils.AuthCookieUtils;
 import woozlabs.echo.global.constant.GlobalConstant;
@@ -32,10 +31,12 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private final AccountRepository accountRepository;
     private final MemberRepository memberRepository;
-    private final SuperAccountRepository superAccountRepository;
     private final FirebaseTokenVerifier firebaseTokenVerifier;
     private final GoogleOAuthUtils googleOAuthUtils;
+
+    private static final String GOOGLE_PROVIDER = "google";
 
     private String createCustomToken(String uid) throws FirebaseAuthException {
         try {
@@ -72,15 +73,16 @@ public class AuthService {
     }
 
     @Transactional
-    public Member createOrUpdateMember(Map<String, Object> userInfo, boolean isPrimary) {
+    public Account createOrUpdateAccount(Map<String, Object> userInfo, boolean isPrimary) {
         String providerId = (String) userInfo.get("id");
         String displayName = (String) userInfo.get("name");
         String email = (String) userInfo.get("email");
         String profileImageUrl = (String) userInfo.get("picture");
         String accessToken = (String) userInfo.get("access_token");
         String refreshToken = (String) userInfo.get("refresh_token");
+        String provider = GOOGLE_PROVIDER;
 
-        Member member = memberRepository.findByGoogleProviderId(providerId)
+        Account account = accountRepository.findByGoogleProviderId(providerId)
                 .map(existingMember -> {
                     existingMember.setDisplayName(displayName);
                     existingMember.setEmail(email);
@@ -90,9 +92,10 @@ public class AuthService {
                         existingMember.setRefreshToken(refreshToken);
                     }
                     existingMember.setAccessTokenFetchedAt(LocalDateTime.now());
+                    existingMember.setProvider(provider);
                     return existingMember;
                 })
-                .orElse(Member.builder()
+                .orElse(Account.builder()
                         .uid(providerId)
                         .googleProviderId(providerId)
                         .displayName(displayName)
@@ -103,9 +106,10 @@ public class AuthService {
                         .accessTokenFetchedAt(LocalDateTime.now())
                         .role(Role.ROLE_USER)
                         .isPrimary(isPrimary)
+                        .provider(provider)
                         .build());
 
-        return memberRepository.save(member);
+        return accountRepository.save(account);
     }
 
     private void constructAndRedirect(HttpServletResponse response, String customToken, String displayName, String profileImageUrl, String email) {
@@ -128,47 +132,45 @@ public class AuthService {
         Map<String, Object> userInfo = getGoogleUserInfoAndTokens(code);
         String providerId = (String) userInfo.get("id");
 
-        Optional<String> superTokenOpt = AuthCookieUtils.getCookieValue(request);
-        String superToken = superTokenOpt.orElse(null);
+        Optional<String> memberTokenOpt = AuthCookieUtils.getCookieValue(request);
+        String memberToken = memberTokenOpt.orElse(null);
 
-        String superAccountUid = firebaseTokenVerifier.verifyTokenAndGetUid(superToken);
+        String memberUid = null;
+        if (memberToken != null) {
+            memberUid = firebaseTokenVerifier.verifyTokenAndGetUid(memberToken);
+        }
 
-        if (superAccountUid == null) {
-            log.info("Cookie 'superToken' is null. Creating new member and super account.");
+        if (memberUid == null) {
+            log.info("Creating new Member with a new account.");
+            Account account = createOrUpdateAccount(userInfo, true);
 
-            Member member = createOrUpdateMember(userInfo, true);
-            log.info("Created or updated member with UID: {}", member.getUid());
-
-            SuperAccount superAccount = new SuperAccount();
-            superAccount.addMember(member);
-            superAccountRepository.save(superAccount);
-
-            member.setSuperAccount(superAccount);
+            Member member = new Member();
+            member.addAccount(account);
             memberRepository.save(member);
 
-            Map<String, Object> customClaims = Map.of("accounts", superAccount.getMemberUids());
-            setCustomUidClaims(member.getUid(), customClaims);
+            account.setMember(member);
+            accountRepository.save(account);
 
-            log.info("Member added to SuperAccount. Member UID: {}", member.getUid());
+            Map<String, Object> customClaims = Map.of("accounts", member.getAccounts().stream().map(Account::getUid).toList());
+            setCustomUidClaims(account.getUid(), customClaims);
+
+            log.info("Account added to Member. Account UID: {}", account.getUid());
         } else {
-            log.info("Cookie 'superToken' found. Adding new member to existing SuperAccount.");
-
-            SuperAccount superAccount = superAccountRepository.findByMemberUids(superAccountUid)
+            log.info("Adding new account to existing Member.");
+            Account existingAccount = accountRepository.findByUid(memberUid)
                     .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SUPER_ACCOUNT));
 
-            Member newMember = createOrUpdateMember(userInfo, false);
-            log.info("Created or updated new member with UID: {}", newMember.getUid());
+            Member member = existingAccount.getMember();
 
-            newMember.setSuperAccount(superAccount);
-            memberRepository.save(newMember);
+            Account newAccount = createOrUpdateAccount(userInfo, false);
+            newAccount.setMember(member);
+            accountRepository.save(newAccount);
 
-            superAccount.addMember(newMember);
-            superAccountRepository.save(superAccount);
+            member.addAccount(newAccount);
+            memberRepository.save(member);
 
-            Map<String, Object> customClaims = Map.of("accounts", superAccount.getMemberUids());
-            setCustomUidClaims(superAccountUid, customClaims);
-
-            log.info("Added new member to existing SuperAccount. Member UID: {}", newMember.getUid());
+            Map<String, Object> customClaims = Map.of("accounts", member.getAccounts().stream().map(Account::getUid).toList());
+            setCustomUidClaims(memberUid, customClaims);
         }
 
         constructAndRedirect(response, createCustomToken(providerId), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"));

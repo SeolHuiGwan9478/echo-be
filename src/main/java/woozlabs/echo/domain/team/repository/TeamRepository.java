@@ -9,6 +9,6 @@ import java.util.List;
 
 public interface TeamRepository extends JpaRepository<Team, Long> {
 
-    @Query("SELECT t FROM Team t JOIN t.teamMembers tm WHERE tm.member.uid = :memberUid")
-    List<Team> findAllTeamsByMemberUid(@Param("memberUid") String memberUid);
+    @Query("SELECT t FROM Team t JOIN t.teamAccounts tm WHERE tm.account.uid = :accountUid")
+    List<Team> findAllTeamsByAccountUid(@Param("accountUid") String accountUid);
 }

@@ -4,8 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import woozlabs.echo.domain.member.entity.Member;
-import woozlabs.echo.domain.member.entity.SuperAccount;
+import woozlabs.echo.domain.member.entity.Account;
 
 @Entity
 @Getter
@@ -17,8 +16,8 @@ public class UserSidebarConfig {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", unique = true)
-    private Member member;
+    @JoinColumn(name = "account_id", unique = true)
+    private Account account;
 
     @Column(columnDefinition = "TEXT")
     private String sidebarConfig;

@@ -5,7 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.signature.Signature;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
@@ -23,10 +23,10 @@ public class Team extends BaseEntity {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    private Member creator;
+    private Account creator;
 
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL)
-    private List<TeamMember> teamMembers = new ArrayList<>();
+    private List<TeamAccount> teamAccounts = new ArrayList<>();
 
     @OneToMany(mappedBy = "ownerId", cascade = CascadeType.ALL)
     private List<Signature> allSignatures = new ArrayList<>();
@@ -38,13 +38,13 @@ public class Team extends BaseEntity {
     }
 
     @Builder
-    public Team(String name, Member creator) {
+    public Team(String name, Account creator) {
         this.name = name;
         this.creator = creator;
     }
 
-    public void addTeamMember(TeamMember teamMember) {
-        this.teamMembers.add(teamMember);
-        teamMember.setTeam(this);
+    public void addTeamMember(TeamAccount teamAccount) {
+        this.teamAccounts.add(teamAccount);
+        teamAccount.setTeam(this);
     }
 }

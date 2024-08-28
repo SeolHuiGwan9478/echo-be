@@ -10,11 +10,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.thymeleaf.TemplateEngine;
 import woozlabs.echo.domain.team.dto.SendInvitationEmailDto;
-import woozlabs.echo.domain.team.entity.TeamMemberRole;
+import woozlabs.echo.domain.team.entity.Role;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -44,7 +43,7 @@ class EmailServiceTest {
                 .invitedByUsername("Admin")
                 .invitedByEmail("jh07050@gmail.com")
                 .teamName("woozlabs")
-                .teamTeamMemberRole(TeamMemberRole.ADMIN)
+                .teamRole(Role.ADMIN)
                 .teamImage("https://vercel.com/static/vercel-team.png")
                 .inviteLink("https://example.com/invite")
                 .build();

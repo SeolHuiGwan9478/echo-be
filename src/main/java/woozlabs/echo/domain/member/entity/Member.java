@@ -1,22 +1,21 @@
 package woozlabs.echo.domain.member.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import woozlabs.echo.domain.echo.entity.EmailTemplate;
-import woozlabs.echo.domain.contactGroup.entity.MemberContactGroup;
-import woozlabs.echo.domain.echo.entity.UserSidebarConfig;
-import woozlabs.echo.domain.signature.Signature;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @Entity
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Member extends BaseEntity {
@@ -24,38 +23,34 @@ public class Member extends BaseEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String uid;
-    private String googleProviderId;
-    private String displayName;
-    private String email;
-    private String profileImageUrl;
-    private String accessToken;
-    private String refreshToken;
-    private LocalDateTime accessTokenFetchedAt;
-    private boolean isPrimary;
+    private String language;
 
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private Theme theme; // 'light' | 'dark' | 'system'
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "super_account_id")
-    private SuperAccount superAccount;
+    private String watchNotification; // ‘INBOX’ | ‘IMPORTANT’ | string
+    private boolean marketingEmails;
+    private boolean securityEmails; // Default value
 
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
-    private List<EmailTemplate> emailTemplates = new ArrayList<>();
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Account> accounts = new ArrayList<>();
 
-    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private UserSidebarConfig sidebarConfig;
+    @ElementCollection
+    @CollectionTable(name = "member_term_agreements", joinColumns = @JoinColumn(name = "member_id"))
+    @MapKeyColumn(name = "agreement_type")
+    @Column(name = "timestamp")
+    private Map<String, LocalDateTime> termAgreements = new HashMap<>();
 
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
-    private List<MemberContactGroup> memberContactGroups = new ArrayList<>();
+    @ElementCollection
+    @CollectionTable(name = "member_marketing_agreements", joinColumns = @JoinColumn(name = "member_id"))
+    @MapKeyColumn(name = "agreement_type")
+    @Column(name = "timestamp")
+    private Map<String, LocalDateTime> marketingAgreements = new HashMap<>();
 
-    @OneToMany(mappedBy = "ownerId", cascade = CascadeType.ALL)
-    private List<Signature> allSignatures = new ArrayList<>();
-
-    public List<Signature> getSignatures() {
-        return allSignatures.stream()
-                .filter(signature -> signature.getType() == Signature.SignatureType.MEMBER)
-                .collect(Collectors.toList());
+    public void addAccount(Account account) {
+        this.accounts.add(account);
+        if (!this.accounts.contains(account)) {
+            this.accounts.add(account);
+        }
     }
 }
