@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.Account;
 
 @Entity
 @Getter
@@ -19,7 +19,7 @@ public class VerificationEmail {
     private String codes;
     private String links;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
+    @JoinColumn(name = "account_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private Member member;
+    private Account account;
 }
