@@ -23,6 +23,7 @@ public final class GlobalConstant {
     public static final String MESSAGE_PAYLOAD_HEADER_BCC_KEY = "Bcc";
     public static final String MESSAGE_PAYLOAD_HEADER_TO_KEY = "To";
     public static final String MESSAGE_INTERNAL_DATE_TIMEZONE = "UTC";
+    public static final String DELETED_MESSAGE_ALERT_MSG = "Not Found: Message(Reason: Deleted Message)";
     // Gmail threads
     public static final String THREAD_PAYLOAD_HEADER_SUBJECT_KEY = "Subject";
     public static final String THREAD_PAYLOAD_HEADER_FROM_KEY = "From";

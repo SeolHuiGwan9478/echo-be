@@ -28,6 +28,7 @@ import woozlabs.echo.domain.gmail.entity.FcmToken;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.gmail.repository.FcmTokenRepository;
 import woozlabs.echo.domain.member.repository.AccountRepository;
+import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
@@ -78,9 +79,10 @@ public class PubSubService {
         if(deliveryAttempt > 5){ // stop pub/sub alert(* case: failed to alert more than three times)
             log.info("Request to stop pub/sub alert");
             gmailServiceImpl.stopPubSub(account.getUid());
+            return;
         }
         PubSubHistory pubSubHistory = pubSubHistoryRepository.findByAccount(account).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR)
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR, ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR.getMessage())
         );
         Gmail gmailService = createGmailService(account.getAccessToken());
         List<String> fcmTokens = fcmTokenRepository.findByAccount(account).stream().map(FcmToken::getFcmToken).toList();
@@ -90,12 +92,15 @@ public class PubSubService {
         // send multicast messages
         for(MessageInHistoryData historyData : getHistoryList){
             try{
-                // process deleted email
-                if(historyData.getHistoryType().equals(HistoryType.MESSAGE_DELETED)) continue;
                 // get detailed message info
                 GmailMessageGetResponse gmailMessage = gmailServiceImpl.getUserEmailMessage(account.getUid(), historyData.getId());
-                String from = gmailMessage.getFrom().getEmail();
-                String subject = gmailMessage.getSubject();
+                HistoryType historyType = historyData.getHistoryType();
+                String from = historyType.equals(HistoryType.MESSAGE_DELETED) ?
+                        DELETED_MESSAGE_ALERT_MSG :
+                        gmailMessage.getFrom().getEmail();
+                String subject = historyType.equals(HistoryType.MESSAGE_DELETED) ?
+                        DELETED_MESSAGE_ALERT_MSG :
+                        gmailMessage.getSubject();
                 Map<String, String> data = new HashMap<>();
                 createMessageData(historyData, data, gmailMessage, account);
                 // create firebase message
