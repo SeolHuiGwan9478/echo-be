@@ -3,58 +3,58 @@ package woozlabs.echo.domain.member.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import woozlabs.echo.domain.member.dto.LinkedAccountDto;
-import woozlabs.echo.domain.member.dto.MemberDto;
-import woozlabs.echo.domain.member.dto.ProfileResponseDto;
+import woozlabs.echo.domain.member.dto.AppearanceDto;
+import woozlabs.echo.domain.member.dto.NotificationDto;
+import woozlabs.echo.domain.member.dto.PreferenceDto;
+import woozlabs.echo.domain.member.dto.UpdatePreferenceRequestDto;
+import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
-import woozlabs.echo.domain.member.entity.SuperAccount;
-import woozlabs.echo.domain.member.repository.MemberRepository;
+import woozlabs.echo.domain.member.entity.Theme;
+import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class MemberService {
 
-    private final MemberRepository memberRepository;
+    private final AccountRepository accountRepository;
 
-    public ProfileResponseDto getProfileByField(String fieldType, String fieldValue) {
-        Member member;
+    @Transactional
+    public void updatePreference(String uid, UpdatePreferenceRequestDto updatePreferenceRequest) {
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
-        if (fieldType.equals("email")) {
-            member = memberRepository.findByEmail(fieldValue)
-                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
-        } else if (fieldType.equals("uid")) {
-            member = memberRepository.findByUid(fieldValue)
-                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
-        } else {
-            throw new CustomErrorException(ErrorCode.INVALID_FIELD_TYPE_ERROR_MESSAGE);
-        }
+        Member member = account.getMember();
 
-        return ProfileResponseDto.builder()
-                .uid(member.getUid())
-                .displayName(member.getDisplayName())
-                .email(member.getEmail())
-                .profileImageUrl(member.getProfileImageUrl())
-                .build();
+        PreferenceDto preferenceDto = updatePreferenceRequest.getPreference();
+        AppearanceDto appearanceDto = preferenceDto.getAppearance();
+        NotificationDto notificationDto = preferenceDto.getNotification();
+
+        member.setLanguage(preferenceDto.getLang() != null ? preferenceDto.getLang() : "en");
+        member.setTheme(appearanceDto.getTheme() != null ? appearanceDto.getTheme() : Theme.SYSTEM);
+        member.setWatchNotification(notificationDto.getWatchNotification());
+        member.setMarketingEmails(notificationDto.isMarketingEmails());
+        member.setSecurityEmails(notificationDto.isSecurityEmails());
     }
 
-    public MemberDto getMemberWithLinkedAccounts(String uid) {
-        Member primaryMember = memberRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ERROR_MESSAGE));
+    public PreferenceDto getPreference(String uid) {
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
-        SuperAccount superAccount = primaryMember.getSuperAccount();
-        List<Member> allLinkedMembers = memberRepository.findAllBySuperAccount(superAccount);
+        Member member = account.getMember();
 
-        List<LinkedAccountDto> linkedAccounts = allLinkedMembers.stream()
-                .filter(m -> !m.getUid().equals(uid))
-                .map(LinkedAccountDto::new)
-                .collect(Collectors.toList());
-
-        return new MemberDto(primaryMember, linkedAccounts);
+        return PreferenceDto.builder()
+                .lang(member.getLanguage())
+                .appearance(AppearanceDto.builder()
+                        .theme(member.getTheme())
+                        .build())
+                .notification(NotificationDto.builder()
+                        .watchNotification(member.getWatchNotification())
+                        .marketingEmails(member.isMarketingEmails())
+                        .securityEmails(member.isSecurityEmails())
+                        .build())
+                .build();
     }
 }
