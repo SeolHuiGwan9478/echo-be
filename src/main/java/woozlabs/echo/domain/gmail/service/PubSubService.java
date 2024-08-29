@@ -76,7 +76,7 @@ public class PubSubService {
         Account account = accountRepository.findByEmail(email).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE, ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE.getMessage())
         );
-        if(deliveryAttempt > 5){ // stop pub/sub alert(* case: failed to alert more than three times)
+        if(deliveryAttempt > 3){ // stop pub/sub alert(* case: failed to alert more than three times)
             log.info("Request to stop pub/sub alert");
             gmailServiceImpl.stopPubSub(account.getUid());
             return;
