@@ -26,7 +26,7 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 public class GmailThreadGetMessagesResponse {
     private String id; // message id
     private String date;
-    private String timezone; // timezone
+    private String timezone = ""; // timezone
     private GmailThreadGetMessagesFrom from;
     private List<GmailThreadGetMessagesCc> cc = new ArrayList<>();
     private List<GmailThreadGetMessagesBcc> bcc = new ArrayList<>();

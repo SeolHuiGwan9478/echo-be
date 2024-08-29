@@ -32,7 +32,7 @@ public class GmailMessageGetResponse implements ResponseDto {
     private String id; // message id
     private String subject;
     private String date;
-    private String timezone; // timezone
+    private String timezone = ""; // timezone
     private GmailMessageGetFrom from;
     private List<GmailMessageGetCc> cc = new ArrayList<>();
     private List<GmailMessageGetBcc> bcc = new ArrayList<>();
