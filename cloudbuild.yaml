@@ -67,12 +67,7 @@ steps:
       'asia-northeast3',
       '--allow-unauthenticated'
     ]
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-      - gcloud run services describe echo-be --region asia-northeast3 --format='value(status.conditions)'
+
 images:
   - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
   - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:latest'
