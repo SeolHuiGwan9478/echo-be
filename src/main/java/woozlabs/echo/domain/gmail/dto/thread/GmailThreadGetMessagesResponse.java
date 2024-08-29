@@ -97,11 +97,10 @@ public class GmailThreadGetMessagesResponse {
                         }).toList();
                         gmailThreadGetMessages.setTo(data);
                     }
+                }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
+                    String date = header.getValue();
+                    extractAndSetDateTime(date, gmailThreadGetMessages);
                 }
-//                }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
-//                    String date = header.getValue();
-//                    extractAndSetDateTime(date, gmailThreadGetMessages);
-//                }
             }
         }
         gmailThreadGetMessages.setDate(message.getInternalDate().toString());
@@ -124,13 +123,14 @@ public class GmailThreadGetMessagesResponse {
             Matcher matcher = pattern.matcher(date);
             if (matcher.find()) {
                 String timezonePart = matcher.group(1);
-                if(!pattern.pattern().equals(Pattern.compile("([+-]\\d{4})$").pattern())){
-                    timezonePart = GlobalUtility.getStandardTimeZone(timezonePart);
-                    ZoneId zone = ZoneId.of(timezonePart);
-                    ZoneOffset offset = zone.getRules().getOffset(Instant.now());
-                    timezonePart = offset.toString().replaceAll(":", "");
-                }
-                convertToIanaTimezone(gmailThreadGetMessages, timezonePart);
+                gmailThreadGetMessages.setTimezone(timezonePart);
+//                if(!pattern.pattern().equals(Pattern.compile("([+-]\\d{4})$").pattern())){
+//                    timezonePart = GlobalUtility.getStandardTimeZone(timezonePart);
+//                    ZoneId zone = ZoneId.of(timezonePart);
+//                    ZoneOffset offset = zone.getRules().getOffset(Instant.now());
+//                    timezonePart = offset.toString().replaceAll(":", "");
+//                }
+//                convertToIanaTimezone(gmailThreadGetMessages, timezonePart);
                 break;
             }
         }

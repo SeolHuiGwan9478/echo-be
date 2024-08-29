@@ -105,11 +105,10 @@ public class GmailMessageGetResponse implements ResponseDto {
                 }case MESSAGE_PAYLOAD_HEADER_SUBJECT_KEY -> {
                     String subject = header.getValue();
                     gmailMessageGetResponse.setSubject(subject);
+                }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
+                    String date = header.getValue();
+                    extractAndSetDateTime(date, gmailMessageGetResponse);
                 }
-//                }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
-//                    String date = header.getValue();
-//                    extractAndSetDateTime(date, gmailMessageGetResponse);
-//                }
             }
         }
         gmailMessageGetResponse.setDate(message.getInternalDate().toString());
@@ -223,13 +222,14 @@ public class GmailMessageGetResponse implements ResponseDto {
             Matcher matcher = pattern.matcher(date);
             if (matcher.find()) {
                 String timezonePart = matcher.group(1);
-                if(!pattern.pattern().equals(Pattern.compile("([+-]\\d{4})$").pattern())){
-                    timezonePart = GlobalUtility.getStandardTimeZone(timezonePart);
-                    ZoneId zone = ZoneId.of(timezonePart);
-                    ZoneOffset offset = zone.getRules().getOffset(Instant.now());
-                    timezonePart = offset.toString().replaceAll(":", "");
-                }
-                convertToIanaTimezone(gmailMessageGetResponse, timezonePart);
+                gmailMessageGetResponse.setTimezone(timezonePart);
+//                if(!pattern.pattern().equals(Pattern.compile("([+-]\\d{4})$").pattern())){
+//                    timezonePart = GlobalUtility.getStandardTimeZone(timezonePart);
+//                    ZoneId zone = ZoneId.of(timezonePart);
+//                    ZoneOffset offset = zone.getRules().getOffset(Instant.now());
+//                    timezonePart = offset.toString().replaceAll(":", "");
+//                }
+//                convertToIanaTimezone(gmailMessageGetResponse, timezonePart);
                 break;
             }
         }
