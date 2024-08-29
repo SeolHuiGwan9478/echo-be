@@ -8,6 +8,7 @@ import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.global.dto.ResponseDto;
 import woozlabs.echo.global.exception.CustomErrorException;
+import woozlabs.echo.global.utils.GlobalUtility;
 
 import java.math.BigInteger;
 import java.time.*;
@@ -104,22 +105,11 @@ public class GmailMessageGetResponse implements ResponseDto {
                     gmailMessageGetResponse.setSubject(subject);
                 }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
                     String date = header.getValue();
-                    List<Pattern> patterns = List.of(
-                            Pattern.compile("\\(([A-Z]{3,4})\\)$"),
-                            Pattern.compile("([A-Z]{3,4})$"),
-                            Pattern.compile("([+-]\\d{4})$")
-                    );
-                    for (Pattern pattern : patterns) {
-                        Matcher matcher = pattern.matcher(date);
-                        if (matcher.find()) {
-                            gmailMessageGetResponse.setTimezone(matcher.group(1));
-                            break;
-                        }
-                    }
+                    extractAndSetDateTime(date, gmailMessageGetResponse);
                 }
             }
         }
-        changeDateFormat(message.getInternalDate(), gmailMessageGetResponse);
+        gmailMessageGetResponse.setDate(message.getInternalDate().toString());
         gmailMessageGetResponse.setId(message.getId());
         gmailMessageGetResponse.setThreadId(message.getThreadId());
         gmailMessageGetResponse.setLabelIds(message.getLabelIds());
@@ -133,6 +123,28 @@ public class GmailMessageGetResponse implements ResponseDto {
         }
         gmailMessageGetResponse.setVerification(verificationInfo);
         return gmailMessageGetResponse;
+    }
+
+    private static void extractAndSetDateTime(String date, GmailMessageGetResponse gmailMessageGetResponse) {
+        List<Pattern> patterns = List.of(
+                Pattern.compile("([+-]\\d{4})$"),
+                Pattern.compile("\\(([A-Z]{3,4})\\)$"),
+                Pattern.compile("([A-Z]{3,4})$")
+        );
+        for (Pattern pattern : patterns) {
+            Matcher matcher = pattern.matcher(date);
+            if (matcher.find()) {
+                String timezonePart = matcher.group(1);
+                if(!pattern.pattern().equals(Pattern.compile("([+-]\\d{4})$").pattern())){
+                    timezonePart = GlobalUtility.getStandardTimeZone(timezonePart);
+                    ZoneId zone = ZoneId.of(timezonePart);
+                    ZoneOffset offset = zone.getRules().getOffset(Instant.now());
+                    timezonePart = offset.toString().replaceAll(":", "");
+                }
+                convertToIanaTimezone(gmailMessageGetResponse, timezonePart);
+                break;
+            }
+        }
     }
 
     private static ExtractVerificationInfo findVerificationEmail(GmailMessageGetPayload payload, GmailUtility gmailUtility){
@@ -166,13 +178,18 @@ public class GmailMessageGetResponse implements ResponseDto {
         info.updateLinks(newInfo.getLinks());
     }
 
-    private static void changeDateFormat(Long internalDate, GmailMessageGetResponse gmailMessageGetResponse) {
-        gmailMessageGetResponse.setDate(internalDate.toString());
-//        Instant instant = Instant.ofEpochMilli(internalDate);
-//        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
-//        String iso8601 = localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-//        if(!iso8601.isEmpty()){
-//            gmailMessageGetResponse.setDate(iso8601);
-//        }
+    private static void convertToIanaTimezone(GmailMessageGetResponse gmailMessageGetResponse, String timezonePart) {
+        try {
+            ZoneOffset offset = ZoneOffset.of(timezonePart);
+            for (String zoneId : ZoneOffset.getAvailableZoneIds()) {
+                ZoneId zone = ZoneId.of(zoneId);
+                if (zone.getRules().getOffset(Instant.now()).equals(offset)) {
+                    gmailMessageGetResponse.setTimezone(zoneId);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            gmailMessageGetResponse.setTimezone(null);
+        }
     }
 }

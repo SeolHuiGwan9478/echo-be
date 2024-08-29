@@ -1,5 +1,7 @@
 package woozlabs.echo.global.utils;
 
+import org.joda.time.DateTimeZone;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -50,5 +52,10 @@ public class GlobalUtility {
             result.add(splitSender);
         }
         return result;
+    }
+
+    public static String getStandardTimeZone(String timezonePart){
+        DateTimeZone standardTimeZone = DateTimeZone.forID(timezonePart);
+        return standardTimeZone.toString();
     }
 }
