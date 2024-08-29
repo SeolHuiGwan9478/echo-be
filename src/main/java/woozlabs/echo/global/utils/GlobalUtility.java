@@ -1,9 +1,12 @@
 package woozlabs.echo.global.utils;
 
 import org.joda.time.DateTimeZone;
+import org.threeten.bp.zone.TzdbZoneRulesProvider;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,6 +58,13 @@ public class GlobalUtility {
     }
 
     public static String getStandardTimeZone(String timezonePart){
+        Set<String> availableZoneIds = TzdbZoneRulesProvider.getAvailableZoneIds();
+        for(String zoneId : availableZoneIds){
+            ZoneId zone = ZoneId.of(zoneId);
+            if (zone.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH).equals(timezonePart)) {
+                return zone.toString();
+            }
+        }
         DateTimeZone standardTimeZone = DateTimeZone.forID(timezonePart);
         return standardTimeZone.toString();
     }
