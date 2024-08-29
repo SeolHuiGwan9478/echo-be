@@ -88,7 +88,7 @@ public class GmailThreadGetMessagesResponse {
                 }case THREAD_PAYLOAD_HEADER_TO_KEY -> {
                     String oneTo = header.getValue();
                     List<List<String>> splitSender = splitCcAndBcc(oneTo);
-                    if(!splitSender.isEmpty()){
+                    if (!splitSender.isEmpty()) {
                         List<GmailThreadGetMessagesTo> data = splitSender.stream().map((ss) -> {
                             GmailThreadGetMessagesTo gmailThreadGetMessagesTo = new GmailThreadGetMessagesTo();
                             gmailThreadGetMessagesTo.setName(ss.get(0));
@@ -97,10 +97,11 @@ public class GmailThreadGetMessagesResponse {
                         }).toList();
                         gmailThreadGetMessages.setTo(data);
                     }
-                }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
-                    String date = header.getValue();
-                    extractAndSetDateTime(date, gmailThreadGetMessages);
                 }
+//                }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
+//                    String date = header.getValue();
+//                    extractAndSetDateTime(date, gmailThreadGetMessages);
+//                }
             }
         }
         gmailThreadGetMessages.setDate(message.getInternalDate().toString());

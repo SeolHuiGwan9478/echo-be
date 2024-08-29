@@ -221,6 +221,15 @@ public class GmailService {
         return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
     }
 
+    public GmailMessageGetResponse getUserEmailMessageWithoutVerification(String uid, String messageId) throws Exception {
+        Account account = accountRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+        String accessToken = account.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
+        return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
+    }
+
     public GmailMessageAttachmentResponse getAttachment(String uid, String messageId, String id) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
