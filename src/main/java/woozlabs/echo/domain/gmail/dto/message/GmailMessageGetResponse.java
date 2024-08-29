@@ -5,6 +5,7 @@ import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import lombok.Data;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
+import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesFrom;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.global.dto.ResponseDto;
 import woozlabs.echo.global.exception.CustomErrorException;
@@ -52,7 +53,7 @@ public class GmailMessageGetResponse implements ResponseDto {
                 case MESSAGE_PAYLOAD_HEADER_FROM_KEY -> {
                     String sender = header.getValue();
                     List<String> splitSender = splitSenderData(sender);
-                    if (splitSender.size() != 1) {
+                    if (splitSender.size() == 2) {
                         gmailMessageGetResponse.setFrom(GmailMessageGetFrom.builder()
                                 .name(splitSender.get(0))
                                 .email(splitSender.get(1))
@@ -60,7 +61,8 @@ public class GmailMessageGetResponse implements ResponseDto {
                         );
                     } else {
                         gmailMessageGetResponse.setFrom(GmailMessageGetFrom.builder()
-                                .email(splitSender.get(0))
+                                .name(header.getValue())
+                                .email(header.getValue())
                                 .build()
                         );
                     }
