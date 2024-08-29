@@ -105,10 +105,11 @@ public class GmailMessageGetResponse implements ResponseDto {
                 }case MESSAGE_PAYLOAD_HEADER_SUBJECT_KEY -> {
                     String subject = header.getValue();
                     gmailMessageGetResponse.setSubject(subject);
-                }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
-                    String date = header.getValue();
-                    extractAndSetDateTime(date, gmailMessageGetResponse);
                 }
+//                }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
+//                    String date = header.getValue();
+//                    extractAndSetDateTime(date, gmailMessageGetResponse);
+//                }
             }
         }
         gmailMessageGetResponse.setDate(message.getInternalDate().toString());
@@ -127,11 +128,13 @@ public class GmailMessageGetResponse implements ResponseDto {
         return gmailMessageGetResponse;
     }
 
+
+
     private static void extractAndSetDateTime(String date, GmailMessageGetResponse gmailMessageGetResponse) {
         List<Pattern> patterns = List.of(
-                Pattern.compile("([+-]\\d{4})$"),
-                Pattern.compile("\\(([A-Z]{3,4})\\)$"),
-                Pattern.compile("([A-Z]{3,4})$")
+                Pattern.compile("([+-]\\d{4})$"), // +0900
+                Pattern.compile("\\(([A-Z]{3,4})\\)$"), //(KST)
+                Pattern.compile("([A-Z]{3,4})$") // KST
         );
         for (Pattern pattern : patterns) {
             Matcher matcher = pattern.matcher(date);
