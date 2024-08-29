@@ -65,8 +65,7 @@ steps:
       'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
       '--region',
       'asia-northeast3',
-      '--allow-unauthenticated',
-      '--set-env-vars', 'PORT=8080'
+      '--allow-unauthenticated'
     ]
 
 images:
