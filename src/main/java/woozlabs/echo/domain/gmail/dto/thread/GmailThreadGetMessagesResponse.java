@@ -7,6 +7,7 @@ import lombok.Data;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
+import woozlabs.echo.global.utils.GlobalUtility;
 
 import java.math.BigInteger;
 import java.time.*;
@@ -47,7 +48,7 @@ public class GmailThreadGetMessagesResponse {
                 case THREAD_PAYLOAD_HEADER_FROM_KEY -> {
                     String sender = header.getValue();
                     List<String> splitSender = splitSenderData(sender);
-                    if (splitSender.size() != 1) {
+                    if (splitSender.size() == 2) {
                         gmailThreadGetMessages.setFrom(GmailThreadGetMessagesFrom.builder()
                                 .name(splitSender.get(0))
                                 .email(splitSender.get(1))
@@ -55,7 +56,8 @@ public class GmailThreadGetMessagesResponse {
                         );
                     } else {
                         gmailThreadGetMessages.setFrom(GmailThreadGetMessagesFrom.builder()
-                                .email(splitSender.get(0))
+                                .name(header.getValue())
+                                .email(header.getValue())
                                 .build()
                         );
                     }
@@ -95,10 +97,13 @@ public class GmailThreadGetMessagesResponse {
                         }).toList();
                         gmailThreadGetMessages.setTo(data);
                     }
+                }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
+                    String date = header.getValue();
+                    extractAndSetDateTime(date, gmailThreadGetMessages);
                 }
             }
         }
-        changeDateFormat(message.getInternalDate(), gmailThreadGetMessages);
+        gmailThreadGetMessages.setDate(message.getInternalDate().toString());
         gmailThreadGetMessages.setId(message.getId());
         gmailThreadGetMessages.setThreadId(message.getThreadId());
         gmailThreadGetMessages.setLabelIds(message.getLabelIds());
@@ -108,13 +113,40 @@ public class GmailThreadGetMessagesResponse {
         return gmailThreadGetMessages;
     }
 
-    private static void changeDateFormat(Long internalDate, GmailThreadGetMessagesResponse gmailThreadGetMessages) {
-        Instant instant = Instant.ofEpochMilli(internalDate);
-        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
-        String iso8601 = localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        if(!iso8601.isEmpty()){
-            gmailThreadGetMessages.setDate(iso8601);
-            gmailThreadGetMessages.setTimezone(MESSAGE_INTERNAL_DATE_TIMEZONE);
+    private static void extractAndSetDateTime(String date, GmailThreadGetMessagesResponse gmailThreadGetMessages) {
+        List<Pattern> patterns = List.of(
+                Pattern.compile("([+-]\\d{4})$"),
+                Pattern.compile("\\(([A-Z]{3,4})\\)$"),
+                Pattern.compile("([A-Z]{3,4})$")
+        );
+        for (Pattern pattern : patterns) {
+            Matcher matcher = pattern.matcher(date);
+            if (matcher.find()) {
+                String timezonePart = matcher.group(1);
+                if(!pattern.pattern().equals(Pattern.compile("([+-]\\d{4})$").pattern())){
+                    timezonePart = GlobalUtility.getStandardTimeZone(timezonePart);
+                    ZoneId zone = ZoneId.of(timezonePart);
+                    ZoneOffset offset = zone.getRules().getOffset(Instant.now());
+                    timezonePart = offset.toString().replaceAll(":", "");
+                }
+                convertToIanaTimezone(gmailThreadGetMessages, timezonePart);
+                break;
+            }
+        }
+    }
+
+    private static void convertToIanaTimezone(GmailThreadGetMessagesResponse gmailThreadGetMessages, String timezonePart) {
+        try {
+            ZoneOffset offset = ZoneOffset.of(timezonePart);
+            for (String zoneId : ZoneOffset.getAvailableZoneIds()) {
+                ZoneId zone = ZoneId.of(zoneId);
+                if (zone.getRules().getOffset(Instant.now()).equals(offset)) {
+                    gmailThreadGetMessages.setTimezone(zoneId);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            gmailThreadGetMessages.setTimezone(null);
         }
     }
 }
