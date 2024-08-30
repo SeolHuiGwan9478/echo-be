@@ -9,7 +9,6 @@ import woozlabs.echo.domain.member.dto.PreferenceDto;
 import woozlabs.echo.domain.member.dto.UpdatePreferenceRequestDto;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
-import woozlabs.echo.domain.member.entity.Theme;
 import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
@@ -29,14 +28,29 @@ public class MemberService {
         Member member = account.getMember();
 
         PreferenceDto preferenceDto = updatePreferenceRequest.getPreference();
-        AppearanceDto appearanceDto = preferenceDto.getAppearance();
-        NotificationDto notificationDto = preferenceDto.getNotification();
+        if (preferenceDto != null) {
+            if (preferenceDto.getLanguage() != null) {
+                member.setLanguage(preferenceDto.getLanguage());
+            }
 
-        member.setLanguage(preferenceDto.getLang() != null ? preferenceDto.getLang() : "en");
-        member.setTheme(appearanceDto.getTheme() != null ? appearanceDto.getTheme() : Theme.SYSTEM);
-        member.setWatchNotification(notificationDto.getWatchNotification());
-        member.setMarketingEmails(notificationDto.isMarketingEmails());
-        member.setSecurityEmails(notificationDto.isSecurityEmails());
+            AppearanceDto appearanceDto = preferenceDto.getAppearance();
+            if (appearanceDto != null && appearanceDto.getTheme() != null) {
+                member.setTheme(appearanceDto.getTheme());
+            }
+
+            NotificationDto notificationDto = preferenceDto.getNotification();
+            if (notificationDto != null) {
+                if (notificationDto.getWatchNotification() != null) {
+                    member.setWatchNotification(notificationDto.getWatchNotification());
+                }
+                if (notificationDto.getMarketingEmails() != null) {
+                    member.setMarketingEmails(notificationDto.getMarketingEmails());
+                }
+                if (notificationDto.getSecurityEmails() != null) {
+                    member.setSecurityEmails(notificationDto.getSecurityEmails());
+                }
+            }
+        }
     }
 
     public PreferenceDto getPreference(String uid) {
@@ -46,7 +60,7 @@ public class MemberService {
         Member member = account.getMember();
 
         return PreferenceDto.builder()
-                .lang(member.getLanguage())
+                .language(member.getLanguage())
                 .appearance(AppearanceDto.builder()
                         .theme(member.getTheme())
                         .build())
