@@ -24,7 +24,6 @@ public class GmailThreadGetResponse implements ResponseDto {
     private List<GmailThreadGetMessagesBcc> bcc;
     private String subject;
     private String snippet;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private String date;
+    private Long date;
     private int threadSize;
 }

@@ -25,7 +25,7 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 @Data
 public class GmailThreadGetMessagesResponse {
     private String id; // message id
-    private String date;
+    private Long date;
     private String timezone = ""; // timezone
     private GmailThreadGetMessagesFrom from;
     private List<GmailThreadGetMessagesCc> cc = new ArrayList<>();
@@ -103,7 +103,7 @@ public class GmailThreadGetMessagesResponse {
                 }
             }
         }
-        gmailThreadGetMessages.setDate(message.getInternalDate().toString());
+        gmailThreadGetMessages.setDate(message.getInternalDate());
         gmailThreadGetMessages.setId(message.getId());
         gmailThreadGetMessages.setThreadId(message.getThreadId());
         gmailThreadGetMessages.setLabelIds(message.getLabelIds());
@@ -124,13 +124,10 @@ public class GmailThreadGetMessagesResponse {
             if (matcher.find()) {
                 String timezonePart = matcher.group(1);
                 gmailThreadGetMessages.setTimezone(timezonePart);
-//                if(!pattern.pattern().equals(Pattern.compile("([+-]\\d{4})$").pattern())){
-//                    timezonePart = GlobalUtility.getStandardTimeZone(timezonePart);
-//                    ZoneId zone = ZoneId.of(timezonePart);
-//                    ZoneOffset offset = zone.getRules().getOffset(Instant.now());
-//                    timezonePart = offset.toString().replaceAll(":", "");
-//                }
-//                convertToIanaTimezone(gmailThreadGetMessages, timezonePart);
+                if(!pattern.pattern().equals(Pattern.compile("([+-]\\d{4})$").pattern())){
+                    timezonePart = GlobalUtility.getStandardTimeZone(timezonePart);
+                }
+                convertToIanaTimezone(gmailThreadGetMessages, timezonePart);
                 break;
             }
         }
