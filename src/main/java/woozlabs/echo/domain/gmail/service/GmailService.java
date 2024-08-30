@@ -141,7 +141,7 @@ public class GmailService {
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
                 labelIds.addAll(message.getLabelIds());
                 if (idxForLambda == messages.size() - 1) {
-                    String date = convertedMessages.get(convertedMessages.size() - 1).getDate();
+                    Long date = convertedMessages.get(convertedMessages.size() - 1).getDate();
                     gmailThreadGetResponse.setSnippet(message.getSnippet());
                     gmailThreadGetResponse.setDate(date);
                 }

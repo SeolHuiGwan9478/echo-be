@@ -124,13 +124,10 @@ public class GmailThreadGetMessagesResponse {
             if (matcher.find()) {
                 String timezonePart = matcher.group(1);
                 gmailThreadGetMessages.setTimezone(timezonePart);
-//                if(!pattern.pattern().equals(Pattern.compile("([+-]\\d{4})$").pattern())){
-//                    timezonePart = GlobalUtility.getStandardTimeZone(timezonePart);
-//                    ZoneId zone = ZoneId.of(timezonePart);
-//                    ZoneOffset offset = zone.getRules().getOffset(Instant.now());
-//                    timezonePart = offset.toString().replaceAll(":", "");
-//                }
-//                convertToIanaTimezone(gmailThreadGetMessages, timezonePart);
+                if(!pattern.pattern().equals(Pattern.compile("([+-]\\d{4})$").pattern())){
+                    timezonePart = GlobalUtility.getStandardTimeZone(timezonePart);
+                }
+                convertToIanaTimezone(gmailThreadGetMessages, timezonePart);
                 break;
             }
         }
