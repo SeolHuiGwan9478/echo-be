@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 public class PreferenceDto {
 
-    private String lang; // 'en' or 'ko'...
+    private String language; // 'en' or 'ko'...
     private AppearanceDto appearance;
     private NotificationDto notification;
 }

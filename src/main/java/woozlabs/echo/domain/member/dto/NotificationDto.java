@@ -1,6 +1,9 @@
 package woozlabs.echo.domain.member.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
@@ -9,6 +12,6 @@ import lombok.*;
 public class NotificationDto {
 
     private String watchNotification; // ‘INBOX’ | ‘IMPORTANT’ | string
-    private boolean marketingEmails;
-    private boolean securityEmails;
+    private Boolean marketingEmails;
+    private Boolean securityEmails;
 }

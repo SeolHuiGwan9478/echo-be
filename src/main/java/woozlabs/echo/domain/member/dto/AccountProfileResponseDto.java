@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProfileResponseDto {
+public class AccountProfileResponseDto {
 
     private String uid;
     private String provider;
@@ -17,5 +17,4 @@ public class ProfileResponseDto {
     private String profileImageUrl;
     private String email;
     private boolean isPrimary;
-    private String language;
 }

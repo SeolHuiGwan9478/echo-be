@@ -16,10 +16,10 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
 
-    public ProfileResponseDto getProfileByField(String fieldType, String fieldValue) {
+    public AccountProfileResponseDto getProfileByField(String fieldType, String fieldValue) {
         Account account = fetchMemberByField(fieldType, fieldValue);
 
-        return ProfileResponseDto.builder()
+        return AccountProfileResponseDto.builder()
                 .uid(account.getUid())
                 .provider(account.getProvider())
                 .displayName(account.getDisplayName())
