@@ -57,9 +57,9 @@ public class MultiThreadGmailService {
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
                 labelIds.addAll(message.getLabelIds());
                 if(idxForLambda == messages.size()-1){
-                    Long date = convertedMessages.get(convertedMessages.size()-1).getDate();
+                    Long date = convertedMessages.get(convertedMessages.size()-1).getTimestamp();
                     gmailThreadListThreads.setSnippet(message.getSnippet());
-                    gmailThreadListThreads.setDate(date);
+                    gmailThreadListThreads.setTimestamp(date);
                 }
                 // get attachments
                 getThreadsAttachments(payload, attachments);

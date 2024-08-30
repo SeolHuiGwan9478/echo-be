@@ -24,6 +24,6 @@ public class GmailThreadGetResponse implements ResponseDto {
     private List<GmailThreadGetMessagesBcc> bcc;
     private String subject;
     private String snippet;
-    private Long date;
+    private Long timestamp;
     private int threadSize;
 }

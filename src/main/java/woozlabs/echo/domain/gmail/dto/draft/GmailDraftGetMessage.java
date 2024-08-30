@@ -14,7 +14,7 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 @Data
 public class GmailDraftGetMessage {
     private String id; // message id
-    private String date;
+    private String timestamp;
     private String fromName;
     private String fromEmail;
     private String threadId; // thread id
@@ -41,7 +41,7 @@ public class GmailDraftGetMessage {
                         gmailDraftGetMessages.setFromEmail(splitSender.get(0));
                     }
                 }
-                case DRAFT_PAYLOAD_HEADER_DATE_KEY -> gmailDraftGetMessages.setDate(header.getValue());
+                case DRAFT_PAYLOAD_HEADER_DATE_KEY -> gmailDraftGetMessages.setTimestamp(header.getValue());
             }
         }
         gmailDraftGetMessages.setId(message.getId());

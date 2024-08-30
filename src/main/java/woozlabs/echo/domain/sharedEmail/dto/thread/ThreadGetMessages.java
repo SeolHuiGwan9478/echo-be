@@ -12,7 +12,7 @@ import java.util.List;
 public class ThreadGetMessages {
 
     private String id; // message id
-    private String date;
+    private String timestamp;
     private String timezone; // timezone
     private ThreadGetMessagesFrom from;
     private List<ThreadGetMessagesCc> cc = new ArrayList<>();
