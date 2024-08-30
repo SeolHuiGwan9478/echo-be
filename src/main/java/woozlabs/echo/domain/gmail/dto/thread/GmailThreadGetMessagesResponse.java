@@ -25,7 +25,7 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 @Data
 public class GmailThreadGetMessagesResponse {
     private String id; // message id
-    private Long date;
+    private Long timestamp;
     private String timezone = ""; // timezone
     private GmailThreadGetMessagesFrom from;
     private List<GmailThreadGetMessagesCc> cc = new ArrayList<>();
@@ -98,12 +98,12 @@ public class GmailThreadGetMessagesResponse {
                         gmailThreadGetMessages.setTo(data);
                     }
                 }case MESSAGE_PAYLOAD_HEADER_DATE_KEY -> {
-                    String date = header.getValue();
-                    extractAndSetDateTime(date, gmailThreadGetMessages);
+                    String timestamp = header.getValue();
+                    extractAndSetDateTime(timestamp, gmailThreadGetMessages);
                 }
             }
         }
-        gmailThreadGetMessages.setDate(message.getInternalDate());
+        gmailThreadGetMessages.setTimestamp(message.getInternalDate());
         gmailThreadGetMessages.setId(message.getId());
         gmailThreadGetMessages.setThreadId(message.getThreadId());
         gmailThreadGetMessages.setLabelIds(message.getLabelIds());
@@ -123,7 +123,6 @@ public class GmailThreadGetMessagesResponse {
             Matcher matcher = pattern.matcher(date);
             if (matcher.find()) {
                 String timezonePart = matcher.group(1);
-                gmailThreadGetMessages.setTimezone(timezonePart);
                 if(!pattern.pattern().equals(Pattern.compile("([+-]\\d{4})$").pattern())){
                     timezonePart = GlobalUtility.getStandardTimeZone(timezonePart);
                 }

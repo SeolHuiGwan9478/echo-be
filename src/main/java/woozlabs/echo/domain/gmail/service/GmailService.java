@@ -141,9 +141,9 @@ public class GmailService {
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
                 labelIds.addAll(message.getLabelIds());
                 if (idxForLambda == messages.size() - 1) {
-                    Long date = convertedMessages.get(convertedMessages.size() - 1).getDate();
+                    Long date = convertedMessages.get(convertedMessages.size() - 1).getTimestamp();
                     gmailThreadGetResponse.setSnippet(message.getSnippet());
-                    gmailThreadGetResponse.setDate(date);
+                    gmailThreadGetResponse.setTimestamp(date);
                 }
                 // get attachments
                 getThreadsAttachments(payload, attachments);
@@ -472,6 +472,7 @@ public class GmailService {
                         }catch (Exception e){
                             log.error(e.getMessage());
                             log.error(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
+                            e.printStackTrace();
                             future.completeExceptionally(new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG));
                         }
                     });
@@ -483,6 +484,7 @@ public class GmailService {
             }catch (Exception e){
                 log.error(e.getMessage());
                 log.error(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
+                e.printStackTrace();
                 throw new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
         }).collect(Collectors.toList());

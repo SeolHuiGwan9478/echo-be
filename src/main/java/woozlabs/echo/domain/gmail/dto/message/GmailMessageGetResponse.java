@@ -31,7 +31,7 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 public class GmailMessageGetResponse implements ResponseDto {
     private String id; // message id
     private String subject;
-    private Long date;
+    private Long timestamp;
     private String timezone = ""; // timezone
     private GmailMessageGetFrom from;
     private List<GmailMessageGetCc> cc = new ArrayList<>();
@@ -111,7 +111,7 @@ public class GmailMessageGetResponse implements ResponseDto {
                 }
             }
         }
-        gmailMessageGetResponse.setDate(message.getInternalDate());
+        gmailMessageGetResponse.setTimestamp(message.getInternalDate());
         gmailMessageGetResponse.setId(message.getId());
         gmailMessageGetResponse.setThreadId(message.getThreadId());
         gmailMessageGetResponse.setLabelIds(message.getLabelIds());
@@ -195,7 +195,7 @@ public class GmailMessageGetResponse implements ResponseDto {
                 }
             }
         }
-        gmailMessageGetResponse.setDate(message.getInternalDate());
+        gmailMessageGetResponse.setTimestamp(message.getInternalDate());
         gmailMessageGetResponse.setId(message.getId());
         gmailMessageGetResponse.setThreadId(message.getThreadId());
         gmailMessageGetResponse.setLabelIds(message.getLabelIds());
@@ -221,7 +221,6 @@ public class GmailMessageGetResponse implements ResponseDto {
             Matcher matcher = pattern.matcher(date);
             if (matcher.find()) {
                 String timezonePart = matcher.group(1);
-                gmailMessageGetResponse.setTimezone(timezonePart);
                 if(!pattern.pattern().equals(Pattern.compile("([+-]\\d{4})$").pattern())){
                     timezonePart = GlobalUtility.getStandardTimeZone(timezonePart);
                 }

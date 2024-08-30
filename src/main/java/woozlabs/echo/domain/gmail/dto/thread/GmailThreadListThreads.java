@@ -12,7 +12,7 @@ public class GmailThreadListThreads {
     private String id;
     private String subject;
     private String snippet;
-    private Long date;
+    private Long timestamp;
     private BigInteger historyId;
     private List<String> labelIds;
     private int threadSize;
