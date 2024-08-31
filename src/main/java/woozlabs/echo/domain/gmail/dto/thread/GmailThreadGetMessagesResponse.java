@@ -4,6 +4,7 @@ import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
@@ -22,6 +23,7 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 import static woozlabs.echo.global.utils.GlobalUtility.splitCcAndBcc;
 import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
+@Slf4j
 @Data
 public class GmailThreadGetMessagesResponse {
     private String id; // message id
@@ -43,6 +45,9 @@ public class GmailThreadGetMessagesResponse {
         MessagePart payload = message.getPayload();
         GmailThreadGetPayload convertedPayload = new GmailThreadGetPayload(payload);
         List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
+        if(message.getSnippet().contains("Hello Kwanwoo, Thank you for considering our homes at 340 Fremont")){
+            log.info(headers.toString());
+        }
         for(MessagePartHeader header: headers) {
             switch (header.getName()) {
                 case THREAD_PAYLOAD_HEADER_FROM_KEY -> {
