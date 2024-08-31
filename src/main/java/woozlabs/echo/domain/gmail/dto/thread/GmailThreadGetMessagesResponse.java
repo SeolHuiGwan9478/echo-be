@@ -49,7 +49,7 @@ public class GmailThreadGetMessagesResponse {
             switch (header.getName()) {
                 case THREAD_PAYLOAD_HEADER_FROM_KEY -> {
                     String sender = header.getValue();
-                    log.info(sender);
+                    if(sender.contains("Alexa") || sender.contains("eqr")) log.info(sender);
                     List<String> splitSender = splitSenderData(sender);
                     if (splitSender.size() == 2) {
                         gmailThreadGetMessages.setFrom(GmailThreadGetMessagesFrom.builder()
