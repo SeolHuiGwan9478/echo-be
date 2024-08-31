@@ -45,11 +45,13 @@ public class GmailThreadGetMessagesResponse {
         MessagePart payload = message.getPayload();
         GmailThreadGetPayload convertedPayload = new GmailThreadGetPayload(payload);
         List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
+        if(message.getSnippet().contains("Hello Kwanwoo, Thank you for considering our homes at 340 Fremont")){
+            log.info(headers.toString());
+        }
         for(MessagePartHeader header: headers) {
             switch (header.getName()) {
                 case THREAD_PAYLOAD_HEADER_FROM_KEY -> {
                     String sender = header.getValue();
-                    if(sender.contains("Alexa") || sender.contains("eqr")) log.info(sender);
                     List<String> splitSender = splitSenderData(sender);
                     if (splitSender.size() == 2) {
                         gmailThreadGetMessages.setFrom(GmailThreadGetMessagesFrom.builder()
