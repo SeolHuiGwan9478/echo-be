@@ -46,6 +46,9 @@ public enum ErrorCode {
     REQUEST_GMAIL_USER_DRAFTS_SEND_API_ERROR_MESSAGE(500, "Failed to send draft messages api"),
     FAILED_TO_GET_GMAIL_CONNECTION_REQUEST(500, "Failed to get connection gmail api"),
     FAILED_TO_CHANGE_DATE_FORMAT(500, "Failed to change date format"),
+    INVALID_ACCESS_TOKEN(401, "Invalid Access Token"),
+    TOO_MANY_REQUESTS(429, "Too many requests"),
+    INVALID_NEXT_PAGE_TOKEN(400, "Invalid next page token"),
 
     // calendar
     GOOGLE_CALENDAR_SECURITY_ERROR(500, "Security error while fetching Google Calendar events"),

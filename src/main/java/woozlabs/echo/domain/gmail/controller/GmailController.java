@@ -18,6 +18,7 @@ import woozlabs.echo.domain.gmail.dto.thread.GmailThreadTotalCountResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
+import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.dto.ResponseDto;
@@ -36,19 +37,12 @@ public class GmailController {
     @GetMapping("/api/v1/gmail/threads")
     public ResponseEntity<ResponseDto> getQueryThreads(HttpServletRequest httpServletRequest,
                                                        @RequestParam(value = "pageToken", required = false) String pageToken,
+                                                       @RequestParam(value = "maxResults", required = false, defaultValue = "50") Long maxResults,
                                                        @RequestParam(value = "q") String q){
         log.info("Request to get threads");
-        try {
-            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-            GmailThreadListResponse response = gmailService.getQueryUserEmailThreads(uid, pageToken, q);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }catch (IOException e){
-            e.printStackTrace();
-            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
-        }catch (Exception e){
-            e.printStackTrace();
-            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
-        }
+        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        GmailThreadListResponse response = gmailService.getQueryUserEmailThreads(uid, pageToken, maxResults, q);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/api/v1/gmail/threads/search")
@@ -73,15 +67,9 @@ public class GmailController {
     @GetMapping("/api/v1/gmail/threads/{id}")
     public ResponseEntity<ResponseDto> getThread(HttpServletRequest httpServletRequest, @PathVariable("id") String id){
         log.info("Request to get thread");
-        try{
-            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-            GmailThreadGetResponse response = gmailService.getUserEmailThread(uid, id);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }catch (IOException e){
-            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
-        }catch (Exception e){
-            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
-        }
+        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        GmailThreadGetResponse response = gmailService.getUserEmailThread(uid, id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @DeleteMapping("/api/v1/gmail/threads/{id}/trash")

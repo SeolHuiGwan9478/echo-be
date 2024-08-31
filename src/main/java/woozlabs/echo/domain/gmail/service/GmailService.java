@@ -1,6 +1,7 @@
 package woozlabs.echo.domain.gmail.service;
 
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -87,12 +88,12 @@ public class GmailService {
     private final GmailUtility gmailUtility;
     private final PubSubValidator pubSubValidator;
 
-    public GmailThreadListResponse getQueryUserEmailThreads(String uid, String pageToken, String q) throws Exception{
+    public GmailThreadListResponse getQueryUserEmailThreads(String uid, String pageToken, Long maxResults, String q) {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
-        ListThreadsResponse response = getQueryListThreadsResponse(pageToken, q, gmailService);
+        ListThreadsResponse response = getQueryListThreadsResponse(pageToken, maxResults, q, gmailService);
         List<Thread> threads = response.getThreads(); // get threads
         threads = isEmptyResult(threads);
         List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
@@ -118,7 +119,7 @@ public class GmailService {
                 .build();
     }
 
-    public GmailThreadGetResponse getUserEmailThread(String uid, String id) throws Exception{
+    public GmailThreadGetResponse getUserEmailThread(String uid, String id){
         try {
             Account account = accountRepository.findByUid(uid).orElseThrow(
                     () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
@@ -171,7 +172,7 @@ public class GmailService {
             gmailThreadGetResponse.setMessages(convertedMessages);
             return gmailThreadGetResponse;
         }catch (IOException e) {
-            throw new GmailException(e.getMessage());
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST.getMessage());
         }
     }
 
@@ -470,9 +471,7 @@ public class GmailService {
                                     .multiThreadRequestGmailThreadGetForList(thread, gmailService);
                             future.complete(result);
                         }catch (Exception e){
-                            log.error(e.getMessage());
                             log.error(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
-                            e.printStackTrace();
                             future.completeExceptionally(new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG));
                         }
                     });
@@ -483,19 +482,21 @@ public class GmailService {
                 return future.get();
             }catch (Exception e){
                 log.error(e.getMessage());
-                log.error(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
-                e.printStackTrace();
                 throw new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
         }).collect(Collectors.toList());
     }
 
-    private Gmail createGmailService(String accessToken) throws Exception{
-        HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-        HttpRequestInitializer requestInitializer = createCredentialWithAccessToken(accessToken);
-        return new Gmail.Builder(httpTransport, JSON_FACTORY, requestInitializer)
-                .setApplicationName("Echo")
-                .build();
+    private Gmail createGmailService(String accessToken) {
+        try{
+            HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+            HttpRequestInitializer requestInitializer = createCredentialWithAccessToken(accessToken);
+            return new Gmail.Builder(httpTransport, JSON_FACTORY, requestInitializer)
+                    .setApplicationName("Echo")
+                    .build();
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
     }
 
     private List<GmailDraftListDrafts> getDetailedDrafts(List<Draft> drafts, Gmail gmailService) {
@@ -529,14 +530,33 @@ public class GmailService {
         return gmailThreadSearchListThreads;
     }
 
-    private ListThreadsResponse getQueryListThreadsResponse(String pageToken, String q, Gmail gmailService) throws IOException {
-        return gmailService.users().threads()
-                .list(USER_ID)
-                .setMaxResults(THREADS_LIST_MAX_LENGTH)
-                .setPageToken(pageToken)
-                .setPrettyPrint(Boolean.TRUE)
-                .setQ(q)
-                .execute();
+    private ListThreadsResponse getQueryListThreadsResponse(String pageToken, Long maxResults, String q, Gmail gmailService) {
+        try{
+            return gmailService.users().threads()
+                    .list(USER_ID)
+                    .setMaxResults(maxResults)
+                    .setPageToken(pageToken)
+                    .setPrettyPrint(Boolean.TRUE)
+                    .setQ(q)
+                    .execute();
+        }catch (GoogleJsonResponseException e){
+            switch (e.getStatusCode()) {
+                case 401 ->
+                        throw new CustomErrorException(ErrorCode.INVALID_ACCESS_TOKEN, ErrorCode.INVALID_ACCESS_TOKEN.getMessage());
+                case 429 ->
+                        throw new CustomErrorException(ErrorCode.TOO_MANY_REQUESTS, ErrorCode.TOO_MANY_REQUESTS.getMessage());
+                case 400 -> {
+                    if (e.getDetails().getMessage().contains("Invalid pageToken")) {
+                        throw new CustomErrorException(ErrorCode.INVALID_NEXT_PAGE_TOKEN, ErrorCode.INVALID_NEXT_PAGE_TOKEN.getMessage());
+                    }
+                    throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE.getMessage());
+                }
+                default ->
+                        throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE.getMessage());
+            }
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE.getMessage());
+        }
     }
 
     private ListThreadsResponse getSearchListThreadsResponse(GmailSearchParams params, Gmail gmailService) throws IOException{
