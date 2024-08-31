@@ -28,7 +28,7 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 @Service
 @RequiredArgsConstructor
 public class MultiThreadGmailService {
-    private final String CONTENT_DISPOSITION_KEY = "Content-Disposition";
+    private final String CONTENT_DISPOSITION_KEY = "CONTENT-DISPOSITION";
     private final String CONTENT_DISPOSITION_INLINE_VALUE = "inline";
     private final String VERIFICATION_EMAIL_LABEL = "VERIFICATION";
     private final GmailUtility gmailUtility;
@@ -154,7 +154,7 @@ public class MultiThreadGmailService {
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
                 for(MessagePartHeader header : headers){
-                    if(header.getName().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
+                    if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
                         attachment.setXAttachmentId(header.getValue());
                     }
                 }
@@ -175,7 +175,7 @@ public class MultiThreadGmailService {
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
                 for(MessagePartHeader header : headers){
-                    if(header.getName().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
+                    if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
                         attachment.setXAttachmentId(header.getValue());
                     }
                 }
@@ -193,7 +193,7 @@ public class MultiThreadGmailService {
     private Boolean isInlineFile(MessagePart part){
         List<MessagePartHeader> headers = part.getHeaders();
         for(MessagePartHeader header : headers){
-            if(header.getName().equals(CONTENT_DISPOSITION_KEY)){
+            if(header.getName().toUpperCase().equals(CONTENT_DISPOSITION_KEY)){
                 String[] parts = header.getValue().split(";");
                 String inlinePart = parts[0].trim();
                 if(inlinePart.equals(CONTENT_DISPOSITION_INLINE_VALUE)) return Boolean.TRUE;

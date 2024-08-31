@@ -33,7 +33,7 @@ public final class GlobalConstant {
     public static final String THREAD_PAYLOAD_HEADER_CC_KEY = "CC";
     public static final String THREAD_PAYLOAD_HEADER_BCC_KEY = "BCC";
     public static final String THREAD_PAYLOAD_HEADER_TO_KEY = "TO";
-    public static final String THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY = "X-Attachment-Id";
+    public static final String THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY = "X-ATTACHMENT-ID";
     public static final String THREADS_GET_METADATA_FORMAT = "metadata";
     public static final String THREADS_GET_FULL_FORMAT = "full";
     public static final Long THREADS_LIST_MAX_LENGTH = 50L;
