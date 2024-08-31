@@ -4,6 +4,8 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public final class GlobalConstant {
+    // exception
+    public static final String EXCEPTION_ERR_MSG_KEY = "Exception";
     // Auth
     public static final String AUTH_UNAUTHORIZED_ERR_MSG = "인증되지 않은 사용자입니다.";
     public static final String AUTH_SIGN_IN_DOMAIN = "https://echo-homepage.vercel.app/sign-in";
