@@ -72,6 +72,7 @@ public class PubSubService {
         PubSubNotification notification = om.readValue(decodedData, PubSubNotification.class);
         String email = notification.getEmailAddress();
         int deliveryAttempt = pubsubMessage.getDeliveryAttempt();
+        log.info(String.valueOf(deliveryAttempt));
         BigInteger newHistoryId = new BigInteger(notification.getHistoryId());
         Account account = accountRepository.findByEmail(email).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE, ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE.getMessage())

@@ -94,7 +94,7 @@ public class GmailService {
         String accessToken = account.getAccessToken();
         Gmail gmailService = createGmailService(accessToken);
         ListThreadsResponse response = getQueryListThreadsResponse(pageToken, maxResults, q, gmailService);
-        List<Thread> threads = response.getThreads(); // xget threads
+        List<Thread> threads = response.getThreads(); // get threads
         threads = isEmptyResult(threads);
         List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
         return GmailThreadListResponse.builder()
