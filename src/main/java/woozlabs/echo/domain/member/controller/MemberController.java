@@ -20,7 +20,7 @@ public class MemberController {
         return ResponseEntity.ok(preference);
     }
 
-    @PostMapping("/{uid}/preferences")
+    @PatchMapping("/{uid}/preferences")
     public ResponseEntity<Void> updatePreferences(@PathVariable("uid") String uid, @RequestBody UpdatePreferenceRequestDto updatePreferenceRequest) {
         memberService.updatePreference(uid, updatePreferenceRequest);
         return ResponseEntity.ok().build();
