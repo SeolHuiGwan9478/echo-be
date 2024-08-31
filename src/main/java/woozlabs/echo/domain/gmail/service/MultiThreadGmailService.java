@@ -64,7 +64,7 @@ public class MultiThreadGmailService {
                 // get attachments
                 getThreadsAttachments(payload, attachments);
                 headers.forEach((header) -> {
-                    String headerName = header.getName();
+                    String headerName = header.getName().toUpperCase();
                     // first message -> extraction subject
                     if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)) {
                         gmailThreadListThreads.setSubject(header.getValue());
@@ -120,7 +120,7 @@ public class MultiThreadGmailService {
             getDraftsAttachments(payload, attachments);
 
             headers.forEach((header) -> {
-                String headerName = header.getName();
+                String headerName = header.getName().toUpperCase();
                 // first message -> extraction subject
                 if (headerName.equals(DRAFT_PAYLOAD_HEADER_SUBJECT_KEY)){
                     gmailDraftListDrafts.setSubject(header.getValue());

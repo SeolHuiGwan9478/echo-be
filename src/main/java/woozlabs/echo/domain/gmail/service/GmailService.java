@@ -149,7 +149,7 @@ public class GmailService {
                 // get attachments
                 getThreadsAttachments(payload, attachments);
                 headers.forEach((header) -> {
-                    String headerName = header.getName();
+                    String headerName = header.getName().toUpperCase();
                     // first message -> extraction subject
                     if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)) {
                         gmailThreadGetResponse.setSubject(header.getValue());

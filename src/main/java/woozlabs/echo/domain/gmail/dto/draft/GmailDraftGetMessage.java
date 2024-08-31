@@ -29,7 +29,7 @@ public class GmailDraftGetMessage {
         GmailDraftGetPayload convertedPayload = new GmailDraftGetPayload(payload);
         List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
         for(MessagePartHeader header: headers) {
-            switch (header.getName()) {
+            switch (header.getName().toUpperCase()) {
                 case DRAFT_PAYLOAD_HEADER_FROM_KEY -> {
                     String sender = header.getValue();
                     List<String> splitSender = splitSenderData(sender);

@@ -49,7 +49,7 @@ public class GmailThreadGetMessagesResponse {
             log.info(headers.toString());
         }
         for(MessagePartHeader header: headers) {
-            switch (header.getName()) {
+            switch (header.getName().toUpperCase()) {
                 case THREAD_PAYLOAD_HEADER_FROM_KEY -> {
                     String sender = header.getValue();
                     List<String> splitSender = splitSenderData(sender);
