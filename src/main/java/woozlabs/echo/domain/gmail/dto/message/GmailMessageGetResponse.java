@@ -49,7 +49,7 @@ public class GmailMessageGetResponse implements ResponseDto {
         GmailMessageGetPayload convertedPayload = new GmailMessageGetPayload(payload);
         List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
         for(MessagePartHeader header: headers) {
-            switch (header.getName()) {
+            switch (header.getName().toUpperCase()) {
                 case MESSAGE_PAYLOAD_HEADER_FROM_KEY -> {
                     String sender = header.getValue();
                     List<String> splitSender = splitSenderData(sender);
@@ -133,7 +133,7 @@ public class GmailMessageGetResponse implements ResponseDto {
         GmailMessageGetPayload convertedPayload = new GmailMessageGetPayload(payload);
         List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
         for(MessagePartHeader header: headers) {
-            switch (header.getName()) {
+            switch (header.getName().toUpperCase()) {
                 case MESSAGE_PAYLOAD_HEADER_FROM_KEY -> {
                     String sender = header.getValue();
                     List<String> splitSender = splitSenderData(sender);

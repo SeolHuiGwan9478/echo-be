@@ -69,7 +69,7 @@ public class GmailService {
     // constants
     private final String MULTI_PART_TEXT_PLAIN = "text/plain";
     private final String TEMP_FILE_PREFIX = "echo";
-    private final String CONTENT_DISPOSITION_KEY = "Content-Disposition";
+    private final String CONTENT_DISPOSITION_KEY = "CONTENT-DISPOSITION";
     private final String CONTENT_DISPOSITION_INLINE_VALUE = "inline";
     private final List<String> SCOPES = Arrays.asList(
             "https://www.googleapis.com/auth/gmail.readonly",
@@ -149,7 +149,7 @@ public class GmailService {
                 // get attachments
                 getThreadsAttachments(payload, attachments);
                 headers.forEach((header) -> {
-                    String headerName = header.getName();
+                    String headerName = header.getName().toUpperCase();
                     // first message -> extraction subject
                     if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)) {
                         gmailThreadGetResponse.setSubject(header.getValue());
@@ -696,7 +696,7 @@ public class GmailService {
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
                 for(MessagePartHeader header : headers){
-                    if(header.getName().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
+                    if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
                         attachment.setXAttachmentId(header.getValue());
                     }
                 }
@@ -717,7 +717,7 @@ public class GmailService {
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
                 for(MessagePartHeader header : headers){
-                    if(header.getName().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
+                    if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
                         attachment.setXAttachmentId(header.getValue());
                     }
                 }
@@ -735,7 +735,7 @@ public class GmailService {
     private Boolean isInlineFile(MessagePart part){
         List<MessagePartHeader> headers = part.getHeaders();
         for(MessagePartHeader header : headers){
-            if(header.getName().equals(CONTENT_DISPOSITION_KEY)){
+            if(header.getName().toUpperCase().equals(CONTENT_DISPOSITION_KEY)){
                 String[] parts = header.getValue().split(";");
                 String inlinePart = parts[0].trim();
                 if(inlinePart.equals(CONTENT_DISPOSITION_INLINE_VALUE)) return Boolean.TRUE;

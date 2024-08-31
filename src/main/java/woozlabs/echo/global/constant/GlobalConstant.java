@@ -18,22 +18,22 @@ public final class GlobalConstant {
     // Gmail global
     public static final String USER_ID = "me";
     // Gmail messages
-    public static final String MESSAGE_PAYLOAD_HEADER_SUBJECT_KEY = "Subject";
-    public static final String MESSAGE_PAYLOAD_HEADER_FROM_KEY = "From";
-    public static final String MESSAGE_PAYLOAD_HEADER_DATE_KEY = "Date";
-    public static final String MESSAGE_PAYLOAD_HEADER_CC_KEY = "Cc";
-    public static final String MESSAGE_PAYLOAD_HEADER_BCC_KEY = "Bcc";
-    public static final String MESSAGE_PAYLOAD_HEADER_TO_KEY = "To";
+    public static final String MESSAGE_PAYLOAD_HEADER_SUBJECT_KEY = "SUBJECT";
+    public static final String MESSAGE_PAYLOAD_HEADER_FROM_KEY = "FROM";
+    public static final String MESSAGE_PAYLOAD_HEADER_DATE_KEY = "DATE";
+    public static final String MESSAGE_PAYLOAD_HEADER_CC_KEY = "CC";
+    public static final String MESSAGE_PAYLOAD_HEADER_BCC_KEY = "BCC";
+    public static final String MESSAGE_PAYLOAD_HEADER_TO_KEY = "TO";
     public static final String MESSAGE_INTERNAL_DATE_TIMEZONE = "UTC";
     public static final String DELETED_MESSAGE_ALERT_MSG = "Not Found: Message(Reason: Deleted Message)";
     // Gmail threads
-    public static final String THREAD_PAYLOAD_HEADER_SUBJECT_KEY = "Subject";
-    public static final String THREAD_PAYLOAD_HEADER_FROM_KEY = "From";
+    public static final String THREAD_PAYLOAD_HEADER_SUBJECT_KEY = "SUBJECT";
+    public static final String THREAD_PAYLOAD_HEADER_FROM_KEY = "FROM";
     public static final String THREAD_PAYLOAD_HEADER_DATE_KEY = "Date";
-    public static final String THREAD_PAYLOAD_HEADER_CC_KEY = "Cc";
-    public static final String THREAD_PAYLOAD_HEADER_BCC_KEY = "Bcc";
-    public static final String THREAD_PAYLOAD_HEADER_TO_KEY = "To";
-    public static final String THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY = "X-Attachment-Id";
+    public static final String THREAD_PAYLOAD_HEADER_CC_KEY = "CC";
+    public static final String THREAD_PAYLOAD_HEADER_BCC_KEY = "BCC";
+    public static final String THREAD_PAYLOAD_HEADER_TO_KEY = "TO";
+    public static final String THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY = "X-ATTACHMENT-ID";
     public static final String THREADS_GET_METADATA_FORMAT = "metadata";
     public static final String THREADS_GET_FULL_FORMAT = "full";
     public static final Long THREADS_LIST_MAX_LENGTH = 50L;
@@ -42,9 +42,9 @@ public final class GlobalConstant {
 
     // Gmail drafts
     public static final String DRAFTS_GET_FULL_FORMAT = "full";
-    public static final String DRAFT_PAYLOAD_HEADER_SUBJECT_KEY = "Subject";
-    public static final String DRAFT_PAYLOAD_HEADER_FROM_KEY = "From";
-    public static final String DRAFT_PAYLOAD_HEADER_DATE_KEY = "Date";
+    public static final String DRAFT_PAYLOAD_HEADER_SUBJECT_KEY = "SUBJECT";
+    public static final String DRAFT_PAYLOAD_HEADER_FROM_KEY = "FROM";
+    public static final String DRAFT_PAYLOAD_HEADER_DATE_KEY = "DATE";
 
     // Gmail History
     public static final String HISTORY_INBOX_LABEL = "INBOX";
