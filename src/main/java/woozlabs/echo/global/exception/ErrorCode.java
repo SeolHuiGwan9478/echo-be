@@ -49,6 +49,7 @@ public enum ErrorCode {
     INVALID_ACCESS_TOKEN(401, "Invalid Access Token"),
     TOO_MANY_REQUESTS(429, "Too many requests"),
     INVALID_NEXT_PAGE_TOKEN(400, "Invalid next page token"),
+    BILLING_ERROR_MESSAGE(402, "Payment Required"),
 
     // calendar
     GOOGLE_CALENDAR_SECURITY_ERROR(500, "Security error while fetching Google Calendar events"),
