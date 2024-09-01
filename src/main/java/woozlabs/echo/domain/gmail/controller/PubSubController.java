@@ -33,6 +33,7 @@ public class PubSubController {
             pubSubService.handleFirebaseCloudMessage(pubsubMessage);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e){
+            log.error(e.getMessage()); // checking bug
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
