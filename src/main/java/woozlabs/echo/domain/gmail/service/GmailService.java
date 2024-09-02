@@ -105,7 +105,9 @@ public class GmailService {
         List<Thread> threads = response.getThreads(); // get threads
         threads = isEmptyResult(threads);
         List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
-        validatePayment(detailedThreads, currentDate, response.getNextPageToken());
+        if(pageToken != null){
+            validatePayment(detailedThreads, currentDate, response.getNextPageToken());
+        }
         return GmailThreadListResponse.builder()
                 .threads(detailedThreads)
                 .nextPageToken(response.getNextPageToken())
@@ -113,7 +115,7 @@ public class GmailService {
     }
 
     private void validatePayment(List<GmailThreadListThreads> detailedThreads, LocalDate currentDate, String nextPageToken) {
-        if(!detailedThreads.isEmpty() && nextPageToken != null){
+        if(!detailedThreads.isEmpty()){
             // get first thread date
             GmailThreadListThreads firstThread = detailedThreads.get(0);
             GmailThreadGetMessagesResponse lastMessageInFirstThread = firstThread.getMessages().get(0);
