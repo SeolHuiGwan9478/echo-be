@@ -499,6 +499,7 @@ public class GmailService {
                             future.complete(result);
                         }catch (Exception e){
                             log.error(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
+                            e.printStackTrace();
                             future.completeExceptionally(new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG));
                         }
                     });
@@ -509,6 +510,7 @@ public class GmailService {
                 return future.get();
             }catch (Exception e){
                 log.error(e.getMessage());
+                e.printStackTrace();
                 throw new GmailException(REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
             }
         }).collect(Collectors.toList());
