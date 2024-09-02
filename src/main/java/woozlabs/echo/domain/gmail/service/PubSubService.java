@@ -73,15 +73,14 @@ public class PubSubService {
         String email = notification.getEmailAddress();
         int deliveryAttempt = pubsubMessage.getDeliveryAttempt();
         log.info(String.valueOf(deliveryAttempt));
+        if(deliveryAttempt > 2){ // stop pub/sub alert(* case: failed to alert more than three times)
+            log.info("Exceed delivery attempt limit");
+            return;
+        }
         BigInteger newHistoryId = new BigInteger(notification.getHistoryId());
         Account account = accountRepository.findByEmail(email).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE, ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE.getMessage())
         );
-        if(deliveryAttempt > 2){ // stop pub/sub alert(* case: failed to alert more than three times)
-            log.info("Request to stop pub/sub alert");
-            gmailServiceImpl.stopPubSub(account.getUid());
-            return;
-        }
         PubSubHistory pubSubHistory = pubSubHistoryRepository.findByAccount(account).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR, ErrorCode.NOT_FOUND_PUB_SUB_HISTORY_ERR.getMessage())
         );
