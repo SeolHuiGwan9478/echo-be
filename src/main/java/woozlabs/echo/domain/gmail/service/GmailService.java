@@ -105,7 +105,9 @@ public class GmailService {
         List<Thread> threads = response.getThreads(); // get threads
         threads = isEmptyResult(threads);
         List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
-        validatePayment(detailedThreads, currentDate, response.getNextPageToken());
+        if(pageToken != null){
+            validatePayment(detailedThreads, currentDate, response.getNextPageToken());
+        }
         return GmailThreadListResponse.builder()
                 .threads(detailedThreads)
                 .nextPageToken(response.getNextPageToken())
@@ -113,7 +115,7 @@ public class GmailService {
     }
 
     private void validatePayment(List<GmailThreadListThreads> detailedThreads, LocalDate currentDate, String nextPageToken) {
-        if(!detailedThreads.isEmpty() && nextPageToken != null){
+        if(!detailedThreads.isEmpty()){
             // get first thread date
             GmailThreadListThreads firstThread = detailedThreads.get(0);
             GmailThreadGetMessagesResponse lastMessageInFirstThread = firstThread.getMessages().get(0);
@@ -561,7 +563,6 @@ public class GmailService {
 
     private ListThreadsResponse getQueryListThreadsResponse(String pageToken, Long maxResults, String q, LocalDate currentDate, Boolean isBilling, Gmail gmailService) {
         try{
-            q = addLimitQueryByBilling(q, currentDate, isBilling);
             return gmailService.users().threads()
                     .list(USER_ID)
                     .setMaxResults(maxResults)
@@ -589,16 +590,6 @@ public class GmailService {
             e.printStackTrace();
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE.getMessage());
         }
-    }
-
-    private String addLimitQueryByBilling(String q, LocalDate currentDate, Boolean isBilling) {
-        if(!isBilling){
-            if(q.equals("in:inbox") || q.equals("in:sent") || q.equals("in:draft") || q.equals("in:trash")){
-                LocalDate beforeSixtyDays = currentDate.minusDays(60);
-                q = q + " after:" + beforeSixtyDays; // add limit query
-            }
-        }
-        return q;
     }
 
     private ListThreadsResponse getSearchListThreadsResponse(GmailSearchParams params, Gmail gmailService) throws IOException{
