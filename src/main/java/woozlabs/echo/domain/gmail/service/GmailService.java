@@ -105,15 +105,15 @@ public class GmailService {
         List<Thread> threads = response.getThreads(); // get threads
         threads = isEmptyResult(threads);
         List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
-        validatePayment(detailedThreads, currentDate);
+        validatePayment(detailedThreads, currentDate, response.getNextPageToken());
         return GmailThreadListResponse.builder()
                 .threads(detailedThreads)
                 .nextPageToken(response.getNextPageToken())
                 .build();
     }
 
-    private void validatePayment(List<GmailThreadListThreads> detailedThreads, LocalDate currentDate) {
-        if(!detailedThreads.isEmpty()){
+    private void validatePayment(List<GmailThreadListThreads> detailedThreads, LocalDate currentDate, String nextPageToken) {
+        if(!detailedThreads.isEmpty() && nextPageToken != null){
             // get first thread date
             GmailThreadListThreads firstThread = detailedThreads.get(0);
             GmailThreadGetMessagesResponse lastMessageInFirstThread = firstThread.getMessages().get(0);
@@ -568,6 +568,7 @@ public class GmailService {
                     .setQ(q)
                     .execute();
         }catch (GoogleJsonResponseException e){
+            e.printStackTrace();
             switch (e.getStatusCode()) {
                 case 401 ->
                         throw new CustomErrorException(ErrorCode.INVALID_ACCESS_TOKEN, ErrorCode.INVALID_ACCESS_TOKEN.getMessage());
@@ -583,6 +584,7 @@ public class GmailService {
                         throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE.getMessage());
             }
         }catch (IOException e){
+            e.printStackTrace();
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE.getMessage());
         }
     }
