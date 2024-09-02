@@ -563,7 +563,6 @@ public class GmailService {
 
     private ListThreadsResponse getQueryListThreadsResponse(String pageToken, Long maxResults, String q, LocalDate currentDate, Boolean isBilling, Gmail gmailService) {
         try{
-            q = addLimitQueryByBilling(q, currentDate, isBilling);
             return gmailService.users().threads()
                     .list(USER_ID)
                     .setMaxResults(maxResults)
@@ -591,16 +590,6 @@ public class GmailService {
             e.printStackTrace();
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE.getMessage());
         }
-    }
-
-    private String addLimitQueryByBilling(String q, LocalDate currentDate, Boolean isBilling) {
-        if(!isBilling){
-            if(q.equals("in:inbox") || q.equals("in:sent") || q.equals("in:draft") || q.equals("in:trash")){
-                LocalDate beforeSixtyDays = currentDate.minusDays(60);
-                q = q + " after:" + beforeSixtyDays; // add limit query
-            }
-        }
-        return q;
     }
 
     private ListThreadsResponse getSearchListThreadsResponse(GmailSearchParams params, Gmail gmailService) throws IOException{
