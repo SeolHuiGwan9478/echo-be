@@ -61,7 +61,18 @@ public class GoogleOAuthUtils {
 
         try {
             ResponseEntity<Map> responseEntity = restTemplate.postForEntity(tokenUrl, request, Map.class);
-            return responseEntity.getBody();
+            if (responseEntity.getStatusCode().is2xxSuccessful()) {
+                Map<String, String> tokens = responseEntity.getBody();
+                if (tokens != null && tokens.containsKey("access_token")) {
+                    return tokens;
+                } else {
+                    log.error("Failed to get Google tokens, response did not contain access token. Response: {}", tokens);
+                    throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_TOKENS, "Google response did not contain access token");
+                }
+            } else {
+                log.error("Failed to get Google tokens. Status code: {}, response: {}", responseEntity.getStatusCode(), responseEntity.getBody());
+                throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_TOKENS, "Failed to get Google tokens");
+            }
         } catch (Exception e) {
             log.error("Failed to get Google tokens. Code: {}", code, e);
             throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_TOKENS, "Failed to get Google tokens", e);
