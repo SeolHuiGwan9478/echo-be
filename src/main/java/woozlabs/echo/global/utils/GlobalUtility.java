@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 public class GlobalUtility {
     public static List<String> splitSenderData(String sender){
         List<String> splitSender = new ArrayList<>();
-        String replaceSender = sender.replaceAll("\"", "");
+        String replaceSender = sender.replaceAll("\\\\", "");
         String regex = "(.*)\\s*<(.*)>";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(replaceSender);
