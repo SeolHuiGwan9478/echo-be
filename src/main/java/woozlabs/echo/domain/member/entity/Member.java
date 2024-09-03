@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
@@ -30,7 +31,12 @@ public class Member extends BaseEntity {
 
     private String watchNotification; // ‘INBOX’ | ‘IMPORTANT’ | string
     private boolean marketingEmails;
-    private boolean securityEmails; // Default value
+
+    @ColumnDefault("true")
+    private boolean securityEmails;
+
+    @ColumnDefault("1")
+    private int density;
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts = new ArrayList<>();
