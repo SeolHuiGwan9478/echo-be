@@ -34,8 +34,11 @@ public class MemberService {
             }
 
             AppearanceDto appearanceDto = preferenceDto.getAppearance();
-            if (appearanceDto != null && appearanceDto.getTheme() != null) {
-                member.setTheme(appearanceDto.getTheme());
+            if (appearanceDto != null) {
+                if (appearanceDto.getTheme() != null) {
+                    member.setTheme(appearanceDto.getTheme());
+                }
+                    member.setDensity(appearanceDto.getDensity()); // default value: 1
             }
 
             NotificationDto notificationDto = preferenceDto.getNotification();

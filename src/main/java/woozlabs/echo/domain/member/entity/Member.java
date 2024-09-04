@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
@@ -23,14 +24,19 @@ public class Member extends BaseEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String language;
+    private String language = "en";
 
     @Enumerated(EnumType.STRING)
-    private Theme theme; // 'light' | 'dark' | 'system'
+    private Theme theme = Theme.LIGHT;
 
-    private String watchNotification; // ‘INBOX’ | ‘IMPORTANT’ | string
+    private String watchNotification;
     private boolean marketingEmails;
-    private boolean securityEmails; // Default value
+
+    @ColumnDefault("true")
+    private boolean securityEmails = true;
+
+    @ColumnDefault("1")
+    private int density = 1;
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts = new ArrayList<>();
@@ -48,7 +54,6 @@ public class Member extends BaseEntity {
     private Map<String, LocalDateTime> marketingAgreements = new HashMap<>();
 
     public void addAccount(Account account) {
-        this.accounts.add(account);
         if (!this.accounts.contains(account)) {
             this.accounts.add(account);
         }
