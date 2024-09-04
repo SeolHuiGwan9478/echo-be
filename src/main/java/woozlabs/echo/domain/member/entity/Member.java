@@ -35,8 +35,8 @@ public class Member extends BaseEntity {
     @ColumnDefault("true")
     private boolean securityEmails = true;
 
-    @ColumnDefault("1")
-    private int density = 1;
+    @Enumerated(EnumType.STRING)
+    private Density density = Density.COMPACT;
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts = new ArrayList<>();
