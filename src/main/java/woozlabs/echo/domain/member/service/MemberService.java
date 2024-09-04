@@ -66,6 +66,7 @@ public class MemberService {
                 .language(member.getLanguage())
                 .appearance(AppearanceDto.builder()
                         .theme(member.getTheme())
+                        .density(member.getDensity())
                         .build())
                 .notification(NotificationDto.builder()
                         .watchNotification(member.getWatchNotification())

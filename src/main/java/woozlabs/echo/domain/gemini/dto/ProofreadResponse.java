@@ -23,5 +23,6 @@ public class ProofreadResponse {
         private String original;
         private String modified;
         private String reason;
+        private String type;
     }
 }
