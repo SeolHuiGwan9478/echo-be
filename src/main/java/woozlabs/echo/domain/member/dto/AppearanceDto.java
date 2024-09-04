@@ -1,6 +1,7 @@
 package woozlabs.echo.domain.member.dto;
 
 import lombok.*;
+import woozlabs.echo.domain.member.entity.Density;
 import woozlabs.echo.domain.member.entity.Theme;
 
 @Getter
@@ -10,6 +11,6 @@ import woozlabs.echo.domain.member.entity.Theme;
 public class AppearanceDto {
 
     private Theme theme; // 'light' | 'dark' | 'system'
-    private int density; // 1 | 2 | 3
+    private Density density; // 'compact' | 'cozy'
 }
 
