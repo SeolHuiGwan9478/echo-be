@@ -2,15 +2,13 @@ package woozlabs.echo.global.utils;
 
 import org.joda.time.DateTimeZone;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,5 +86,20 @@ public class GlobalUtility {
             offsetId = "+0000";
         }
         return offsetId.length() == 5 ? offsetId : "+" + offsetId;
+    }
+
+    public static String decodeAndReEncodeEmail(String originContent){
+        // Convert URL-safe Base64 to standard Base64
+        String standardBase64 = originContent
+                .replace('-', '+')
+                .replace('_', '/');
+        // Add padding if necessary
+        int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
+        for (int i = 0; i < paddingCount; i++) {
+            standardBase64 += "=";
+        }
+        byte[] decodedBinaryContent = Base64.getDecoder().decode(standardBase64);
+        String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
+        return Base64.getEncoder().encodeToString(decodedContent.getBytes());
     }
 }
