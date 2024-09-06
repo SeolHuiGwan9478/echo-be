@@ -1,25 +1,37 @@
 package woozlabs.echo.domain.sharedEmail.entity;
 
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.mongodb.core.mapping.Document;
+import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.global.common.entity.BaseEntity;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
+@Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "shared_emails")
-public class SharedEmail {
+public class SharedEmail extends BaseEntity {
 
-    @Id
-    private String id;
-    private String teamId;
-    private String threadId;
-    private String sharedById;
-    private ShareStatus shareStatus;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Enumerated(EnumType.STRING)
+    private Access access;
+
+    private String dataId;
+
+    @Enumerated(EnumType.STRING)
+    private SharedDataType sharedDataType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private Account owner;
+
+    private boolean canEditorEditPermission;
+    private boolean canViewerViewToolMenu;
+
 }
