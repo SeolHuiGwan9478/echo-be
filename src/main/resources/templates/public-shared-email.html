@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shared Email Invitation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .footer {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>You've been invited to access shared content</h1>
+    <p>Hello,</p>
+    <p>You have been invited to access the shared content.</p>
+    <p><strong>Details:</strong></p>
+    <ul>
+        <li><strong>Access Type:</strong> <span th:text="${access}">Access Type</span></li>
+        <li><strong>Permission:</strong> <span th:text="${permission}">Permission</span></li>
+        <li><strong>Data ID:</strong> <span th:text="${dataId}">Data ID</span></li>
+        <li><strong>Shared Data Type:</strong> <span th:text="${sharedDataType}">Shared Data Type</span></li>
+    </ul>
+    <p th:text="${invitationMemo}">Invitation memo goes here.</p>
+    <p>If you have any questions, please contact the sender.</p>
+    <p>Best regards,</p>
+    <p>The Echo Team</p>
+
+    <div class="footer">
+        <p>This is an automated email. Please do not reply directly to this message.</p>
+    </div>
+</div>
+</body>
+</html>
