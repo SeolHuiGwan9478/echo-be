@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.sharedEmail.entity;
+package woozlabs.echo.domain.team.entity;
 
 import jakarta.persistence.Id;
 import lombok.*;

@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.sharedEmail.entity;
+package woozlabs.echo.domain.team.entity;
 
 import jakarta.persistence.Id;
 import lombok.*;
@@ -13,7 +13,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "private_comments")
-public class PrivateComment {
+public class TeamSharedEmailPrivateComment {
 
     @Id
     private String id;

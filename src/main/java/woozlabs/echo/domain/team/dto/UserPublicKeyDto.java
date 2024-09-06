@@ -1,6 +1,6 @@
-package woozlabs.echo.domain.sharedEmail.dto;
+package woozlabs.echo.domain.team.dto;
 
-import woozlabs.echo.domain.sharedEmail.entity.UserPublicKey;
+import woozlabs.echo.domain.team.entity.UserPublicKey;
 
 public class UserPublicKeyDto {
 
