@@ -12,7 +12,6 @@ import woozlabs.echo.domain.sharedEmail.entity.SharedEmail;
 import woozlabs.echo.domain.sharedEmail.entity.SharedEmailPermission;
 import woozlabs.echo.domain.sharedEmail.repository.SharedEmailPermissionRepository;
 import woozlabs.echo.domain.sharedEmail.repository.SharedInboxRepository;
-import woozlabs.echo.domain.team.service.TeamService;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
@@ -54,7 +53,7 @@ public class SharedInboxService {
                             inviteShareEmailService.sendEmailViaSES(existingAccount.getEmail(), shareEmailRequestDto.getInvitationMemo(), sendSharedEmailInvitationDto);
                         },
                         () -> {
-                            inviteePermissions.put(invitee, shareEmailRequestDto.getPermission());
+                            inviteePermissions.put(invitee, Permission.VIEWER);
                             inviteShareEmailService.sendEmailViaSES(invitee, "This email grants access to this item without logging in. Only forward it to people you trust.\n" + shareEmailRequestDto.getInvitationMemo(), sendSharedEmailInvitationDto);
                         }
                 );
