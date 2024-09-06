@@ -9,10 +9,7 @@ import org.hibernate.annotations.ColumnDefault;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Entity
 @Getter
@@ -42,6 +39,11 @@ public class Member extends BaseEntity {
     private List<Account> accounts = new ArrayList<>();
 
     @ElementCollection
+    @CollectionTable(name = "member_account_emails", joinColumns = @JoinColumn(name = "member_id"))
+    @Column(name = "email")
+    private Set<String> accountEmails = new HashSet<>();
+
+    @ElementCollection
     @CollectionTable(name = "member_term_agreements", joinColumns = @JoinColumn(name = "member_id"))
     @MapKeyColumn(name = "agreement_type")
     @Column(name = "timestamp")
@@ -56,6 +58,7 @@ public class Member extends BaseEntity {
     public void addAccount(Account account) {
         if (!this.accounts.contains(account)) {
             this.accounts.add(account);
+            this.accountEmails.add(account.getEmail());
         }
     }
 }
