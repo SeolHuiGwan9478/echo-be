@@ -131,35 +131,12 @@ public class AuthService {
     public void handleGoogleCallback(String code, HttpServletRequest request, HttpServletResponse response) throws FirebaseAuthException {
         Map<String, Object> userInfo = getGoogleUserInfoAndTokens(code);
         String providerId = (String) userInfo.get("id");
+        String email = (String) userInfo.get("email");
 
-        Optional<String> memberTokenOpt = AuthCookieUtils.getCookieValue(request);
-        String memberToken = memberTokenOpt.orElse(null);
+        Optional<Account> existingAccountOpt = accountRepository.findByGoogleProviderId(providerId);
 
-        String memberUid = null;
-        if (memberToken != null) {
-            memberUid = firebaseTokenVerifier.verifyTokenAndGetUid(memberToken);
-        }
-
-        if (memberUid == null) {
-            log.info("Creating new Member with a new account.");
-            Account account = createOrUpdateAccount(userInfo, true);
-
-            Member member = new Member();
-            member.addAccount(account);
-            memberRepository.save(member);
-
-            account.setMember(member);
-            accountRepository.save(account);
-
-            Map<String, Object> customClaims = Map.of("accounts", member.getAccounts().stream().map(Account::getUid).toList());
-            setCustomUidClaims(account.getUid(), customClaims);
-
-            log.info("Account added to Member. Account UID: {}", account.getUid());
-        } else {
-            log.info("Adding new account to existing Member.");
-            Account existingAccount = accountRepository.findByUid(memberUid)
-                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SUPER_ACCOUNT));
-
+        if (existingAccountOpt.isPresent()) {
+            Account existingAccount = existingAccountOpt.get();
             Member member = existingAccount.getMember();
 
             Account newAccount = createOrUpdateAccount(userInfo, false);
@@ -169,10 +146,58 @@ public class AuthService {
             member.addAccount(newAccount);
             memberRepository.save(member);
 
+            member.getAccountEmails().add(email);
+
             Map<String, Object> customClaims = Map.of("accounts", member.getAccounts().stream().map(Account::getUid).toList());
-            setCustomUidClaims(memberUid, customClaims);
+            setCustomUidClaims(existingAccount.getUid(), customClaims);
+
+            log.info("Added new account to existing Member. Account UID: {}", newAccount.getUid());
+        } else {
+            Optional<String> cookieTokenOpt = AuthCookieUtils.getCookieValue(request);
+            String cookieToken = cookieTokenOpt.orElse(null);
+
+            if (cookieToken != null) {
+                String uid = firebaseTokenVerifier.verifyTokenAndGetUid(cookieToken);
+                Optional<Account> existingMemberAccountOpt = accountRepository.findByUid(uid);
+
+                if (existingMemberAccountOpt.isPresent()) {
+                    Account existingAccount = existingMemberAccountOpt.get();
+                    Member member = existingAccount.getMember();
+
+                    Account newAccount = createOrUpdateAccount(userInfo, false);
+                    newAccount.setMember(member);
+                    accountRepository.save(newAccount);
+
+                    member.addAccount(newAccount);
+                    memberRepository.save(member);
+
+                    member.getAccountEmails().add(email);
+
+                    Map<String, Object> customClaims = Map.of("accounts", member.getAccounts().stream().map(Account::getUid).toList());
+                    setCustomUidClaims(uid, customClaims);
+
+                    log.info("Added new account to existing Member. Account UID: {}", newAccount.getUid());
+                }
+            } else {
+                log.info("Creating new Member with a new account.");
+                Account account = createOrUpdateAccount(userInfo, true);
+
+                Member member = new Member();
+                member.addAccount(account);
+                memberRepository.save(member);
+
+                account.setMember(member);
+                accountRepository.save(account);
+
+                member.getAccountEmails().add(email);
+
+                Map<String, Object> customClaims = Map.of("accounts", member.getAccounts().stream().map(Account::getUid).toList());
+                setCustomUidClaims(account.getUid(), customClaims);
+
+                log.info("Account added to new Member. Account UID: {}", account.getUid());
+            }
         }
 
-        constructAndRedirect(response, createCustomToken(providerId), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"));
+        constructAndRedirect(response, createCustomToken(providerId), (String) userInfo.get("name"), (String) userInfo.get("picture"), email);
     }
 }
