@@ -1,13 +1,13 @@
-package woozlabs.echo.domain.sharedEmail.dto;
+package woozlabs.echo.domain.team.dto;
 
 import lombok.Getter;
-import woozlabs.echo.domain.sharedEmail.entity.PrivateComment;
+import woozlabs.echo.domain.team.entity.TeamSharedEmailPrivateComment;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 
 @Getter
-public class PrivateCommentResponseDto {
+public class TeamSharedEmailPrivateCommentResponseDto {
 
     private String id;
     private String sharedEmailId;
@@ -15,7 +15,7 @@ public class PrivateCommentResponseDto {
     private Map<String, String> encryptedContents;
     private LocalDateTime createdAt;
 
-    public PrivateCommentResponseDto(PrivateComment comment) {
+    public TeamSharedEmailPrivateCommentResponseDto(TeamSharedEmailPrivateComment comment) {
         this.id = comment.getId();
         this.sharedEmailId = comment.getSharedEmailId();
         this.authorId = comment.getAuthorId();
