@@ -20,7 +20,7 @@ public class SharedEmailPermission {
     private Long sharedEmailId;
 
     @ElementCollection
-    @CollectionTable(name = "shared_email_permissions", joinColumns = @JoinColumn(name = "shared_email_id"))
+    @CollectionTable(name = "invitee_permissions", joinColumns = @JoinColumn(name = "shared_email_id"))
     @MapKeyColumn(name = "invitee_email")
     @Column(name = "permission")
     @Enumerated(EnumType.STRING)
