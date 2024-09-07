@@ -50,6 +50,8 @@ public enum ErrorCode {
     TOO_MANY_REQUESTS(429, "Too many requests"),
     INVALID_NEXT_PAGE_TOKEN(400, "Invalid next page token"),
     BILLING_ERROR_MESSAGE(402, "Payment Required"),
+    NOT_FOUND_GMAIL_THREAD(404, "Not found Gmail Thread"),
+    THREAD_NOT_FOUND_AND_REMOVED(404, "The thread was deleted and the shared email has been removed."),
 
     // calendar
     GOOGLE_CALENDAR_SECURITY_ERROR(500, "Security error while fetching Google Calendar events"),
@@ -92,7 +94,6 @@ public enum ErrorCode {
     NOT_FOUND_INVITATION_TOKEN(404, "Not Found: Invitation Token"),
     INVITATION_EXPIRED(400, "The team invitation approval deadline has expired"),
     NOT_FOUND_TEAM_MEMBER(404, "The Account can't be found in the team"),
-    NOT_FOUND_SHARED_EMAIL(404, "Not Found: Shared Email"),
     UNAUTHORIZED_ACCESS(401, "You can't access this feature with this privilege"),
 
     // verification
@@ -103,7 +104,14 @@ public enum ErrorCode {
     // pub/sub
     CLOUD_PUB_SUB_WATCH_ERR(400, "Failed to watch cloud pub/sub"),
     CLOUD_PUB_SUB_STOP_ERR(500, "Failed to stop cloud pub/sub"),
-    NOT_FOUND_PUB_SUB_HISTORY_ERR(404, "Not Found: PubSubHistory");
+    NOT_FOUND_PUB_SUB_HISTORY_ERR(404, "Not Found: PubSubHistory"),
+
+    // sharedEmail
+    NOT_FOUND_SHARED_EMAIL(404, "SharedEmail not found."),
+    DATA_ALREADY_SHARED(403, "The shared email already shared"),
+    NOT_FOUND_SHARED_EMAIL_PERMISSION(404, "The shared email resource you are trying to access does not exist."),
+    FORBIDDEN_ACCESS_TO_SHARED_EMAIL(403, "You do not have permission to access this shared email resource.");
+
 
     private final int status;
     private final String message;
