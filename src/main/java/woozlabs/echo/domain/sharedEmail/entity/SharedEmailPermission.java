@@ -17,7 +17,9 @@ public class SharedEmailPermission {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long sharedEmailId;
+    @OneToOne
+    @JoinColumn(name = "shared_email_id")
+    private SharedEmail sharedEmail;
 
     @ElementCollection
     @CollectionTable(name = "invitee_permissions", joinColumns = @JoinColumn(name = "shared_email_id"))

@@ -34,4 +34,6 @@ public class SharedEmail extends BaseEntity {
     private boolean canEditorEditPermission;
     private boolean canViewerViewToolMenu;
 
+    @OneToOne(mappedBy = "sharedEmail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private SharedEmailPermission sharedEmailPermission;
 }
