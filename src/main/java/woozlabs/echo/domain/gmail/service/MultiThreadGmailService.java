@@ -15,6 +15,7 @@ import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
+import woozlabs.echo.global.utils.GlobalUtility;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -28,8 +29,6 @@ import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 @Service
 @RequiredArgsConstructor
 public class MultiThreadGmailService {
-    private final String CONTENT_DISPOSITION_KEY = "CONTENT-DISPOSITION";
-    private final String CONTENT_DISPOSITION_INLINE_VALUE = "inline";
     private final String VERIFICATION_EMAIL_LABEL = "VERIFICATION";
     private final GmailUtility gmailUtility;
 
@@ -149,7 +148,7 @@ public class MultiThreadGmailService {
 
     private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments){
         if(part.getParts() == null){ // base condition
-            if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
@@ -170,7 +169,7 @@ public class MultiThreadGmailService {
             for(MessagePart subPart : part.getParts()){
                 getThreadsAttachments(subPart, attachments);
             }
-            if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
@@ -190,22 +189,9 @@ public class MultiThreadGmailService {
         }
     }
 
-    private Boolean isInlineFile(MessagePart part){
-        List<MessagePartHeader> headers = part.getHeaders();
-        for(MessagePartHeader header : headers){
-            if(header.getName().toUpperCase().equals(CONTENT_DISPOSITION_KEY)){
-                String[] parts = header.getValue().split(";");
-                String inlinePart = parts[0].trim();
-                if(inlinePart.equals(CONTENT_DISPOSITION_INLINE_VALUE)) return Boolean.TRUE;
-                return Boolean.FALSE;
-            }
-        }
-        return Boolean.FALSE;
-    }
-
     private void getDraftsAttachments(MessagePart part, List<GmailDraftListAttachments> attachments){
         if(part.getParts() == null){ // base condition
-            if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 attachments.add(GmailDraftListAttachments.builder()
                         .mimeType(part.getMimeType())
@@ -218,7 +204,7 @@ public class MultiThreadGmailService {
             for(MessagePart subPart : part.getParts()){
                 getDraftsAttachments(subPart, attachments);
             }
-            if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 attachments.add(GmailDraftListAttachments.builder()
                         .mimeType(part.getMimeType())

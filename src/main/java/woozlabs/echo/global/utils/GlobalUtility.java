@@ -1,5 +1,7 @@
 package woozlabs.echo.global.utils;
 
+import com.google.api.services.gmail.model.MessagePart;
+import com.google.api.services.gmail.model.MessagePartHeader;
 import org.joda.time.DateTimeZone;
 
 import java.nio.charset.StandardCharsets;
@@ -11,6 +13,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static woozlabs.echo.global.constant.GlobalConstant.THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY;
 
 public class GlobalUtility {
     public static List<String> splitSenderData(String sender){
@@ -101,5 +105,17 @@ public class GlobalUtility {
         byte[] decodedBinaryContent = Base64.getDecoder().decode(standardBase64);
         String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
         return Base64.getEncoder().encodeToString(decodedContent.getBytes());
+    }
+
+    public static Boolean isInlineFile(MessagePart part){
+        List<MessagePartHeader> headers = part.getHeaders();
+        for(MessagePartHeader header : headers){
+            if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
+                String xAttachmentId = header.getValue();
+                if(!xAttachmentId.startsWith("f")) return Boolean.TRUE;
+                else break;
+            }
+        }
+        return Boolean.FALSE;
     }
 }
