@@ -18,7 +18,6 @@ import woozlabs.echo.domain.gmail.dto.thread.GmailThreadTotalCountResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
-import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.dto.ResponseDto;

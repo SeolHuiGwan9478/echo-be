@@ -45,9 +45,6 @@ public class GmailThreadGetMessagesResponse {
         MessagePart payload = message.getPayload();
         GmailThreadGetPayload convertedPayload = new GmailThreadGetPayload(payload);
         List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
-        if(message.getSnippet().contains("Hello Kwanwoo, Thank you for considering our homes at 340 Fremont")){
-            log.info(headers.toString());
-        }
         for(MessagePartHeader header: headers) {
             switch (header.getName().toUpperCase()) {
                 case THREAD_PAYLOAD_HEADER_FROM_KEY -> {

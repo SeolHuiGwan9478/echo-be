@@ -3,6 +3,8 @@ package woozlabs.echo.domain.gmail.dto.thread;
 import com.google.api.services.gmail.model.MessagePartBody;
 import lombok.Builder;
 import lombok.Getter;
+import woozlabs.echo.domain.gmail.util.GmailUtility;
+import woozlabs.echo.global.utils.GlobalUtility;
 
 @Getter
 @Builder
@@ -12,10 +14,12 @@ public class GmailThreadGetBody {
     private String data;
 
     public static GmailThreadGetBody toGmailThreadGetBody(MessagePartBody body){
+        String data = body.getData();
+        if(data != null) data = GlobalUtility.decodeAndReEncodeEmail(data);
         return GmailThreadGetBody.builder()
                 .attachmentId(body.getAttachmentId())
                 .size(body.getSize())
-                .data(body.getData())
+                .data(data)
                 .build();
     }
 }

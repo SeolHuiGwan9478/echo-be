@@ -1,23 +1,25 @@
 package woozlabs.echo.global.utils;
 
+import com.google.api.services.gmail.model.MessagePart;
+import com.google.api.services.gmail.model.MessagePartHeader;
 import org.joda.time.DateTimeZone;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static woozlabs.echo.global.constant.GlobalConstant.THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY;
 
 public class GlobalUtility {
     public static List<String> splitSenderData(String sender){
         List<String> splitSender = new ArrayList<>();
-        String replaceSender = sender.replaceAll("\"", "");
+        String replaceSender = sender.replaceAll("[\"\\\\]", "");
         String regex = "(.*)\\s*<(.*)>";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(replaceSender);
@@ -88,5 +90,32 @@ public class GlobalUtility {
             offsetId = "+0000";
         }
         return offsetId.length() == 5 ? offsetId : "+" + offsetId;
+    }
+
+    public static String decodeAndReEncodeEmail(String originContent){
+        // Convert URL-safe Base64 to standard Base64
+        String standardBase64 = originContent
+                .replace('-', '+')
+                .replace('_', '/');
+        // Add padding if necessary
+        int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
+        for (int i = 0; i < paddingCount; i++) {
+            standardBase64 += "=";
+        }
+        byte[] decodedBinaryContent = Base64.getDecoder().decode(standardBase64);
+        String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
+        return Base64.getEncoder().encodeToString(decodedContent.getBytes());
+    }
+
+    public static Boolean isInlineFile(MessagePart part){
+        List<MessagePartHeader> headers = part.getHeaders();
+        for(MessagePartHeader header : headers){
+            if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
+                String xAttachmentId = header.getValue();
+                if(!xAttachmentId.startsWith("f")) return Boolean.TRUE;
+                else break;
+            }
+        }
+        return Boolean.FALSE;
     }
 }

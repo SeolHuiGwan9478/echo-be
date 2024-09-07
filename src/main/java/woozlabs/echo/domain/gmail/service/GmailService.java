@@ -51,6 +51,7 @@ import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
+import woozlabs.echo.global.utils.GlobalUtility;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -73,8 +74,6 @@ public class GmailService {
     // constants
     private final String MULTI_PART_TEXT_PLAIN = "text/plain";
     private final String TEMP_FILE_PREFIX = "echo";
-    private final String CONTENT_DISPOSITION_KEY = "CONTENT-DISPOSITION";
-    private final String CONTENT_DISPOSITION_INLINE_VALUE = "inline";
     private final List<String> SCOPES = Arrays.asList(
             "https://www.googleapis.com/auth/gmail.readonly",
             "https://www.googleapis.com/auth/userinfo.profile",
@@ -101,12 +100,12 @@ public class GmailService {
         LocalDate currentDate = LocalDate.now();
         Boolean isBilling = Boolean.FALSE;
         // -------------------
-        ListThreadsResponse response = getQueryListThreadsResponse(pageToken, maxResults, q, currentDate, isBilling, gmailService);
+        ListThreadsResponse response = getQueryListThreadsResponse(pageToken, maxResults, q, gmailService);
         List<Thread> threads = response.getThreads(); // get threads
         threads = isEmptyResult(threads);
         List<GmailThreadListThreads> detailedThreads = getDetailedThreads(threads, gmailService); // get detailed threads
         if(pageToken != null){
-            validatePayment(detailedThreads, currentDate, response.getNextPageToken());
+            validatePayment(detailedThreads, currentDate);
         }
         return GmailThreadListResponse.builder()
                 .threads(detailedThreads)
@@ -114,7 +113,7 @@ public class GmailService {
                 .build();
     }
 
-    private void validatePayment(List<GmailThreadListThreads> detailedThreads, LocalDate currentDate, String nextPageToken) {
+    private void validatePayment(List<GmailThreadListThreads> detailedThreads, LocalDate currentDate) {
         if(!detailedThreads.isEmpty()){
             // get first thread date
             GmailThreadListThreads firstThread = detailedThreads.get(0);
@@ -561,7 +560,7 @@ public class GmailService {
         return gmailThreadSearchListThreads;
     }
 
-    private ListThreadsResponse getQueryListThreadsResponse(String pageToken, Long maxResults, String q, LocalDate currentDate, Boolean isBilling, Gmail gmailService) {
+    private ListThreadsResponse getQueryListThreadsResponse(String pageToken, Long maxResults, String q, Gmail gmailService) {
         try{
             return gmailService.users().threads()
                     .list(USER_ID)
@@ -724,7 +723,7 @@ public class GmailService {
 
     private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments){
         if(part.getParts() == null){ // base condition
-            if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
@@ -745,7 +744,7 @@ public class GmailService {
             for(MessagePart subPart : part.getParts()){
                 getThreadsAttachments(subPart, attachments);
             }
-            if(part.getFilename() != null && !part.getFilename().isBlank() && !isInlineFile(part)){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
@@ -763,18 +762,5 @@ public class GmailService {
                 }
             }
         }
-    }
-
-    private Boolean isInlineFile(MessagePart part){
-        List<MessagePartHeader> headers = part.getHeaders();
-        for(MessagePartHeader header : headers){
-            if(header.getName().toUpperCase().equals(CONTENT_DISPOSITION_KEY)){
-                String[] parts = header.getValue().split(";");
-                String inlinePart = parts[0].trim();
-                if(inlinePart.equals(CONTENT_DISPOSITION_INLINE_VALUE)) return Boolean.TRUE;
-                return Boolean.FALSE;
-            }
-        }
-        return Boolean.FALSE;
     }
 }
