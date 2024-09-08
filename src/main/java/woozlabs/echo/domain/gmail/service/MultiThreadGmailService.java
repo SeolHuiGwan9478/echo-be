@@ -37,7 +37,7 @@ public class MultiThreadGmailService {
             // init
             String id = thread.getId();
             BigInteger historyId = thread.getHistoryId();
-            GmailThreadListThreads gmailThreadListThreads= new GmailThreadListThreads();
+            GmailThreadListThreads gmailThreadListThreads = new GmailThreadListThreads();
             Thread detailedThread = gmailService.users().threads().get(USER_ID, id)
                     .setFormat(THREADS_GET_FULL_FORMAT)
                     .execute();

@@ -30,11 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.history.*;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
+import woozlabs.echo.domain.gmail.dto.message.*;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesResponse;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadTotalCountResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
@@ -385,8 +382,23 @@ public class GmailService {
         ModifyThreadRequest modifyThreadRequest = new ModifyThreadRequest();
         modifyThreadRequest.setAddLabelIds(request.getAddLabelIds());
         modifyThreadRequest.setRemoveLabelIds(request.getRemoveLabelIds());
-        Thread thread = gmailService.users().threads().modify(USER_ID, id, modifyThreadRequest).execute();
+        gmailService.users().threads().modify(USER_ID, id, modifyThreadRequest).execute();
         return GmailThreadUpdateResponse.builder()
+                .addLabelIds(request.getAddLabelIds())
+                .removeLabelIds(request.getRemoveLabelIds())
+                .build();
+    }
+
+    public GmailMessageUpdateResponse updateUserEmailMessage(String uid, String id, GmailMessageUpdateRequest request) throws Exception{
+        Account account = accountRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+        String accessToken = account.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        ModifyMessageRequest modifyMessageRequest = new ModifyMessageRequest();
+        modifyMessageRequest.setAddLabelIds(request.getAddLabelIds());
+        modifyMessageRequest.setRemoveLabelIds(request.getRemoveLabelIds());
+        gmailService.users().messages().modify(USER_ID, id, modifyMessageRequest).execute();
+        return GmailMessageUpdateResponse.builder()
                 .addLabelIds(request.getAddLabelIds())
                 .removeLabelIds(request.getRemoveLabelIds())
                 .build();

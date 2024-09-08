@@ -10,10 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.history.GmailHistoryListResponse;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
+import woozlabs.echo.domain.gmail.dto.message.*;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadTotalCountResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
@@ -138,6 +135,20 @@ public class GmailController {
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             GmailMessageGetResponse response = gmailService.getUserEmailMessage(uid, messageId);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    @PatchMapping("/api/v1/gmail/messages/{messageId}/modify")
+    public ResponseEntity<?> updateMessage(HttpServletRequest httpServletRequest,
+                                           @PathVariable("messageId") String messageId,
+                                           @RequestBody GmailMessageUpdateRequest request){
+        log.info("Request to update message");
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailMessageUpdateResponse response = gmailService.updateUserEmailMessage(uid, messageId, request);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e){
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
