@@ -7,10 +7,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.utils.FirebaseTokenVerifier;
 
-import static woozlabs.echo.global.constant.GlobalConstant.*;
+import static woozlabs.echo.global.constant.GlobalConstant.AUTH_UNAUTHORIZED_ERR_MSG;
+import static woozlabs.echo.global.constant.GlobalConstant.EMPTY_CHAR;
 
 @Component
 @RequiredArgsConstructor
