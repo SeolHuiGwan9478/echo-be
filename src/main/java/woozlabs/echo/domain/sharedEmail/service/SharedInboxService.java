@@ -37,11 +37,14 @@ public class SharedInboxService {
 
     @Transactional
     public void publicShareEmail(String uid, ShareEmailRequestDto shareEmailRequestDto) {
+        log.info("Started publicShareEmail with uid: {} and dataId: {}", uid, shareEmailRequestDto.getDataId());
+
         Account account = accountRepository.findByUid(uid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
         boolean isAlreadyShared = sharedInboxRepository.existsByDataId(shareEmailRequestDto.getDataId());
         if (isAlreadyShared) {
+            log.error("Data already shared for dataId: {}", shareEmailRequestDto.getDataId());
             throw new CustomErrorException(ErrorCode.DATA_ALREADY_SHARED);
         }
 
@@ -105,7 +108,6 @@ public class SharedInboxService {
         Permission permissionLevel;
 
         if (uid != null) {
-            // 등록된 사용자일 경우
             Account account = accountRepository.findByUid(uid)
                     .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
@@ -113,12 +115,12 @@ public class SharedInboxService {
                     .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL_PERMISSION));
 
             if (!sharedEmailPermission.getInviteePermissions().containsKey(account.getEmail())) {
+                log.error("Forbidden access to shared email for account: {}", account.getEmail());
                 throw new CustomErrorException(ErrorCode.FORBIDDEN_ACCESS_TO_SHARED_EMAIL);
             }
 
             permissionLevel = sharedEmailPermission.getInviteePermissions().getOrDefault(account.getEmail(), Permission.VIEWER);
         } else {
-            // 등록되지 않은 사용자일 경우
             permissionLevel = Permission.VIEWER;
         }
 
@@ -129,6 +131,7 @@ public class SharedInboxService {
         } catch (CustomErrorException e) {
             if (e.getErrorCode() == ErrorCode.NOT_FOUND_GMAIL_THREAD) {
                 sharedInboxRepository.delete(sharedEmail);
+                log.warn("Shared email deleted for dataId: {} due to missing Gmail thread", sharedEmail.getDataId());
                 throw new CustomErrorException(ErrorCode.THREAD_NOT_FOUND_AND_REMOVED, e.getMessage());
             }
             throw e;
