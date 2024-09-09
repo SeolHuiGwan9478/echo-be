@@ -18,6 +18,7 @@ public class VerificationEmail {
     private String messageId;
     private String codes;
     private String links;
+    private String uuid;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id")
     @OnDelete(action = OnDeleteAction.CASCADE)

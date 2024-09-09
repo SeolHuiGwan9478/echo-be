@@ -104,11 +104,13 @@ public class GlobalUtility {
         }
         byte[] decodedBinaryContent = Base64.getDecoder().decode(standardBase64);
         String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
+        System.out.println(decodedContent);
         return Base64.getEncoder().encodeToString(decodedContent.getBytes());
     }
 
     public static Boolean isInlineFile(MessagePart part){
         List<MessagePartHeader> headers = part.getHeaders();
+        System.out.println(headers);
         for(MessagePartHeader header : headers){
             if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
                 String xAttachmentId = header.getValue();
