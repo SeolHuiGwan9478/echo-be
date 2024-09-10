@@ -8,9 +8,7 @@ import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetResponse;
 import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.repository.AccountRepository;
-import woozlabs.echo.domain.sharedEmail.dto.GetSharedEmailResponseDto;
-import woozlabs.echo.domain.sharedEmail.dto.SendSharedEmailInvitationDto;
-import woozlabs.echo.domain.sharedEmail.dto.ShareEmailRequestDto;
+import woozlabs.echo.domain.sharedEmail.dto.*;
 import woozlabs.echo.domain.sharedEmail.entity.Permission;
 import woozlabs.echo.domain.sharedEmail.entity.SharedEmail;
 import woozlabs.echo.domain.sharedEmail.entity.SharedEmailPermission;
@@ -22,6 +20,7 @@ import woozlabs.echo.global.exception.ErrorCode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -34,6 +33,111 @@ public class SharedInboxService {
     private final SharedEmailPermissionRepository sharedEmailPermissionRepository;
     private final InviteShareEmailService inviteShareEmailService;
     private final GmailService gmailService;
+
+    @Transactional
+    public SharedEmail createSharePost(String uid, CreateSharedRequestDto createSharedRequestDto) {
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+        SharedEmail sharedEmail = SharedEmail.builder()
+                .access(createSharedRequestDto.getAccess())
+                .dataId(createSharedRequestDto.getDataId())
+                .sharedDataType(createSharedRequestDto.getSharedDataType())
+                .owner(account)
+                .canEditorEditPermission(createSharedRequestDto.isCanEditorEditPermission())
+                .canViewerViewToolMenu(createSharedRequestDto.isCanViewerViewToolMenu())
+                .build();
+
+        sharedInboxRepository.save(sharedEmail);
+
+        Map<String, Permission> inviteePermissions = new HashMap<>();
+        inviteePermissions.put(account.getEmail(), Permission.OWNER);
+
+        SharedEmailPermission sharedEmailPermission = SharedEmailPermission.builder()
+                .sharedEmail(sharedEmail)
+                .inviteePermissions(inviteePermissions)
+                .build();
+
+        sharedEmailPermissionRepository.save(sharedEmailPermission);
+
+        return sharedEmail;
+    }
+
+    @Transactional
+    public SharedEmail inviteToSharedPost(String uid, UUID sharedEmailId, SendSharedEmailInvitationDto sendSharedEmailInvitationDto) {
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+        SharedEmail sharedEmail = sharedInboxRepository.findById(sharedEmailId)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL));
+
+        SharedEmailPermission sharedEmailPermission = sharedEmailPermissionRepository.findBySharedEmailId(sharedEmailId)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL_PERMISSION));
+
+        if (!sharedEmailPermission.getInviteePermissions().getOrDefault(account.getEmail(), Permission.VIEWER).equals(Permission.OWNER)) {
+            throw new CustomErrorException(ErrorCode.FORBIDDEN_ACCESS_TO_SHARED_EMAIL);
+        }
+
+        List<String> invitees = sendSharedEmailInvitationDto.getInvitees();
+        Map<String, Permission> newInviteePermissions = new HashMap<>();
+
+        if (sendSharedEmailInvitationDto.isNotifyInvitation()) {
+            for (String invitee : invitees) {
+                accountRepository.findByEmail(invitee).ifPresentOrElse(
+                        existingAccount -> {
+                            newInviteePermissions.put(invitee, sendSharedEmailInvitationDto.getPermission());
+                            inviteShareEmailService.sendEmailViaSES(existingAccount.getEmail(), sendSharedEmailInvitationDto.getInvitationMemo(), sendSharedEmailInvitationDto);
+                        },
+                        () -> {
+                            newInviteePermissions.put(invitee, Permission.VIEWER);
+                            inviteShareEmailService.sendEmailViaSES(invitee, "This email grants access to this item without logging in. Only forward it to people you trust.\n" + sendSharedEmailInvitationDto.getInvitationMemo(), sendSharedEmailInvitationDto);
+                        }
+                );
+            }
+        } else {
+            for (String invitee : invitees) {
+                newInviteePermissions.put(invitee, sendSharedEmailInvitationDto.getPermission());
+            }
+        }
+
+        Map<String, Permission> currentPermissions = sharedEmailPermission.getInviteePermissions();
+        currentPermissions.putAll(newInviteePermissions);
+
+        sharedEmailPermission.setInviteePermissions(currentPermissions);
+        sharedEmailPermissionRepository.save(sharedEmailPermission);
+
+        return sharedEmail;
+    }
+
+    @Transactional
+    public SharedEmail updateSharedPost(String uid, UUID sharedEmailId, UpdateSharedPostDto updateDto) {
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+        SharedEmail sharedEmail = sharedInboxRepository.findById(sharedEmailId)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL));
+
+        SharedEmailPermission sharedEmailPermission = sharedEmailPermissionRepository.findBySharedEmailId(sharedEmailId)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL_PERMISSION));
+
+        if (!sharedEmailPermission.getInviteePermissions().getOrDefault(account.getEmail(), Permission.VIEWER).equals(Permission.OWNER)) {
+            throw new CustomErrorException(ErrorCode.FORBIDDEN_ACCESS_TO_SHARED_EMAIL);
+        }
+
+        if (updateDto.getAccess() != null) {
+            sharedEmail.setAccess(updateDto.getAccess());
+        }
+        if (updateDto.getCanEditorEditPermission() != null) {
+            sharedEmail.setCanEditorEditPermission(updateDto.getCanEditorEditPermission());
+        }
+        if (updateDto.getCanViewerViewToolMenu() != null) {
+            sharedEmail.setCanViewerViewToolMenu(updateDto.getCanViewerViewToolMenu());
+        }
+
+        sharedInboxRepository.save(sharedEmail);
+
+        return sharedEmail;
+    }
 
     @Transactional
     public void publicShareEmail(String uid, ShareEmailRequestDto shareEmailRequestDto) {
@@ -55,10 +159,10 @@ public class SharedInboxService {
 
         SendSharedEmailInvitationDto sendSharedEmailInvitationDto = SendSharedEmailInvitationDto.builder()
                 .invitationMemo(shareEmailRequestDto.getInvitationMemo())
-                .access(shareEmailRequestDto.getAccess().name())
-                .permission(shareEmailRequestDto.getPermission().name())
+                .access(shareEmailRequestDto.getAccess())
+                .permission(shareEmailRequestDto.getPermission())
                 .dataId(shareEmailRequestDto.getDataId())
-                .sharedDataType(shareEmailRequestDto.getSharedDataType().name())
+                .sharedDataType(shareEmailRequestDto.getSharedDataType())
                 .build();
 
         if (shareEmailRequestDto.isNotifyInvitation()) {
