@@ -22,7 +22,9 @@ import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @RestController
@@ -170,7 +172,7 @@ public class GmailController {
         }
     }
 
-    @PostMapping(value = "/api/v1/gmail/messages/send", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping("/api/v1/gmail/messages/send")
     public ResponseEntity<ResponseDto> sendMessage(HttpServletRequest httpServletRequest,
                                                    @RequestPart("toEmailAddress") String toEmailAddress,
                                                    @RequestPart("subject") String subject,
@@ -183,7 +185,7 @@ public class GmailController {
             request.setToEmailAddress(toEmailAddress);
             request.setSubject(subject);
             request.setBodyText(bodyText);
-            request.setFiles(files);
+            request.setFiles(Objects.requireNonNullElseGet(files, ArrayList::new));
             GmailMessageSendResponse response = gmailService.sendUserEmailMessage(uid, request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         }catch (IOException e){
