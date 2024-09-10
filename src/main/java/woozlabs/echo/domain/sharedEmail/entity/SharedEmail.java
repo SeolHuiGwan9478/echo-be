@@ -1,12 +1,13 @@
 package woozlabs.echo.domain.sharedEmail.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.UuidGenerator;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -16,8 +17,8 @@ import java.util.List;
 @AllArgsConstructor
 public class SharedEmail extends BaseEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Id @UuidGenerator
+    private UUID id;
 
     @Enumerated(EnumType.STRING)
     private Access access;
@@ -29,11 +30,13 @@ public class SharedEmail extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
+    @JsonIgnore
     private Account owner;
 
     private boolean canEditorEditPermission;
     private boolean canViewerViewToolMenu;
 
     @OneToOne(mappedBy = "sharedEmail", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private SharedEmailPermission sharedEmailPermission;
 }
