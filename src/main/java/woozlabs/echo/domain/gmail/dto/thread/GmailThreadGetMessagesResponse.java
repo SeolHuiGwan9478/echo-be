@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
 import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
+import woozlabs.echo.domain.gmail.dto.message.GmailMessageInlineFileData;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.global.utils.GlobalUtility;
 
@@ -40,7 +41,7 @@ public class GmailThreadGetMessagesResponse {
     private GmailThreadGetPayload payload;
     private ExtractVerificationInfo verification = new ExtractVerificationInfo();
 
-    public static GmailThreadGetMessagesResponse toGmailThreadGetMessages(Message message, GmailUtility gmailUtility){
+    public static GmailThreadGetMessagesResponse toGmailThreadGetMessages(Message message, List<GmailMessageInlineFileData> inlineFiles){
         GmailThreadGetMessagesResponse gmailThreadGetMessages = new GmailThreadGetMessagesResponse();
         MessagePart payload = message.getPayload();
         GmailThreadGetPayload convertedPayload = new GmailThreadGetPayload(payload);

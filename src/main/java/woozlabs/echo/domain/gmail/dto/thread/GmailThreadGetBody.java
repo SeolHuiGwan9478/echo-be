@@ -1,10 +1,13 @@
 package woozlabs.echo.domain.gmail.dto.thread;
 
 import com.google.api.services.gmail.model.MessagePartBody;
+import com.google.api.services.gmail.model.MessagePartHeader;
 import lombok.Builder;
 import lombok.Getter;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.global.utils.GlobalUtility;
+
+import java.util.List;
 
 @Getter
 @Builder

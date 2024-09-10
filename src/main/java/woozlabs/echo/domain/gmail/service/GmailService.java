@@ -30,11 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.history.*;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageAttachmentResponse;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageGetResponse;
+import woozlabs.echo.domain.gmail.dto.message.*;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesResponse;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendRequest;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageSendResponse;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadTotalCountResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
@@ -160,13 +157,14 @@ public class GmailService {
             List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
             List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
+            List<GmailMessageInlineFileData> inlineFiles = new ArrayList<>();
             List<GmailThreadGetMessagesResponse> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
             for (int idx = 0; idx < messages.size(); idx++) {
                 int idxForLambda = idx;
                 Message message = messages.get(idx);
                 MessagePart payload = message.getPayload();
-                convertedMessages.add(GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message, gmailUtility));
+                convertedMessages.add(GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message, inlineFiles));
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
                 labelIds.addAll(message.getLabelIds());
                 if (idxForLambda == messages.size() - 1) {
@@ -175,7 +173,7 @@ public class GmailService {
                     gmailThreadGetResponse.setTimestamp(date);
                 }
                 // get attachments
-                getThreadsAttachments(payload, attachments);
+                getThreadsAttachments(payload, attachments, inlineFiles, gmailService, message.getId());
                 headers.forEach((header) -> {
                     String headerName = header.getName().toUpperCase();
                     // first message -> extraction subject
@@ -385,8 +383,23 @@ public class GmailService {
         ModifyThreadRequest modifyThreadRequest = new ModifyThreadRequest();
         modifyThreadRequest.setAddLabelIds(request.getAddLabelIds());
         modifyThreadRequest.setRemoveLabelIds(request.getRemoveLabelIds());
-        Thread thread = gmailService.users().threads().modify(USER_ID, id, modifyThreadRequest).execute();
+        gmailService.users().threads().modify(USER_ID, id, modifyThreadRequest).execute();
         return GmailThreadUpdateResponse.builder()
+                .addLabelIds(request.getAddLabelIds())
+                .removeLabelIds(request.getRemoveLabelIds())
+                .build();
+    }
+
+    public GmailMessageUpdateResponse updateUserEmailMessage(String uid, String id, GmailMessageUpdateRequest request) throws Exception{
+        Account account = accountRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+        String accessToken = account.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        ModifyMessageRequest modifyMessageRequest = new ModifyMessageRequest();
+        modifyMessageRequest.setAddLabelIds(request.getAddLabelIds());
+        modifyMessageRequest.setRemoveLabelIds(request.getRemoveLabelIds());
+        gmailService.users().messages().modify(USER_ID, id, modifyMessageRequest).execute();
+        return GmailMessageUpdateResponse.builder()
                 .addLabelIds(request.getAddLabelIds())
                 .removeLabelIds(request.getRemoveLabelIds())
                 .build();
@@ -721,9 +734,9 @@ public class GmailService {
         return result.getThreadsTotal();
     }
 
-    private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments){
+    private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments, List<GmailMessageInlineFileData> inlineFiles, Gmail gmailService, String messageId) throws IOException {
         if(part.getParts() == null){ // base condition
-            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part, inlineFiles, gmailService, messageId)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
@@ -742,9 +755,9 @@ public class GmailService {
             }
         }else{ // recursion
             for(MessagePart subPart : part.getParts()){
-                getThreadsAttachments(subPart, attachments);
+                getThreadsAttachments(subPart, attachments, inlineFiles, gmailService, messageId);
             }
-            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part, inlineFiles, gmailService, messageId)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();

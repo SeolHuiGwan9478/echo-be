@@ -228,6 +228,7 @@ public class PubSubService {
                         .messageId(historyData.getId())
                         .codes(String.join(",",gmailMessage.getVerification().getCodes()))
                         .links(String.join(",",gmailMessage.getVerification().getLinks()))
+                        .uuid(UUID.randomUUID().toString())
                         .account(owner)
                         .build();
                 verificationEmailRepository.save(verificationEmail);
