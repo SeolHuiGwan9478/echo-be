@@ -1,9 +1,13 @@
 package woozlabs.echo.global.utils;
 
+import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.MessagePart;
+import com.google.api.services.gmail.model.MessagePartBody;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import org.joda.time.DateTimeZone;
+import woozlabs.echo.domain.gmail.dto.message.GmailMessageInlineFileData;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -15,6 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static woozlabs.echo.global.constant.GlobalConstant.THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY;
+import static woozlabs.echo.global.constant.GlobalConstant.USER_ID;
 
 public class GlobalUtility {
     public static List<String> splitSenderData(String sender){
@@ -104,17 +109,24 @@ public class GlobalUtility {
         }
         byte[] decodedBinaryContent = Base64.getDecoder().decode(standardBase64);
         String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
-        System.out.println(decodedContent);
+        //System.out.println(decodedContent);
         return Base64.getEncoder().encodeToString(decodedContent.getBytes());
     }
 
-    public static Boolean isInlineFile(MessagePart part){
+    public static Boolean isInlineFile(MessagePart part, List<GmailMessageInlineFileData> inlineFiles, Gmail gmailService, String messageId) throws IOException {
         List<MessagePartHeader> headers = part.getHeaders();
-        System.out.println(headers);
         for(MessagePartHeader header : headers){
             if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
                 String xAttachmentId = header.getValue();
-                if(!xAttachmentId.startsWith("f")) return Boolean.TRUE;
+                if(!xAttachmentId.startsWith("f")){
+                    //String attachmentId = part.getBody().getAttachmentId();
+                    //MessagePartBody attachment = gmailService.users().messages().attachments().get(USER_ID, messageId,attachmentId).execute();
+                    GmailMessageInlineFileData inlineFile = GmailMessageInlineFileData.builder()
+                            .contentId(xAttachmentId)
+                            .data(part.getBody().getData()).build();
+                    inlineFiles.add(inlineFile);
+                    return Boolean.TRUE;
+                }
                 else break;
             }
         }

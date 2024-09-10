@@ -157,13 +157,14 @@ public class GmailService {
             List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
             List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
+            List<GmailMessageInlineFileData> inlineFiles = new ArrayList<>();
             List<GmailThreadGetMessagesResponse> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
             for (int idx = 0; idx < messages.size(); idx++) {
                 int idxForLambda = idx;
                 Message message = messages.get(idx);
                 MessagePart payload = message.getPayload();
-                convertedMessages.add(GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message, gmailUtility));
+                convertedMessages.add(GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message, inlineFiles));
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
                 labelIds.addAll(message.getLabelIds());
                 if (idxForLambda == messages.size() - 1) {
@@ -172,7 +173,7 @@ public class GmailService {
                     gmailThreadGetResponse.setTimestamp(date);
                 }
                 // get attachments
-                getThreadsAttachments(payload, attachments);
+                getThreadsAttachments(payload, attachments, inlineFiles, gmailService, message.getId());
                 headers.forEach((header) -> {
                     String headerName = header.getName().toUpperCase();
                     // first message -> extraction subject
@@ -733,9 +734,9 @@ public class GmailService {
         return result.getThreadsTotal();
     }
 
-    private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments){
+    private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments, List<GmailMessageInlineFileData> inlineFiles, Gmail gmailService, String messageId) throws IOException {
         if(part.getParts() == null){ // base condition
-            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part, inlineFiles, gmailService, messageId)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
@@ -754,9 +755,9 @@ public class GmailService {
             }
         }else{ // recursion
             for(MessagePart subPart : part.getParts()){
-                getThreadsAttachments(subPart, attachments);
+                getThreadsAttachments(subPart, attachments, inlineFiles, gmailService, messageId);
             }
-            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part, inlineFiles, gmailService, messageId)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
