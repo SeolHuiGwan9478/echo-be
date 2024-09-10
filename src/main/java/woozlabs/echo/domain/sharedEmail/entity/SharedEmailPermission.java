@@ -1,10 +1,12 @@
 package woozlabs.echo.domain.sharedEmail.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -19,6 +21,7 @@ public class SharedEmailPermission {
 
     @OneToOne
     @JoinColumn(name = "shared_email_id")
+    @JsonIgnore
     private SharedEmail sharedEmail;
 
     @ElementCollection
