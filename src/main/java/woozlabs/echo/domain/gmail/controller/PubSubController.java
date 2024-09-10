@@ -7,12 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import woozlabs.echo.domain.gmail.dto.pubsub.FcmTokenRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.FcmTokenResponse;
+import woozlabs.echo.domain.gmail.dto.pubsub.GetVerificationDataResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubMessage;
 import woozlabs.echo.domain.gmail.service.PubSubService;
 import woozlabs.echo.global.constant.GlobalConstant;
@@ -44,5 +42,13 @@ public class PubSubController {
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
         FcmTokenResponse response = pubSubService.saveFcmToken(uid, request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/api/v1/verification/{uuid}")
+    public ResponseEntity<?> getVerificationData(HttpServletRequest httpServletRequest, @PathVariable String uuid){
+        log.info("Request to get verification data");
+        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        GetVerificationDataResponse response = pubSubService.getVerificationData(uid, uuid);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

@@ -213,11 +213,14 @@ public class PubSubService {
         String FCM_MSG_TYPE_KEY = "type";
         String FCM_MSG_VERIFICATION_KEY = "verification";
         String FCM_MSG_LABEL_KEY = "label";
+        String FCM_MSG_UUID_KEY = "uuid";
+        String uuid = UUID.randomUUID().toString();
         HistoryType historyType = historyData.getHistoryType();
         // set base info
         data.put(FCM_MSG_ID_KEY, historyData.getId());
         data.put(FCM_MSG_THREAD_ID_KEY, historyData.getThreadId());
         data.put(FCM_MSG_TYPE_KEY, historyData.getHistoryType().getType());
+        data.put(FCM_MSG_UUID_KEY, uuid);
         if(historyType.equals(HistoryType.MESSAGE_ADDED)){
             // set verification data
             Boolean isVerification = gmailMessage.getVerification().getVerification();
@@ -228,9 +231,12 @@ public class PubSubService {
                         .messageId(historyData.getId())
                         .codes(String.join(",",gmailMessage.getVerification().getCodes()))
                         .links(String.join(",",gmailMessage.getVerification().getLinks()))
-                        .uuid(UUID.randomUUID().toString())
+                        .uuid(uuid)
                         .account(owner)
                         .build();
+                if(!gmailMessage.getVerification().getLinks().isEmpty()){ // save shortened link
+                    verificationEmail.setShortenedLink("https://echo.woozlabs.com/verification/" + uuid);
+                }
                 verificationEmailRepository.save(verificationEmail);
             }
         }else if(historyType.equals(HistoryType.LABEL_ADDED) || historyType.equals(HistoryType.LABEL_REMOVED)){
@@ -238,5 +244,18 @@ public class PubSubService {
             data.put(FCM_MSG_LABEL_KEY, String.join(",", labelIds));
         }
         // set schedule data
+    }
+
+    public GetVerificationDataResponse getVerificationData(String uid, String uuid){
+        Account account = accountRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+        VerificationEmail verificationEmail = verificationEmailRepository.findByUuidAndAccount(uuid, account).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_VERIFICATION_EMAIL_DATA)
+        );
+        return GetVerificationDataResponse.builder()
+                .uuid(verificationEmail.getUuid())
+                .links(verificationEmail.getLinks())
+                .shortenedLink(verificationEmail.getShortenedLink())
+                .build();
     }
 }

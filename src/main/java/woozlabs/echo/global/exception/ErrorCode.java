@@ -105,6 +105,7 @@ public enum ErrorCode {
     CLOUD_PUB_SUB_WATCH_ERR(400, "Failed to watch cloud pub/sub"),
     CLOUD_PUB_SUB_STOP_ERR(500, "Failed to stop cloud pub/sub"),
     NOT_FOUND_PUB_SUB_HISTORY_ERR(404, "Not Found: PubSubHistory"),
+    NOT_FOUND_VERIFICATION_EMAIL_DATA(404, "Not Found: Verification Email Data"),
 
     // sharedEmail
     NOT_FOUND_SHARED_EMAIL(404, "SharedEmail not found."),

@@ -35,7 +35,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/v1/gemini/**",
                         "/api/v1/fcm",
                         "/api/v1/echo/**",
-                        "/api/v1/gen/**"
+                        "/api/v1/gen/**",
+                        "/api/v1/verification/**"
                 );
     }
 }
