@@ -252,6 +252,7 @@ public class PubSubService {
         VerificationEmail verificationEmail = verificationEmailRepository.findByUuidAndAccount(uuid, account).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_VERIFICATION_EMAIL_DATA)
         );
+        if(verificationEmail.getLinks().isEmpty()) throw new CustomErrorException(ErrorCode.IS_NOT_VERIFICATION_LINK);
         return GetVerificationDataResponse.builder()
                 .uuid(verificationEmail.getUuid())
                 .links(verificationEmail.getLinks())

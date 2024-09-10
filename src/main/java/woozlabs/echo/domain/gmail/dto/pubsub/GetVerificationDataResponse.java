@@ -8,5 +8,6 @@ import lombok.Getter;
 public class GetVerificationDataResponse {
     private String uuid;
     private String links;
+    private String codes;
     private String shortenedLink;
 }
