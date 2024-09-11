@@ -12,6 +12,7 @@ import woozlabs.echo.domain.member.dto.PreferenceDto;
 import woozlabs.echo.domain.member.dto.UpdatePreferenceRequestDto;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.MemberAccount;
 import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
@@ -29,11 +30,9 @@ public class MemberService {
     private final MemberRepository memberRepository;
 
     @Transactional
-    public void updatePreference(String uid, UpdatePreferenceRequestDto updatePreferenceRequest) {
-        Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-
-        Member member = account.getMember();
+    public void updatePreference(String primaryUid, UpdatePreferenceRequestDto updatePreferenceRequest) {
+        Member member = memberRepository.findByPrimaryUid(primaryUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
 
         PreferenceDto preferenceDto = updatePreferenceRequest.getPreference();
         if (preferenceDto != null) {
@@ -66,11 +65,9 @@ public class MemberService {
         }
     }
 
-    public PreferenceDto getPreference(String uid) {
-        Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-
-        Member member = account.getMember();
+    public PreferenceDto getPreference(String primaryUid) {
+        Member member = memberRepository.findByPrimaryUid(primaryUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
 
         return PreferenceDto.builder()
                 .language(member.getLanguage())
@@ -87,25 +84,20 @@ public class MemberService {
     }
 
     @Transactional
-    public void deleteMember(String uid) {
-        Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+    public void deleteMember(String primaryUid) {
+        Member member = memberRepository.findByPrimaryUid(primaryUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
 
-        Member member = account.getMember();
         member.setDeletedAt(LocalDateTime.now());
 
-        try {
-            FirebaseAuth.getInstance().deleteUser(uid);
-        } catch (FirebaseAuthException e) {
-            throw new CustomErrorException(ErrorCode.FIREBASE_ACCOUNT_DELETION_ERROR, e.getMessage());
+        List<MemberAccount> memberAccounts = member.getMemberAccounts();
+        for (MemberAccount memberAccount : memberAccounts) {
+            Account account = memberAccount.getAccount();
+            account.getMemberAccounts().remove(memberAccount);
+            accountRepository.save(account);
         }
 
-        List<Account> accounts = member.getAccounts();
-        for (Account acc : accounts) {
-            acc.setMember(null);
-            accountRepository.save(acc);
-        }
-
+        member.getMemberAccounts().clear();
         memberRepository.save(member);
     }
 
@@ -114,6 +106,14 @@ public class MemberService {
     public void hardDeleteExpiredMembers() {
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
         List<Member> expiredMember = memberRepository.findAllByDeletedAtBefore(thirtyDaysAgo);
+
+        for (Member member : expiredMember) {
+            try {
+                FirebaseAuth.getInstance().deleteUser(member.getPrimaryUid());
+            } catch (FirebaseAuthException e) {
+                throw new CustomErrorException(ErrorCode.FIREBASE_ACCOUNT_DELETION_ERROR, e.getMessage());
+            }
+        }
 
         memberRepository.deleteAll(expiredMember);
     }
