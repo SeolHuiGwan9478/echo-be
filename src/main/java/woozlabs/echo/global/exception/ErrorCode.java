@@ -21,6 +21,7 @@ public enum ErrorCode {
     FAILED_TO_SET_CUSTOM_CLAIMS(500, "Failed to set custom claims"),
     DUPLICATE_FCM_TOKEN_ERR(400,"Is already exist this token"),
     EXCEED_FCM_TOKEN_SIZE_ERR(400, "Exceed maximum token size"),
+    FIREBASE_ACCOUNT_DELETION_ERROR(500, "Can not firebase account deleted"),
 
     // account
     NOT_FOUND_ACCOUNT_ERROR_MESSAGE(404, "Not found: Account"),
