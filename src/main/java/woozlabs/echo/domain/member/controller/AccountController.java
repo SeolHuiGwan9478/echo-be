@@ -26,8 +26,9 @@ public class AccountController {
     }
 
     @PostMapping("/{uid}/unlink")
-    public ResponseEntity<Void> unlinkAccountFromMember(@PathVariable("uid") String uid) {
-        accountService.unlinkAccount(uid);
+    public ResponseEntity<Void> unlinkAccountFromMember(@PathVariable("uid") String uid,
+                                                        @RequestParam("accountUid") String accountUid) {
+        accountService.unlinkAccount(uid, accountUid);
         return ResponseEntity.noContent().build();
     }
 }

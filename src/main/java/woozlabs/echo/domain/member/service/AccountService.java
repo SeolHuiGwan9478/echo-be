@@ -6,9 +6,14 @@ import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.member.dto.*;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.MemberAccount;
 import woozlabs.echo.domain.member.repository.AccountRepository;
+import woozlabs.echo.domain.member.repository.MemberAccountRepository;
+import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
+
+import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -16,6 +21,8 @@ import woozlabs.echo.global.exception.ErrorCode;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final MemberRepository memberRepository;
+    private final MemberAccountRepository memberAccountRepository;
 
     public AccountProfileResponseDto getProfileByField(String fieldType, String fieldValue) {
         Account account = fetchMemberByField(fieldType, fieldValue);
@@ -43,17 +50,25 @@ public class AccountService {
     }
 
     @Transactional
-    public void unlinkAccount(String uid) {
-        Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+    public void unlinkAccount(String primaryUid, String accountUid) {
+        Member member = memberRepository.findByPrimaryUid(primaryUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER, "Member not found for primaryUid: " + primaryUid));
 
-        Member member = account.getMember();
+        Account account = accountRepository.findByUid(accountUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE, "Account not found for accountUid: " + accountUid));
 
-        if (member == null) {
-            throw new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER, "Member not found for this account");
+        MemberAccount memberAccount = memberAccountRepository.findByMemberAndAccount(member, account)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT));
+
+        if (account.isPrimary() || account.getUid().equals(member.getPrimaryUid())) {
+            throw new CustomErrorException(ErrorCode.CANNOT_UNLINK_PRIMARY_ACCOUNT);
         }
 
-        account.setMember(null);
+        member.getMemberAccounts().remove(memberAccount);
+        account.getMemberAccounts().remove(memberAccount);
+
+        memberAccountRepository.delete(memberAccount);
+        memberRepository.save(member);
         accountRepository.save(account);
     }
 }
