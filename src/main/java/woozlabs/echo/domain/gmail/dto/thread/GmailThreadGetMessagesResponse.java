@@ -41,7 +41,7 @@ public class GmailThreadGetMessagesResponse {
     private GmailThreadGetPayload payload;
     private ExtractVerificationInfo verification = new ExtractVerificationInfo();
 
-    public static GmailThreadGetMessagesResponse toGmailThreadGetMessages(Message message, List<GmailMessageInlineFileData> inlineFiles){
+    public static GmailThreadGetMessagesResponse toGmailThreadGetMessages(Message message){
         GmailThreadGetMessagesResponse gmailThreadGetMessages = new GmailThreadGetMessagesResponse();
         MessagePart payload = message.getPayload();
         GmailThreadGetPayload convertedPayload = new GmailThreadGetPayload(payload);

@@ -15,6 +15,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import jakarta.activation.DataHandler;
 import jakarta.activation.DataSource;
 import jakarta.activation.FileDataSource;
+import jakarta.mail.BodyPart;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
 import jakarta.mail.Session;
@@ -50,16 +51,19 @@ import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 import woozlabs.echo.global.utils.GlobalUtility;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
@@ -157,14 +161,13 @@ public class GmailService {
             List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
             List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
             List<GmailThreadListAttachments> attachments = new ArrayList<>();
-            List<GmailMessageInlineFileData> inlineFiles = new ArrayList<>();
             List<GmailThreadGetMessagesResponse> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
             for (int idx = 0; idx < messages.size(); idx++) {
                 int idxForLambda = idx;
                 Message message = messages.get(idx);
                 MessagePart payload = message.getPayload();
-                convertedMessages.add(GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message, inlineFiles));
+                convertedMessages.add(GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message));
                 List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
                 labelIds.addAll(message.getLabelIds());
                 if (idxForLambda == messages.size() - 1) {
@@ -173,7 +176,7 @@ public class GmailService {
                     gmailThreadGetResponse.setTimestamp(date);
                 }
                 // get attachments
-                getThreadsAttachments(payload, attachments, inlineFiles, gmailService, message.getId());
+                getThreadsAttachments(payload, attachments);
                 headers.forEach((header) -> {
                     String headerName = header.getName().toUpperCase();
                     // first message -> extraction subject
@@ -246,6 +249,47 @@ public class GmailService {
         Gmail gmailService = createGmailService(accessToken);
         Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
         return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
+    }
+
+    public void getUserEmailMessageTest(String uid, String messageId) throws Exception {
+        Account account = accountRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+        String accessToken = account.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        Message message = gmailService.users().messages().get(USER_ID, messageId).setFormat("RAW").execute();
+        String raw = message.getRaw();
+        // Convert URL-safe Base64 to standard Base64
+        String standardBase64 = raw
+                .replace('-', '+')
+                .replace('_', '/');
+        // Add padding if necessary
+        int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
+        for (int i = 0; i < paddingCount; i++) {
+            standardBase64 += "=";
+        }
+        byte[] decodedBinaryContent = java.util.Base64.getDecoder().decode(standardBase64);
+        String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
+        MimeMessage mimeMessage = new MimeMessage(null, new ByteArrayInputStream(decodedContent.getBytes(StandardCharsets.UTF_8)));
+        StringBuilder htmlBuilder = new StringBuilder();
+        Multipart multipart = (Multipart) mimeMessage.getContent();
+        StringBuilder base64Images = new StringBuilder();
+        System.out.println(multipart);
+        for (int i = 0; i < multipart.getCount(); i++) {
+            BodyPart bodyPart = multipart.getBodyPart(i);
+
+            if (bodyPart.getContentType().startsWith("image/")) {
+                String contentId = bodyPart.getHeader("Content-ID")[0].replaceAll("<|>", "");
+                byte[] imageBytes = bodyPart.getInputStream().readAllBytes();
+                String base64Image = java.util.Base64.getEncoder().encodeToString(imageBytes);
+                String imageType = bodyPart.getContentType().split("/")[1];
+
+                // Create a data URL for the image
+                String dataUrl = "data:image/" + imageType + ";base64," + base64Image;
+
+                base64Images.append("cid:").append(contentId).append(" -> ").append(dataUrl).append("\n");
+            }
+        }
+        System.out.println(base64Images);
     }
 
     public GmailMessageGetResponse getUserEmailMessageWithoutVerification(String uid, String messageId) throws Exception {
@@ -734,9 +778,9 @@ public class GmailService {
         return result.getThreadsTotal();
     }
 
-    private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments, List<GmailMessageInlineFileData> inlineFiles, Gmail gmailService, String messageId) throws IOException {
+    private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments) throws IOException {
         if(part.getParts() == null){ // base condition
-            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part, inlineFiles, gmailService, messageId)){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
@@ -755,9 +799,9 @@ public class GmailService {
             }
         }else{ // recursion
             for(MessagePart subPart : part.getParts()){
-                getThreadsAttachments(subPart, attachments, inlineFiles, gmailService, messageId);
+                getThreadsAttachments(subPart, attachments);
             }
-            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part, inlineFiles, gmailService, messageId)){
+            if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();

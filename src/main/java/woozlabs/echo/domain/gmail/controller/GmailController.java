@@ -337,4 +337,17 @@ public class GmailController {
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }
     }
+
+    @GetMapping("/api/v1/gmail/messages/{messageId}/test")
+    public ResponseEntity<ResponseDto> getMessageTest(HttpServletRequest httpServletRequest,
+                                                  @PathVariable("messageId") String messageId){
+        log.info("Request to get message({})", messageId);
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            gmailService.getUserEmailMessageTest(uid, messageId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
 }

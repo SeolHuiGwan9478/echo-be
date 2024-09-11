@@ -113,18 +113,12 @@ public class GlobalUtility {
         return Base64.getEncoder().encodeToString(decodedContent.getBytes());
     }
 
-    public static Boolean isInlineFile(MessagePart part, List<GmailMessageInlineFileData> inlineFiles, Gmail gmailService, String messageId) throws IOException {
+    public static Boolean isInlineFile(MessagePart part) {
         List<MessagePartHeader> headers = part.getHeaders();
         for(MessagePartHeader header : headers){
             if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
                 String xAttachmentId = header.getValue();
                 if(!xAttachmentId.startsWith("f")){
-                    //String attachmentId = part.getBody().getAttachmentId();
-                    //MessagePartBody attachment = gmailService.users().messages().attachments().get(USER_ID, messageId,attachmentId).execute();
-                    GmailMessageInlineFileData inlineFile = GmailMessageInlineFileData.builder()
-                            .contentId(xAttachmentId)
-                            .data(part.getBody().getData()).build();
-                    inlineFiles.add(inlineFile);
                     return Boolean.TRUE;
                 }
                 else break;
