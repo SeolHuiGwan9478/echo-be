@@ -100,6 +100,12 @@ public class MemberService {
             throw new CustomErrorException(ErrorCode.FIREBASE_ACCOUNT_DELETION_ERROR, e.getMessage());
         }
 
+        List<Account> accounts = member.getAccounts();
+        for (Account acc : accounts) {
+            acc.setMember(null);
+            accountRepository.save(acc);
+        }
+
         memberRepository.save(member);
     }
 
