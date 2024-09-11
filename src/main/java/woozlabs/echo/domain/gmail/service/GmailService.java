@@ -658,7 +658,7 @@ public class GmailService {
                 .execute();
     }
 
-    private Thread getOneThreadResponse(String id, Gmail gmailService) throws IOException{
+    private Thread getOneThreadResponse(String id, Gmail gmailService) throws IOException {
         return gmailService.users().threads()
                 .get(USER_ID, id)
                 .setFormat(THREADS_GET_FULL_FORMAT)
