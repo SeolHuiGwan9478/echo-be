@@ -25,4 +25,10 @@ public class MemberController {
         memberService.updatePreference(uid, updatePreferenceRequest);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/{uid}/delete")
+    public ResponseEntity<Void> deleteMember(@PathVariable("uid") String uid) {
+        memberService.deleteMember(uid);
+        return ResponseEntity.ok().build();
+    }
 }

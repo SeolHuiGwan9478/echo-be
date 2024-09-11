@@ -29,6 +29,8 @@ public class Member extends BaseEntity {
     private String watchNotification;
     private boolean marketingEmails;
 
+    private LocalDateTime deletedAt;
+
     @ColumnDefault("true")
     private boolean securityEmails = true;
 

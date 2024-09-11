@@ -1,6 +1,9 @@
 package woozlabs.echo.domain.member.service;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.member.dto.AppearanceDto;
@@ -10,8 +13,12 @@ import woozlabs.echo.domain.member.dto.UpdatePreferenceRequestDto;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.repository.AccountRepository;
+import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -19,6 +26,7 @@ import woozlabs.echo.global.exception.ErrorCode;
 public class MemberService {
 
     private final AccountRepository accountRepository;
+    private final MemberRepository memberRepository;
 
     @Transactional
     public void updatePreference(String uid, UpdatePreferenceRequestDto updatePreferenceRequest) {
@@ -76,5 +84,31 @@ public class MemberService {
                         .securityEmails(member.isSecurityEmails())
                         .build())
                 .build();
+    }
+
+    @Transactional
+    public void deleteMember(String uid) {
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+        Member member = account.getMember();
+        member.setDeletedAt(LocalDateTime.now());
+
+        try {
+            FirebaseAuth.getInstance().deleteUser(uid);
+        } catch (FirebaseAuthException e) {
+            throw new CustomErrorException(ErrorCode.FIREBASE_ACCOUNT_DELETION_ERROR, e.getMessage());
+        }
+
+        memberRepository.save(member);
+    }
+
+    @Scheduled(cron = "0 0 0 * * ?")
+    @Transactional
+    public void hardDeleteExpiredMembers() {
+        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+        List<Member> expiredMember = memberRepository.findAllByDeletedAtBefore(thirtyDaysAgo);
+
+        memberRepository.deleteAll(expiredMember);
     }
 }
