@@ -8,6 +8,7 @@ import woozlabs.echo.domain.member.entity.Account;
 
 @Entity
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -18,6 +19,7 @@ public class VerificationEmail {
     private String messageId;
     private String codes;
     private String links;
+    private String shortenedLink;
     private String uuid;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id")
