@@ -22,7 +22,19 @@ public class WebConfig implements WebMvcConfigurer {
                         "https://echo-email-app.web.app"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                .allowedHeaders("*")
+                .allowedHeaders(
+                        "Authorization",
+                        "Content-Type",
+                        "Accept",
+                        "Origin",
+                        "X-Requested-With",
+                        "Cache-Control",
+                        "Pragma",
+                        "Cookie",
+                        "DNT",
+                        "User-Agent",
+                        "X-Custom-Header"
+                )
                 .allowCredentials(true);
     }
 
