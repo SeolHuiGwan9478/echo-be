@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.member.dto.*;
 import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
@@ -39,5 +40,20 @@ public class AccountService {
         } else {
             throw new CustomErrorException(ErrorCode.INVALID_FIELD_TYPE_ERROR_MESSAGE);
         }
+    }
+
+    @Transactional
+    public void unlinkAccount(String uid) {
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+        Member member = account.getMember();
+
+        if (member == null) {
+            throw new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER, "Member not found for this account");
+        }
+
+        account.setMember(null);
+        accountRepository.save(account);
     }
 }

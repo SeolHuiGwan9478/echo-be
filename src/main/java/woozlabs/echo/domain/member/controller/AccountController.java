@@ -24,4 +24,10 @@ public class AccountController {
         AccountProfileResponseDto response = accountService.getProfileByField("uid", uid);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/{uid}/unlink")
+    public ResponseEntity<Void> unlinkAccountFromMember(@PathVariable("uid") String uid) {
+        accountService.unlinkAccount(uid);
+        return ResponseEntity.noContent().build();
+    }
 }
