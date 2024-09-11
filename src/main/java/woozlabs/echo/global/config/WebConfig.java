@@ -21,7 +21,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "https://echo-email-app.firebaseapp.com",
                         "https://echo-email-app.web.app"
                 )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD")
                 .allowedHeaders(
                         "Authorization",
                         "Content-Type",
