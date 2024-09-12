@@ -301,7 +301,7 @@ public class GmailService {
         return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
     }
 
-    public GmailMessageAttachmentResponse getAttachment(String uid, String messageId, String id) throws Exception{
+    public GmailMessageAttachmentResponse getAttachment(String uid, String messageId, String id, String mimeType) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
@@ -310,10 +310,13 @@ public class GmailService {
                 .attachments()
                 .get(USER_ID, messageId, id)
                 .execute();
+        String base64Src = "data:" + mimeType + ";base64," + attachment.getData();
         return GmailMessageAttachmentResponse.builder()
                 .attachmentId(attachment.getAttachmentId())
                 .size(attachment.getSize())
-                .data(attachment.getData()).build();
+                .data(attachment.getData())
+                .base64Src(base64Src)
+                .build();
     }
 
     public GmailMessageSendResponse sendUserEmailMessage(String uid, GmailMessageSendRequest request) throws Exception{
