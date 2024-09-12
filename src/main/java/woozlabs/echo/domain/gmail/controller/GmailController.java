@@ -175,10 +175,10 @@ public class GmailController {
 
     @PostMapping("/api/v1/gmail/messages/send")
     public ResponseEntity<ResponseDto> sendMessage(HttpServletRequest httpServletRequest,
-                                                   @RequestPart("toEmailAddress") String toEmailAddress,
-                                                   @RequestPart("subject") String subject,
-                                                   @RequestPart("bodyText") String bodyText,
-                                                   @RequestPart(value = "files", required = false) List<MultipartFile> files){
+                                                   @RequestParam("toEmailAddress") String toEmailAddress,
+                                                   @RequestParam("subject") String subject,
+                                                   @RequestParam("bodyText") String bodyText,
+                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files){
         log.info("Request to send message");
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
