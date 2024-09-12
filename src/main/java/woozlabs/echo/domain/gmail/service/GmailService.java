@@ -310,7 +310,18 @@ public class GmailService {
                 .attachments()
                 .get(USER_ID, messageId, id)
                 .execute();
-        String base64Src = "data:" + mimeType + ";base64," + attachment.getData();
+        String standardBase64 = attachment.getData()
+                .replace('-', '+')
+                .replace('_', '/');
+        // Add padding if necessary
+        int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
+        for (int i = 0; i < paddingCount; i++) {
+            standardBase64 += "=";
+        }
+        byte[] decodedBinaryContent = java.util.Base64.getDecoder().decode(standardBase64);
+        //byte[] attachmentData = java.util.Base64.getDecoder().decode(attachment.getData());
+        String base64Image = java.util.Base64.getEncoder().encodeToString(decodedBinaryContent);
+        String base64Src = "data:" + mimeType + ";base64," + base64Image;
         return GmailMessageAttachmentResponse.builder()
                 .attachmentId(attachment.getAttachmentId())
                 .size(attachment.getSize())
