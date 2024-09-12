@@ -9,7 +9,10 @@ import org.hibernate.annotations.ColumnDefault;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Entity
 @Getter
@@ -21,6 +24,8 @@ public class Member extends BaseEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String primaryUid;
+
     private String language = "en";
 
     @Enumerated(EnumType.STRING)
@@ -28,6 +33,7 @@ public class Member extends BaseEntity {
 
     private String watchNotification;
     private boolean marketingEmails;
+    private LocalDateTime deletedAt;
 
     @ColumnDefault("true")
     private boolean securityEmails = true;
@@ -35,13 +41,8 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Density density = Density.COMPACT;
 
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Account> accounts = new ArrayList<>();
-
-    @ElementCollection
-    @CollectionTable(name = "member_account_emails", joinColumns = @JoinColumn(name = "member_id"))
-    @Column(name = "email")
-    private Set<String> accountEmails = new HashSet<>();
+    @OneToMany(mappedBy = "member")
+    private List<MemberAccount> memberAccounts = new ArrayList<>();
 
     @ElementCollection
     @CollectionTable(name = "member_term_agreements", joinColumns = @JoinColumn(name = "member_id"))
@@ -55,10 +56,8 @@ public class Member extends BaseEntity {
     @Column(name = "timestamp")
     private Map<String, LocalDateTime> marketingAgreements = new HashMap<>();
 
-    public void addAccount(Account account) {
-        if (!this.accounts.contains(account)) {
-            this.accounts.add(account);
-            this.accountEmails.add(account.getEmail());
-        }
+    public void addMemberAccount(MemberAccount memberAccount) {
+        this.memberAccounts.add(memberAccount);
+        memberAccount.setMember(this);
     }
 }

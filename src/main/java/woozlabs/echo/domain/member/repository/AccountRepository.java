@@ -18,8 +18,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     Optional<Account> findByEmail(String email);
 
-    List<Account> findAllByMember(Member member);
-
     @Query("SELECT m FROM Account m WHERE m.accessTokenFetchedAt <= :cutoffTime")
     List<Account> findAccountsByCutoffTime(@Param("cutoffTime") LocalDateTime cutoffTime);
 }

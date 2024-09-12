@@ -21,6 +21,7 @@ public enum ErrorCode {
     FAILED_TO_SET_CUSTOM_CLAIMS(500, "Failed to set custom claims"),
     DUPLICATE_FCM_TOKEN_ERR(400,"Is already exist this token"),
     EXCEED_FCM_TOKEN_SIZE_ERR(400, "Exceed maximum token size"),
+    FIREBASE_ACCOUNT_DELETION_ERROR(500, "Can not firebase account deleted"),
 
     // account
     NOT_FOUND_ACCOUNT_ERROR_MESSAGE(404, "Not found: Account"),
@@ -34,6 +35,8 @@ public enum ErrorCode {
     FAILED_TO_FETCH_GOOGLE_TOKENS(500, "Failed to get Google access tokens"),
     INVALID_FIELD_TYPE_ERROR_MESSAGE(400, "Invalid Account Field Type"),
     INVALID_SESSION(400, "Session is empty or invalid"),
+    NOT_FOUND_MEMBER_ACCOUNT(404, "MemberAccount not found for Member and Account"),
+    CANNOT_UNLINK_PRIMARY_ACCOUNT(403, "Cannot unlink the primary account"),
 
     // token
     NOT_FOUND_ACCESS_TOKEN(404, "Not found: Access Token"),

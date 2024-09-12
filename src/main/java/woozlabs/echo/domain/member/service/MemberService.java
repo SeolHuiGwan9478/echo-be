@@ -1,6 +1,9 @@
 package woozlabs.echo.domain.member.service;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.member.dto.AppearanceDto;
@@ -9,9 +12,14 @@ import woozlabs.echo.domain.member.dto.PreferenceDto;
 import woozlabs.echo.domain.member.dto.UpdatePreferenceRequestDto;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.MemberAccount;
 import woozlabs.echo.domain.member.repository.AccountRepository;
+import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -19,13 +27,12 @@ import woozlabs.echo.global.exception.ErrorCode;
 public class MemberService {
 
     private final AccountRepository accountRepository;
+    private final MemberRepository memberRepository;
 
     @Transactional
-    public void updatePreference(String uid, UpdatePreferenceRequestDto updatePreferenceRequest) {
-        Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-
-        Member member = account.getMember();
+    public void updatePreference(String primaryUid, UpdatePreferenceRequestDto updatePreferenceRequest) {
+        Member member = memberRepository.findByPrimaryUid(primaryUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
 
         PreferenceDto preferenceDto = updatePreferenceRequest.getPreference();
         if (preferenceDto != null) {
@@ -58,11 +65,9 @@ public class MemberService {
         }
     }
 
-    public PreferenceDto getPreference(String uid) {
-        Account account = accountRepository.findByUid(uid)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-
-        Member member = account.getMember();
+    public PreferenceDto getPreference(String primaryUid) {
+        Member member = memberRepository.findByPrimaryUid(primaryUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
 
         return PreferenceDto.builder()
                 .language(member.getLanguage())
@@ -76,5 +81,40 @@ public class MemberService {
                         .securityEmails(member.isSecurityEmails())
                         .build())
                 .build();
+    }
+
+    @Transactional
+    public void deleteMember(String primaryUid) {
+        Member member = memberRepository.findByPrimaryUid(primaryUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
+
+        member.setDeletedAt(LocalDateTime.now());
+
+        List<MemberAccount> memberAccounts = member.getMemberAccounts();
+        for (MemberAccount memberAccount : memberAccounts) {
+            Account account = memberAccount.getAccount();
+            account.getMemberAccounts().remove(memberAccount);
+            accountRepository.save(account);
+        }
+
+        member.getMemberAccounts().clear();
+        memberRepository.save(member);
+    }
+
+    @Scheduled(cron = "0 0 0 * * ?")
+    @Transactional
+    public void hardDeleteExpiredMembers() {
+        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+        List<Member> expiredMember = memberRepository.findAllByDeletedAtBefore(thirtyDaysAgo);
+
+        for (Member member : expiredMember) {
+            try {
+                FirebaseAuth.getInstance().deleteUser(member.getPrimaryUid());
+            } catch (FirebaseAuthException e) {
+                throw new CustomErrorException(ErrorCode.FIREBASE_ACCOUNT_DELETION_ERROR, e.getMessage());
+            }
+        }
+
+        memberRepository.deleteAll(expiredMember);
     }
 }

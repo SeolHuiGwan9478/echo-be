@@ -2,6 +2,7 @@ package woozlabs.echo.domain.member.service;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -11,8 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.MemberAccount;
 import woozlabs.echo.domain.member.entity.Role;
 import woozlabs.echo.domain.member.repository.AccountRepository;
+import woozlabs.echo.domain.member.repository.MemberAccountRepository;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.domain.member.utils.AuthCookieUtils;
 import woozlabs.echo.global.constant.GlobalConstant;
@@ -33,6 +36,7 @@ public class AuthService {
 
     private final AccountRepository accountRepository;
     private final MemberRepository memberRepository;
+    private final MemberAccountRepository memberAccountRepository;
     private final FirebaseTokenVerifier firebaseTokenVerifier;
     private final GoogleOAuthUtils googleOAuthUtils;
 
@@ -112,13 +116,24 @@ public class AuthService {
         return accountRepository.save(account);
     }
 
-    private void constructAndRedirect(HttpServletResponse response, String customToken, String displayName, String profileImageUrl, String email) {
-        String url = UriComponentsBuilder.fromHttpUrl(GlobalConstant.AUTH_SIGN_IN_DOMAIN)
-                .queryParam("customToken", customToken)
-                .queryParam("displayName", displayName)
-                .queryParam("profileImageUrl", profileImageUrl)
-                .queryParam("email", email)
-                .toUriString();
+    private void constructAndRedirect(HttpServletResponse response, String customToken, String displayName, String profileImageUrl, String email, boolean isAddAccount) {
+        String url;
+
+        if (isAddAccount) {
+            url = UriComponentsBuilder.fromHttpUrl(GlobalConstant.AUTH_ADD_ACCOUNT_DOMAIN)
+                    .queryParam("customToken", customToken)
+                    .queryParam("displayName", displayName)
+                    .queryParam("profileImageUrl", profileImageUrl)
+                    .queryParam("email", email)
+                    .toUriString();
+        } else {
+            url = UriComponentsBuilder.fromHttpUrl(GlobalConstant.AUTH_SIGN_IN_DOMAIN)
+                    .queryParam("customToken", customToken)
+                    .queryParam("displayName", displayName)
+                    .queryParam("profileImageUrl", profileImageUrl)
+                    .queryParam("email", email)
+                    .toUriString();
+        }
 
         try {
             response.sendRedirect(url);
@@ -131,73 +146,108 @@ public class AuthService {
     public void handleGoogleCallback(String code, HttpServletRequest request, HttpServletResponse response) throws FirebaseAuthException {
         Map<String, Object> userInfo = getGoogleUserInfoAndTokens(code);
         String providerId = (String) userInfo.get("id");
-        String email = (String) userInfo.get("email");
 
         Optional<Account> existingAccountOpt = accountRepository.findByGoogleProviderId(providerId);
 
         if (existingAccountOpt.isPresent()) {
             Account existingAccount = existingAccountOpt.get();
-            Member member = existingAccount.getMember();
-
-            Account newAccount = createOrUpdateAccount(userInfo, false);
-            newAccount.setMember(member);
-            accountRepository.save(newAccount);
-
-            member.addAccount(newAccount);
-            memberRepository.save(member);
-
-            member.getAccountEmails().add(email);
-
-            Map<String, Object> customClaims = Map.of("accounts", member.getAccounts().stream().map(Account::getUid).toList());
-            setCustomUidClaims(existingAccount.getUid(), customClaims);
-
-            log.info("Added new account to existing Member. Account UID: {}", newAccount.getUid());
+            handleExistingAccount(existingAccount, userInfo, request, response);
         } else {
-            Optional<String> cookieTokenOpt = AuthCookieUtils.getCookieValue(request);
-            String cookieToken = cookieTokenOpt.orElse(null);
-
-            if (cookieToken != null) {
-                String uid = firebaseTokenVerifier.verifyTokenAndGetUid(cookieToken);
-                Optional<Account> existingMemberAccountOpt = accountRepository.findByUid(uid);
-
-                if (existingMemberAccountOpt.isPresent()) {
-                    Account existingAccount = existingMemberAccountOpt.get();
-                    Member member = existingAccount.getMember();
-
-                    Account newAccount = createOrUpdateAccount(userInfo, false);
-                    newAccount.setMember(member);
-                    accountRepository.save(newAccount);
-
-                    member.addAccount(newAccount);
-                    memberRepository.save(member);
-
-                    member.getAccountEmails().add(email);
-
-                    Map<String, Object> customClaims = Map.of("accounts", member.getAccounts().stream().map(Account::getUid).toList());
-                    setCustomUidClaims(uid, customClaims);
-
-                    log.info("Added new account to existing Member. Account UID: {}", newAccount.getUid());
-                }
-            } else {
-                log.info("Creating new Member with a new account.");
-                Account account = createOrUpdateAccount(userInfo, true);
-
-                Member member = new Member();
-                member.addAccount(account);
-                memberRepository.save(member);
-
-                account.setMember(member);
-                accountRepository.save(account);
-
-                member.getAccountEmails().add(email);
-
-                Map<String, Object> customClaims = Map.of("accounts", member.getAccounts().stream().map(Account::getUid).toList());
-                setCustomUidClaims(account.getUid(), customClaims);
-
-                log.info("Account added to new Member. Account UID: {}", account.getUid());
-            }
+            handleNewAccount(userInfo, request, response);
         }
+    }
 
-        constructAndRedirect(response, createCustomToken(providerId), (String) userInfo.get("name"), (String) userInfo.get("picture"), email);
+    @Transactional
+    public void handleExistingAccount(Account existingAccount, Map<String, Object> userInfo, HttpServletRequest request, HttpServletResponse response) throws FirebaseAuthException {
+        updateAccountInfo(existingAccount, userInfo);
+
+        Optional<String> cookieTokenOpt = AuthCookieUtils.getCookieValue(request);
+
+        if (cookieTokenOpt.isPresent()) {
+            String uid = firebaseTokenVerifier.verifyTokenAndGetUid(cookieTokenOpt.get());
+            Member cookieTokenMember = memberRepository.findByPrimaryUid(uid)
+                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
+
+            addNewAccountToExistingMember(cookieTokenMember, userInfo, response);
+        } else {
+            accountRepository.save(existingAccount);
+
+            log.info("Updated existing Account. Account UID: {}", existingAccount.getUid());
+
+            constructAndRedirect(response, createCustomToken(existingAccount.getUid()), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), false);
+        }
+    }
+
+    public void handleNewAccount(Map<String, Object> userInfo, HttpServletRequest request, HttpServletResponse response) throws FirebaseAuthException {
+        Optional<String> cookieTokenOpt = AuthCookieUtils.getCookieValue(request);
+
+        if (cookieTokenOpt.isPresent()) {
+            String uid = firebaseTokenVerifier.verifyTokenAndGetUid(cookieTokenOpt.get());
+            Member cookieTokenMember = memberRepository.findByPrimaryUid(uid)
+                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
+
+            if (cookieTokenMember != null) {
+                addNewAccountToExistingMember(cookieTokenMember, userInfo, response);
+            } else {
+                createNewMemberWithAccount(userInfo, response);
+            }
+        } else {
+            createNewMemberWithAccount(userInfo, response);
+        }
+    }
+
+    @Transactional
+    public void addNewAccountToExistingMember(Member member, Map<String, Object> userInfo, HttpServletResponse response) throws FirebaseAuthException {
+        Account newAccount = createOrUpdateAccount(userInfo, false);
+        MemberAccount memberAccount = new MemberAccount(member, newAccount);
+
+        member.addMemberAccount(memberAccount);
+
+        Map<String, Object> customClaims = Map.of("primaryMemberUid", member.getPrimaryUid());
+        setCustomUidClaims(newAccount.getUid(), customClaims);
+
+        memberRepository.save(member);
+        accountRepository.save(newAccount);
+        memberAccountRepository.save(memberAccount);
+
+        log.info("Added new account to existing Member. Account UID: {}", newAccount.getUid());
+
+        constructAndRedirect(response, createCustomToken(newAccount.getUid()), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), true);
+    }
+
+    @Transactional
+    public void createNewMemberWithAccount(Map<String, Object> userInfo, HttpServletResponse response) throws FirebaseAuthException {
+        Account account = createOrUpdateAccount(userInfo, true);
+
+        Member member = new Member();
+        member.setPrimaryUid(account.getUid());
+
+        MemberAccount memberAccount = new MemberAccount(member, account);
+        member.addMemberAccount(memberAccount);
+        account.getMemberAccounts().add(memberAccount);
+
+        Map<String, Object> customClaims = Map.of("primaryMemberUid", member.getPrimaryUid());
+        setCustomUidClaims(account.getUid(), customClaims);
+
+        memberRepository.save(member);
+        accountRepository.save(account);
+
+        log.info("Created new Member with a new account. Account UID: {}", account.getUid());
+
+        String customToken = createCustomToken(account.getUid());
+        constructAndRedirect(response, customToken, (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), false);
+    }
+
+    private void updateAccountInfo(Account account, Map<String, Object> userInfo) {
+        account.setDisplayName((String) userInfo.get("name"));
+        account.setEmail((String) userInfo.get("email"));
+        account.setProfileImageUrl((String) userInfo.get("picture"));
+        account.setAccessToken((String) userInfo.get("access_token"));
+        String refreshToken = (String) userInfo.get("refresh_token");
+        if (refreshToken != null) {
+            account.setRefreshToken(refreshToken);
+        }
+        account.setAccessTokenFetchedAt(LocalDateTime.now());
+        account.setProvider(GOOGLE_PROVIDER);
     }
 }
