@@ -257,4 +257,39 @@ public class SharedInboxService {
 
         return responseDto;
     }
+
+    @Transactional
+    public UpdateInviteePermissionsDto updateInviteePermissions(String uid, UUID sharedEmailId, UpdateInviteePermissionsDto updateInviteePermissionsDto) {
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+        SharedEmailPermission sharedEmailPermission = sharedEmailPermissionRepository.findBySharedEmailId(sharedEmailId)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL_PERMISSION));
+
+        Permission accountPermission = sharedEmailPermission.getInviteePermissions().getOrDefault(account.getEmail(), Permission.VIEWER);
+
+        if (!(accountPermission.equals(Permission.OWNER) || accountPermission.equals(Permission.EDITOR))) {
+            throw new CustomErrorException(ErrorCode.FORBIDDEN_ACCESS_TO_SHARED_EMAIL);
+        }
+
+        Map<String, Permission> currentPermissions = sharedEmailPermission.getInviteePermissions();
+        for (Map.Entry<String, Permission> entry : updateInviteePermissionsDto.getInviteePermissions().entrySet()) {
+            String email = entry.getKey();
+            Permission newPermission = entry.getValue();
+
+            if (currentPermissions.containsKey(email)) {
+                currentPermissions.put(email, newPermission);
+            } else {
+                throw new CustomErrorException(ErrorCode.INVITEE_NOT_FOUND_ERROR);
+            }
+        }
+
+        sharedEmailPermission.setInviteePermissions(currentPermissions);
+        sharedEmailPermissionRepository.save(sharedEmailPermission);
+
+        UpdateInviteePermissionsDto updatedPermissionsDto = new UpdateInviteePermissionsDto();
+        updatedPermissionsDto.setInviteePermissions(currentPermissions);
+
+        return updatedPermissionsDto;
+    }
 }

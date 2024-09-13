@@ -60,4 +60,13 @@ public class SharedInboxController {
         GetSharedEmailResponseDto responseDto = sharedInboxService.getSharedEmail(uid, dataId);
         return ResponseEntity.ok(responseDto);
     }
+
+    @PostMapping("/public-share/{sharedEmailId}/update-permissions")
+    public ResponseEntity<UpdateInviteePermissionsDto> updateInviteePermissions(HttpServletRequest httpServletRequest,
+                                                                @PathVariable("sharedEmailId") UUID sharedEmailId,
+                                                                @RequestBody UpdateInviteePermissionsDto updateInviteePermissionsDto) {
+        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        UpdateInviteePermissionsDto responseDto = sharedInboxService.updateInviteePermissions(uid, sharedEmailId, updateInviteePermissionsDto);
+        return ResponseEntity.ok(responseDto);
+    }
 }
