@@ -17,10 +17,7 @@ import woozlabs.echo.domain.sharedEmail.repository.SharedInboxRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -38,6 +35,23 @@ public class SharedInboxService {
     public SharedEmailResponseDto createSharePost(String uid, CreateSharedRequestDto createSharedRequestDto) {
         Account account = accountRepository.findByUid(uid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+        Optional<SharedEmail> existingSharedEmail = sharedInboxRepository.findByDataId(createSharedRequestDto.getDataId());
+        if (existingSharedEmail.isPresent()) {
+            SharedEmail sharedEmail = existingSharedEmail.get();
+
+            return SharedEmailResponseDto.builder()
+                    .id(sharedEmail.getId())
+                    .access(sharedEmail.getAccess())
+                    .dataId(sharedEmail.getDataId())
+                    .sharedDataType(sharedEmail.getSharedDataType())
+                    .canEditorEditPermission(sharedEmail.isCanEditorEditPermission())
+                    .canViewerViewToolMenu(sharedEmail.isCanViewerViewToolMenu())
+                    .inviteePermissions(sharedEmail.getSharedEmailPermission().getInviteePermissions()) // 초대된 권한 포함
+                    .createdAt(sharedEmail.getCreatedAt())
+                    .updatedAt(sharedEmail.getUpdatedAt())
+                    .build();
+        }
 
         SharedEmail sharedEmail = SharedEmail.builder()
                 .access(createSharedRequestDto.getAccess())
