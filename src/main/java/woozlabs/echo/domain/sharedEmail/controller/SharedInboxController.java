@@ -20,37 +20,29 @@ public class SharedInboxController {
     private final SharedInboxService sharedInboxService;
 
     @PostMapping("/public-share/create")
-    public ResponseEntity<SharedEmail> createSharePost(HttpServletRequest httpServletRequest,
+    public ResponseEntity<SharedEmailResponseDto> createSharePost(HttpServletRequest httpServletRequest,
                                                        @RequestBody CreateSharedRequestDto createSharedRequestDto) {
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-        SharedEmail sharedEmail = sharedInboxService.createSharePost(uid, createSharedRequestDto);
-        return ResponseEntity.ok(sharedEmail);
+        SharedEmailResponseDto responseDto = sharedInboxService.createSharePost(uid, createSharedRequestDto);
+        return ResponseEntity.ok(responseDto);
     }
 
     @PostMapping("/public-share/{sharedEmailId}/invite")
-    public ResponseEntity<SharedEmail> inviteToSharedPost(HttpServletRequest httpServletRequest,
+    public ResponseEntity<SharedEmailResponseDto> inviteToSharedPost(HttpServletRequest httpServletRequest,
                                                        @PathVariable("sharedEmailId") UUID sharedEmailId,
                                                        @RequestBody SendSharedEmailInvitationDto sendSharedEmailInvitationDto) {
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-        SharedEmail sharedEmail = sharedInboxService.inviteToSharedPost(uid, sharedEmailId, sendSharedEmailInvitationDto);
+        SharedEmailResponseDto sharedEmail = sharedInboxService.inviteToSharedPost(uid, sharedEmailId, sendSharedEmailInvitationDto);
         return ResponseEntity.ok(sharedEmail);
     }
 
     @PatchMapping("/public-share/{sharedEmailId}/update")
-    public ResponseEntity<SharedEmail> updateSharedPost(HttpServletRequest httpServletRequest,
+    public ResponseEntity<SharedEmailResponseDto> updateSharedPost(HttpServletRequest httpServletRequest,
                                                         @PathVariable("sharedEmailId") UUID sharedEmailId,
                                                         @RequestBody UpdateSharedPostDto updateSharedPostDto) {
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-        SharedEmail updatedSharedEmail = sharedInboxService.updateSharedPost(uid, sharedEmailId, updateSharedPostDto);
+        SharedEmailResponseDto updatedSharedEmail = sharedInboxService.updateSharedPost(uid, sharedEmailId, updateSharedPostDto);
         return ResponseEntity.ok(updatedSharedEmail);
-    }
-
-    @PostMapping("/public-share")
-    public ResponseEntity<ThreadGetResponse> shareEmail(HttpServletRequest httpServletRequest,
-                                                        @RequestBody ShareEmailRequestDto shareEmailRequestDto) {
-        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-        sharedInboxService.publicShareEmail(uid, shareEmailRequestDto);
-        return ResponseEntity.status(201).build();
     }
 
     @GetMapping("/public-share/{dataId}")
