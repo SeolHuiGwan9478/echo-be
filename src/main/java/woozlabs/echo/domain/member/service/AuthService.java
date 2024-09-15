@@ -182,16 +182,24 @@ public class AuthService {
         Optional<String> cookieTokenOpt = AuthCookieUtils.getCookieValue(request);
 
         if (cookieTokenOpt.isPresent()) {
-            String uid = firebaseTokenVerifier.verifyTokenAndGetUid(cookieTokenOpt.get());
+            String tokenValue = cookieTokenOpt.get();
+            log.info("Token found in cookie: {}", tokenValue);
+
+            String uid = firebaseTokenVerifier.verifyTokenAndGetUid(tokenValue);
+            log.info("Token verified successfully, UID: {}", uid);
+
             Member cookieTokenMember = memberRepository.findByPrimaryUid(uid)
                     .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
 
             if (cookieTokenMember != null) {
+                log.info("Member found with UID: {}, adding new account.", uid);
                 addNewAccountToExistingMember(cookieTokenMember, userInfo, response);
             } else {
+                log.warn("Unexpected case: Member is null after lookup.");
                 createNewMemberWithAccount(userInfo, response);
             }
         } else {
+            log.info("No token found in cookie, creating new member with account.");
             createNewMemberWithAccount(userInfo, response);
         }
     }

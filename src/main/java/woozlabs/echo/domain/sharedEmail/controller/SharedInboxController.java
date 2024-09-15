@@ -61,4 +61,13 @@ public class SharedInboxController {
         UpdateInviteePermissionsDto responseDto = sharedInboxService.updateInviteePermissions(uid, sharedEmailId, updateInviteePermissionsDto);
         return ResponseEntity.ok(responseDto);
     }
+
+    @PostMapping("/public-share/{sharedEmailId}/exclude-permissions")
+    public ResponseEntity<SharedEmailResponseDto> excludeInvitees(HttpServletRequest httpServletRequest,
+                                                                  @PathVariable("sharedEmailId") UUID sharedEmailId,
+                                                                  @RequestBody ExcludeInviteesRequestDto excludeInviteesRequestDto) {
+        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        SharedEmailResponseDto responseDto = sharedInboxService.excludeInvitees(uid, sharedEmailId, excludeInviteesRequestDto);
+        return ResponseEntity.ok(responseDto);
+    }
 }
