@@ -19,7 +19,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "http://localhost:3000",
                         "http://localhost:5173",
                         "https://echo-email-app.firebaseapp.com",
-                        "https://echo-email-app.web.app"
+                        "https://echo-email-app.web.app",
+                        "https://echo-homepage.vercel.app"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD")
                 .allowedHeaders(
