@@ -18,8 +18,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static woozlabs.echo.global.constant.GlobalConstant.THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY;
-import static woozlabs.echo.global.constant.GlobalConstant.USER_ID;
+import static woozlabs.echo.global.constant.GlobalConstant.*;
 
 public class GlobalUtility {
     public static List<String> splitSenderData(String sender){
@@ -116,9 +115,10 @@ public class GlobalUtility {
     public static Boolean isInlineFile(MessagePart part) {
         List<MessagePartHeader> headers = part.getHeaders();
         for(MessagePartHeader header : headers){
-            if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_X_ATTACHMENT_ID_KEY)){
-                String xAttachmentId = header.getValue();
-                if(!xAttachmentId.startsWith("f")){
+            if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_CONTENT_ID_KEY)){
+                String contentId = header.getValue();
+                contentId = contentId.replace("<", "").replace(">", "");
+                if(!contentId.startsWith("f")){
                     return Boolean.TRUE;
                 }
                 else break;

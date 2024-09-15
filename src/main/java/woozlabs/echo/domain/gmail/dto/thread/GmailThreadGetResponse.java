@@ -18,6 +18,8 @@ public class GmailThreadGetResponse implements ResponseDto {
     private List<String> labelIds;
     private int attachmentSize;
     private List<GmailThreadListAttachments> attachments;
+    private int inlineImageSize;
+    private List<GmailThreadListInlineImages> inlineImages;
     private List<GmailThreadGetMessagesResponse> messages;
     private List<GmailThreadGetMessagesFrom> from;
     private List<GmailThreadGetMessagesCc> cc;
