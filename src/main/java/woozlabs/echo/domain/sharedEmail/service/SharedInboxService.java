@@ -272,4 +272,45 @@ public class SharedInboxService {
 
         return updatedPermissionsDto;
     }
+
+    @Transactional
+    public SharedEmailResponseDto excludeInvitees(String uid, UUID sharedEmailId, ExcludeInviteesRequestDto excludeInviteesRequestDto) {
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+        SharedEmailPermission sharedEmailPermission = sharedEmailPermissionRepository.findBySharedEmailId(sharedEmailId)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL_PERMISSION));
+
+        Permission accountPermission = sharedEmailPermission.getInviteePermissions().getOrDefault(account.getEmail(), Permission.VIEWER);
+
+        if (!(accountPermission.equals(Permission.OWNER) || accountPermission.equals(Permission.EDITOR))) {
+            throw new CustomErrorException(ErrorCode.FORBIDDEN_ACCESS_TO_SHARED_EMAIL);
+        }
+
+        Map<String, Permission> currentPermissions = sharedEmailPermission.getInviteePermissions();
+        List<String> inviteeEmails = excludeInviteesRequestDto.getInviteeEmails();
+
+        for (String invitee : inviteeEmails) {
+            if (currentPermissions.containsKey(invitee)) {
+                currentPermissions.remove(invitee);
+            } else {
+                throw new CustomErrorException(ErrorCode.INVITEE_NOT_FOUND_ERROR);
+            }
+        }
+
+        sharedEmailPermission.setInviteePermissions(currentPermissions);
+        sharedEmailPermissionRepository.save(sharedEmailPermission);
+
+        return SharedEmailResponseDto.builder()
+                .id(sharedEmailPermission.getSharedEmail().getId())
+                .access(sharedEmailPermission.getSharedEmail().getAccess())
+                .dataId(sharedEmailPermission.getSharedEmail().getDataId())
+                .sharedDataType(sharedEmailPermission.getSharedEmail().getSharedDataType())
+                .canEditorEditPermission(sharedEmailPermission.getSharedEmail().isCanEditorEditPermission())
+                .canViewerViewToolMenu(sharedEmailPermission.getSharedEmail().isCanViewerViewToolMenu())
+                .inviteePermissions(currentPermissions)
+                .createdAt(sharedEmailPermission.getSharedEmail().getCreatedAt())
+                .updatedAt(sharedEmailPermission.getSharedEmail().getUpdatedAt())
+                .build();
+    }
 }
