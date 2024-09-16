@@ -15,7 +15,7 @@ steps:
       - |
         gcloud secrets versions access latest --secret="application-prod" > application-prod.yml
 
-  # Pull the cached image if it exists
+  # Pull the image if it exists
   - name: 'gcr.io/cloud-builders/docker'
     entrypoint: 'bash'
     args: [
