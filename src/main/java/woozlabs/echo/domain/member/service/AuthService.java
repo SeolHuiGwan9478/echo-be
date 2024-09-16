@@ -2,7 +2,6 @@ package woozlabs.echo.domain.member.service;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseToken;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +26,8 @@ import woozlabs.echo.global.utils.GoogleOAuthUtils;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -85,6 +86,7 @@ public class AuthService {
         String accessToken = (String) userInfo.get("access_token");
         String refreshToken = (String) userInfo.get("refresh_token");
         String provider = GOOGLE_PROVIDER;
+        String uuid = UUID.randomUUID().toString();
 
         Account account = accountRepository.findByGoogleProviderId(providerId)
                 .map(existingMember -> {
@@ -100,7 +102,7 @@ public class AuthService {
                     return existingMember;
                 })
                 .orElse(Account.builder()
-                        .uid(providerId)
+                        .uid(uuid)
                         .googleProviderId(providerId)
                         .displayName(displayName)
                         .email(email)
@@ -210,9 +212,7 @@ public class AuthService {
         MemberAccount memberAccount = new MemberAccount(member, newAccount);
 
         member.addMemberAccount(memberAccount);
-
-        Map<String, Object> customClaims = Map.of("primaryMemberUid", member.getPrimaryUid());
-        setCustomUidClaims(newAccount.getUid(), customClaims);
+        member.setDeletedAt(null);
 
         memberRepository.save(member);
         accountRepository.save(newAccount);
@@ -221,6 +221,12 @@ public class AuthService {
         log.info("Added new account to existing Member. Account UID: {}", newAccount.getUid());
 
         constructAndRedirect(response, createCustomToken(newAccount.getUid()), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), true);
+
+        CompletableFuture.runAsync(() -> {
+            Map<String, Object> customClaims = Map.of("primaryMemberUid", member.getPrimaryUid());
+            setCustomUidClaims(newAccount.getUid(), customClaims);
+            log.info("Custom claims set for account UID: {}", newAccount.getUid());
+        });
     }
 
     @Transactional
@@ -234,16 +240,22 @@ public class AuthService {
         member.addMemberAccount(memberAccount);
         account.getMemberAccounts().add(memberAccount);
 
-        Map<String, Object> customClaims = Map.of("primaryMemberUid", member.getPrimaryUid());
-        setCustomUidClaims(account.getUid(), customClaims);
+        member.setDeletedAt(null);
+
+        String customToken = createCustomToken(account.getUid());
 
         memberRepository.save(member);
         accountRepository.save(account);
 
         log.info("Created new Member with a new account. Account UID: {}", account.getUid());
 
-        String customToken = createCustomToken(account.getUid());
         constructAndRedirect(response, customToken, (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), false);
+
+        CompletableFuture.runAsync(() -> {
+            Map<String, Object> customClaims = Map.of("primaryMemberUid", member.getPrimaryUid());
+            setCustomUidClaims(account.getUid(), customClaims);
+            log.info("Custom claims set for account UID: {}", account.getUid());
+        });
     }
 
     private void updateAccountInfo(Account account, Map<String, Object> userInfo) {
