@@ -113,7 +113,7 @@ public class SharedInboxService {
                             inviteShareEmailService.sendEmailViaSES(existingAccount.getEmail(), sendSharedEmailInvitationDto.getInvitationMemo(), sendSharedEmailInvitationDto);
                         },
                         () -> {
-                            newInviteePermissions.put(invitee, Permission.VIEWER);
+                            newInviteePermissions.put(invitee, sendSharedEmailInvitationDto.getPermission());
                             inviteShareEmailService.sendEmailViaSES(invitee, "This email grants access to this item without logging in. Only forward it to people you trust.\n" + sendSharedEmailInvitationDto.getInvitationMemo(), sendSharedEmailInvitationDto);
                         }
                 );
