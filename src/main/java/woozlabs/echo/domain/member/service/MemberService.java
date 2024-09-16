@@ -128,7 +128,11 @@ public class MemberService {
         Member member = memberRepository.findByPrimaryUid(primaryUid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
 
-        // firebase 탈퇴 로직은 제외
+        try {
+            FirebaseAuth.getInstance().deleteUser(member.getPrimaryUid());
+        } catch (FirebaseAuthException e) {
+            throw new CustomErrorException(ErrorCode.FIREBASE_ACCOUNT_DELETION_ERROR, e.getMessage());
+        }
 
         List<Account> accountsToDelete = new ArrayList<>();
 
