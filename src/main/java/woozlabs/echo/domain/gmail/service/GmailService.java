@@ -254,47 +254,6 @@ public class GmailService {
         return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
     }
 
-    public void getUserEmailMessageTest(String uid, String messageId) throws Exception {
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
-        Message message = gmailService.users().messages().get(USER_ID, messageId).setFormat("RAW").execute();
-        String raw = message.getRaw();
-        // Convert URL-safe Base64 to standard Base64
-        String standardBase64 = raw
-                .replace('-', '+')
-                .replace('_', '/');
-        // Add padding if necessary
-        int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
-        for (int i = 0; i < paddingCount; i++) {
-            standardBase64 += "=";
-        }
-        byte[] decodedBinaryContent = java.util.Base64.getDecoder().decode(standardBase64);
-        String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
-        MimeMessage mimeMessage = new MimeMessage(null, new ByteArrayInputStream(decodedContent.getBytes(StandardCharsets.UTF_8)));
-        StringBuilder htmlBuilder = new StringBuilder();
-        Multipart multipart = (Multipart) mimeMessage.getContent();
-        StringBuilder base64Images = new StringBuilder();
-        System.out.println(multipart);
-        for (int i = 0; i < multipart.getCount(); i++) {
-            BodyPart bodyPart = multipart.getBodyPart(i);
-
-            if (bodyPart.getContentType().startsWith("image/")) {
-                String contentId = bodyPart.getHeader("Content-ID")[0].replaceAll("<|>", "");
-                byte[] imageBytes = bodyPart.getInputStream().readAllBytes();
-                String base64Image = java.util.Base64.getEncoder().encodeToString(imageBytes);
-                String imageType = bodyPart.getContentType().split("/")[1];
-
-                // Create a data URL for the image
-                String dataUrl = "data:image/" + imageType + ";base64," + base64Image;
-
-                base64Images.append("cid:").append(contentId).append(" -> ").append(dataUrl).append("\n");
-            }
-        }
-        System.out.println(base64Images);
-    }
-
     public GmailMessageGetResponse getUserEmailMessageWithoutVerification(String uid, String messageId) throws Exception {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
