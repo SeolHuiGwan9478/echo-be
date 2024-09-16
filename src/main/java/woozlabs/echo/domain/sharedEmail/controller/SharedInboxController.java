@@ -5,8 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import woozlabs.echo.domain.sharedEmail.dto.*;
-import woozlabs.echo.domain.sharedEmail.dto.thread.ThreadGetResponse;
-import woozlabs.echo.domain.sharedEmail.entity.SharedEmail;
 import woozlabs.echo.domain.sharedEmail.service.SharedInboxService;
 import woozlabs.echo.global.constant.GlobalConstant;
 
@@ -45,11 +43,11 @@ public class SharedInboxController {
         return ResponseEntity.ok(updatedSharedEmail);
     }
 
-    @GetMapping("/public-share/{dataId}")
+    @GetMapping("/public-share/{sharedEmailId}")
     public ResponseEntity<GetSharedEmailResponseDto> getSharedEmail(HttpServletRequest httpServletRequest,
-                                                                    @PathVariable("dataId") String dataId) {
+                                                                    @PathVariable("sharedEmailId") UUID sharedEmailId) {
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-        GetSharedEmailResponseDto responseDto = sharedInboxService.getSharedEmail(uid, dataId);
+        GetSharedEmailResponseDto responseDto = sharedInboxService.getSharedEmail(uid, sharedEmailId);
         return ResponseEntity.ok(responseDto);
     }
 
