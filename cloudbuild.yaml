@@ -20,14 +20,14 @@ steps:
     entrypoint: 'bash'
     args: [
       '-c',
-      'docker pull us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:latest || exit 0'
+      'docker pull us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:latest || exit 0'
     ]
 
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
-      '-t', 'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
+      '-t', 'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:$COMMIT_SHA',
       '.'
     ]
 
@@ -35,22 +35,22 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'push',
-      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
+      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:$COMMIT_SHA'
     ]
 
   # Tag the latest image for cache purposes
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'tag',
-      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
-      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:latest'
+      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:$COMMIT_SHA',
+      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:latest'
     ]
 
   # Push the latest tagged image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'push',
-      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:latest'
+      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:latest'
     ]
 
   # Deploy container image to Cloud Run
@@ -61,7 +61,7 @@ steps:
       'echo-be',
       '--platform=managed',
       '--image',
-      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
+      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:$COMMIT_SHA',
       '--region',
       'us-central1',
       '--allow-unauthenticated',
@@ -69,8 +69,8 @@ steps:
     ]
 
 images:
-  - 'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
-  - 'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:latest'
+  - 'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
