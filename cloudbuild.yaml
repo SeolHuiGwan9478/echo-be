@@ -35,7 +35,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'push',
-      'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
+      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
     ]
 
   # Tag the latest image for cache purposes
