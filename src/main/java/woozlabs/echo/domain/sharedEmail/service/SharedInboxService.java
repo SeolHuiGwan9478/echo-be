@@ -113,7 +113,7 @@ public class SharedInboxService {
                             inviteShareEmailService.sendEmailViaSES(existingAccount.getEmail(), sendSharedEmailInvitationDto.getInvitationMemo(), sendSharedEmailInvitationDto);
                         },
                         () -> {
-                            newInviteePermissions.put(invitee, Permission.VIEWER);
+                            newInviteePermissions.put(invitee, sendSharedEmailInvitationDto.getPermission());
                             inviteShareEmailService.sendEmailViaSES(invitee, "This email grants access to this item without logging in. Only forward it to people you trust.\n" + sendSharedEmailInvitationDto.getInvitationMemo(), sendSharedEmailInvitationDto);
                         }
                 );
@@ -183,60 +183,94 @@ public class SharedInboxService {
                 .build();
     }
 
-    public GetSharedEmailResponseDto getSharedEmail(String uid, String dataId) {
+    public GetSharedEmailResponseDto getSharedEmail(String uid, UUID sharedEmailId) {
         log.info("Fetching shared email for UID: {}", uid);
 
-        SharedEmail sharedEmail = sharedInboxRepository.findByDataId(dataId)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL));
+        SharedEmailPermission sharedEmailPermission = sharedEmailPermissionRepository.findBySharedEmailId(sharedEmailId)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL_PERMISSION));
 
-        Permission permissionLevel;
+        Permission permissionLevel = Permission.VIEWER;
+        Account account = null;
 
         if (uid != null) {
-            Account account = accountRepository.findByUid(uid)
+            account = accountRepository.findByUid(uid)
                     .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
-            SharedEmailPermission sharedEmailPermission = sharedEmailPermissionRepository.findBySharedEmailId(sharedEmail.getId())
-                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL_PERMISSION));
-
-            if (!sharedEmailPermission.getInviteePermissions().containsKey(account.getEmail())) {
-                log.error("Forbidden access to shared email for account: {}", account.getEmail());
+            String userEmail = account.getEmail();
+            if (sharedEmailPermission.getInviteePermissions().containsKey(userEmail)) {
+                permissionLevel = sharedEmailPermission.getInviteePermissions().get(userEmail);
+            } else {
+                log.error("Forbidden access to shared email for account: {}", userEmail);
                 throw new CustomErrorException(ErrorCode.FORBIDDEN_ACCESS_TO_SHARED_EMAIL);
             }
-
-            permissionLevel = sharedEmailPermission.getInviteePermissions().getOrDefault(account.getEmail(), Permission.VIEWER);
         } else {
-            permissionLevel = Permission.VIEWER;
+            permissionLevel = Permission.PUBLIC_VIEWER;
         }
-
 
         GmailThreadGetResponse gmailThreadResponse;
         try {
-            gmailThreadResponse = gmailService.getUserEmailThread(sharedEmail.getOwner().getUid(), sharedEmail.getDataId());
+            gmailThreadResponse = gmailService.getUserEmailThread(sharedEmailPermission.getSharedEmail().getOwner().getUid(), sharedEmailPermission.getSharedEmail().getDataId());
         } catch (CustomErrorException e) {
             if (e.getErrorCode() == ErrorCode.NOT_FOUND_GMAIL_THREAD) {
-                sharedInboxRepository.delete(sharedEmail);
-                log.warn("Shared email deleted for dataId: {} due to missing Gmail thread", sharedEmail.getDataId());
+                sharedInboxRepository.delete(sharedEmailPermission.getSharedEmail());
+                log.warn("Shared email deleted for dataId: {} due to missing Gmail thread", sharedEmailPermission.getSharedEmail().getDataId());
                 throw new CustomErrorException(ErrorCode.THREAD_NOT_FOUND_AND_REMOVED, e.getMessage());
             }
             throw e;
         }
 
+        Map<String, Permission> inviteePermissions = new HashMap<>();
+        for (Map.Entry<String, Permission> entry : sharedEmailPermission.getInviteePermissions().entrySet()) {
+            String inviteeEmail = entry.getKey();
+            Permission originalPermission = entry.getValue();
+
+            if (accountRepository.findByEmail(inviteeEmail).isPresent()) {
+                inviteePermissions.put(inviteeEmail, originalPermission);
+            } else {
+                inviteePermissions.put(inviteeEmail, Permission.PUBLIC_VIEWER);
+            }
+        }
+
+        Map<String, Permission> filteredPermissions = new HashMap<>();
+        if (permissionLevel == Permission.OWNER || permissionLevel == Permission.EDITOR) {
+            filteredPermissions = inviteePermissions;
+        } else if (permissionLevel == Permission.VIEWER) {
+            for (Map.Entry<String, Permission> entry : inviteePermissions.entrySet()) {
+                String inviteeEmail = entry.getKey();
+                Permission originalPermission = entry.getValue();
+
+                if (inviteeEmail.equals(sharedEmailPermission.getSharedEmail().getOwner().getEmail()) || (account != null && inviteeEmail.equals(account.getEmail()))) {
+                    filteredPermissions.put(inviteeEmail, originalPermission);
+                }
+            }
+            filteredPermissions.put(sharedEmailPermission.getSharedEmail().getOwner().getEmail(), Permission.OWNER);
+            if (account != null) {
+                filteredPermissions.put(account.getEmail(), Permission.VIEWER);
+            }
+        } else if (permissionLevel == Permission.PUBLIC_VIEWER) {
+            for (Map.Entry<String, Permission> entry : inviteePermissions.entrySet()) {
+                String inviteeEmail = entry.getKey();
+                if (inviteeEmail.equals(sharedEmailPermission.getSharedEmail().getOwner().getEmail())) {
+                    filteredPermissions.put(inviteeEmail, entry.getValue());
+                }
+            }
+            filteredPermissions.put(sharedEmailPermission.getSharedEmail().getOwner().getEmail(), Permission.OWNER);
+        }
+
         GetSharedEmailResponseDto responseDto = GetSharedEmailResponseDto.builder()
                 .gmailThreadGetResponse(gmailThreadResponse)
+                .dataId(sharedEmailPermission.getSharedEmail().getDataId())
                 .permissionLevel(permissionLevel)
-                .canEdit(permissionLevel == Permission.EDITOR && sharedEmail.isCanEditorEditPermission())
-                .canViewToolMenu(permissionLevel == Permission.EDITOR || permissionLevel == Permission.OWNER && sharedEmail.isCanViewerViewToolMenu())
+                .canEdit(permissionLevel == Permission.EDITOR && sharedEmailPermission.getSharedEmail().isCanEditorEditPermission())
+                .canViewToolMenu(permissionLevel == Permission.EDITOR || (permissionLevel == Permission.OWNER && sharedEmailPermission.getSharedEmail().isCanViewerViewToolMenu()))
+                .sharedDataType(sharedEmailPermission.getSharedEmail().getSharedDataType())
                 .build();
 
-        if (permissionLevel == Permission.OWNER) {
-            Map<String, Permission> inviteePermissions = sharedEmailPermissionRepository.findBySharedEmailId(sharedEmail.getId())
-                    .map(SharedEmailPermission::getInviteePermissions)
-                    .orElse(new HashMap<>());
-            responseDto.setInviteePermissions(inviteePermissions);
-        }
+        responseDto.setInviteePermissions(filteredPermissions);
 
         return responseDto;
     }
+
 
     @Transactional
     public UpdateInviteePermissionsDto updateInviteePermissions(String uid, UUID sharedEmailId, UpdateInviteePermissionsDto updateInviteePermissionsDto) {
