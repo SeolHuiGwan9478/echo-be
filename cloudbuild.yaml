@@ -20,14 +20,14 @@ steps:
     entrypoint: 'bash'
     args: [
       '-c',
-      'docker pull asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:latest || exit 0'
+      'docker pull us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:latest || exit 0'
     ]
 
-  # Build the container image with caching
+  # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
-      '-t', 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
+      '-t', 'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
       '.'
     ]
 
@@ -42,15 +42,15 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'tag',
-      'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
-      'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:latest'
+      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
+      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:latest'
     ]
 
   # Push the latest tagged image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'push',
-      'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:latest'
+      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:latest'
     ]
 
   # Deploy container image to Cloud Run
@@ -61,16 +61,16 @@ steps:
       'echo-be',
       '--platform=managed',
       '--image',
-      'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
+      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA',
       '--region',
-      'asia-northeast3',
+      'us-central1',
       '--allow-unauthenticated',
       '--verbosity=debug'
     ]
 
 images:
-  - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
-  - 'asia-northeast3-docker.pkg.dev/echo-cloud-427211/cloud-run-source-deploy/echo-be/echo-be:latest'
+  - 'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-be/echo-be:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
