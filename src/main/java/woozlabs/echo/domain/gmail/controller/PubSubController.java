@@ -45,10 +45,13 @@ public class PubSubController {
     }
 
     @GetMapping("/api/v1/verification/{uuid}")
-    public ResponseEntity<?> getVerificationData(HttpServletRequest httpServletRequest, @PathVariable String uuid){
+    public ResponseEntity<?> getVerificationData(HttpServletRequest httpServletRequest, @PathVariable("uuid") String uuid){
         log.info("Request to get verification data");
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
         GetVerificationDataResponse response = pubSubService.getVerificationData(uid, uuid);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        String link = response.getLinks().split(",")[0];
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header("Location", link)
+                .build();
     }
 }
