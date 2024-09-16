@@ -58,7 +58,7 @@ steps:
     args: [
       'run',
       'deploy',
-      'echo-be',
+      'echo-dev',
       '--platform=managed',
       '--image',
       'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:$COMMIT_SHA',
