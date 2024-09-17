@@ -208,30 +208,38 @@ public class AuthService {
         }
     }
 
-    @Transactional
     public void addNewAccountToExistingMember(Member member, Map<String, Object> userInfo, HttpServletResponse response) throws FirebaseAuthException {
         Account newAccount = createOrUpdateAccount(userInfo, false);
-        MemberAccount memberAccount = new MemberAccount(member, newAccount);
 
-        member.addMemberAccount(memberAccount);
-        member.setDeletedAt(null);
+        boolean accountExists = member.getMemberAccounts().stream()
+                .anyMatch(ma -> ma.getAccount().equals(newAccount));
+
+        if (!accountExists) {
+            MemberAccount memberAccount = new MemberAccount(member, newAccount);
+            member.addMemberAccount(memberAccount);
+            member.setDeletedAt(null);
+
+            memberAccountRepository.save(memberAccount);
+            memberAccountRepository.flush();
+
+            log.info("Added new account to existing Member. Account UID: {}", newAccount.getUid());
+        } else {
+            log.info("Account already associated with this member. UID: {}", newAccount.getUid());
+        }
 
         memberRepository.save(member);
         accountRepository.save(newAccount);
-        memberAccountRepository.save(memberAccount);
-
-        log.info("Added new account to existing Member. Account UID: {}", newAccount.getUid());
+        memberRepository.flush();
+        accountRepository.flush();
 
         constructAndRedirect(response, createCustomToken(newAccount.getUid()), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), true);
 
-        CompletableFuture.runAsync(() -> {
-            List<String> accountUids = member.getMemberAccounts().stream()
-                    .map(ma -> ma.getAccount().getUid())
-                    .collect(Collectors.toList());
-            Map<String, Object> customClaims = Map.of("accounts", accountUids);
-            setCustomUidClaims(newAccount.getUid(), customClaims);
-            log.info("Custom claims set for account UID: {}", newAccount.getUid());
-        });
+        List<String> accountUids = member.getMemberAccounts().stream()
+                .map(ma -> ma.getAccount().getUid())
+                .collect(Collectors.toList());
+        Map<String, Object> customClaims = Map.of("accounts", accountUids);
+        setCustomUidClaims(member.getPrimaryUid(), customClaims);
+        log.info("Custom claims set for account UID: {}", newAccount.getUid());
     }
 
     @Transactional
@@ -261,7 +269,7 @@ public class AuthService {
                     .map(ma -> ma.getAccount().getUid())
                     .collect(Collectors.toList());
             Map<String, Object> customClaims = Map.of("accounts", accountUids);
-            setCustomUidClaims(account.getUid(), customClaims);
+            setCustomUidClaims(member.getPrimaryUid(), customClaims);
             log.info("Custom claims set for account UID: {}", account.getUid());
         });
     }
