@@ -24,10 +24,12 @@ import woozlabs.echo.global.utils.FirebaseTokenVerifier;
 import woozlabs.echo.global.utils.GoogleOAuthUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -223,7 +225,10 @@ public class AuthService {
         constructAndRedirect(response, createCustomToken(newAccount.getUid()), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), true);
 
         CompletableFuture.runAsync(() -> {
-            Map<String, Object> customClaims = Map.of("accounts", newAccount.getUid());
+            List<String> accountUids = member.getMemberAccounts().stream()
+                    .map(ma -> ma.getAccount().getUid())
+                    .collect(Collectors.toList());
+            Map<String, Object> customClaims = Map.of("accounts", accountUids);
             setCustomUidClaims(newAccount.getUid(), customClaims);
             log.info("Custom claims set for account UID: {}", newAccount.getUid());
         });
@@ -252,7 +257,10 @@ public class AuthService {
         constructAndRedirect(response, customToken, (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), false);
 
         CompletableFuture.runAsync(() -> {
-            Map<String, Object> customClaims = Map.of("accounts", account.getUid());
+            List<String> accountUids = member.getMemberAccounts().stream()
+                    .map(ma -> ma.getAccount().getUid())
+                    .collect(Collectors.toList());
+            Map<String, Object> customClaims = Map.of("accounts", accountUids);
             setCustomUidClaims(account.getUid(), customClaims);
             log.info("Custom claims set for account UID: {}", account.getUid());
         });
