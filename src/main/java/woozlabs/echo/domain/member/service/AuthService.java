@@ -223,7 +223,7 @@ public class AuthService {
         constructAndRedirect(response, createCustomToken(newAccount.getUid()), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), true);
 
         CompletableFuture.runAsync(() -> {
-            Map<String, Object> customClaims = Map.of("primaryMemberUid", member.getPrimaryUid());
+            Map<String, Object> customClaims = Map.of("accounts", newAccount.getUid());
             setCustomUidClaims(newAccount.getUid(), customClaims);
             log.info("Custom claims set for account UID: {}", newAccount.getUid());
         });
@@ -252,7 +252,7 @@ public class AuthService {
         constructAndRedirect(response, customToken, (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), false);
 
         CompletableFuture.runAsync(() -> {
-            Map<String, Object> customClaims = Map.of("primaryMemberUid", member.getPrimaryUid());
+            Map<String, Object> customClaims = Map.of("accounts", account.getUid());
             setCustomUidClaims(account.getUid(), customClaims);
             log.info("Custom claims set for account UID: {}", account.getUid());
         });
