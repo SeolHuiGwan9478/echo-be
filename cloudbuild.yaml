@@ -15,14 +15,6 @@ steps:
       - |
         gcloud secrets versions access latest --secret="application-prod" > application-prod.yml
 
-  # Pull the image if it exists
-  - name: 'gcr.io/cloud-builders/docker'
-    entrypoint: 'bash'
-    args: [
-      '-c',
-      'docker pull us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:latest || exit 0'
-    ]
-
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
     args: [
@@ -36,14 +28,6 @@ steps:
     args: [
       'push',
       'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:$COMMIT_SHA'
-    ]
-
-  # Tag the latest image for cache purposes
-  - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'tag',
-      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:$COMMIT_SHA',
-      'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:latest'
     ]
 
   # Push the latest tagged image to Container Registry
@@ -70,7 +54,6 @@ steps:
 
 images:
   - 'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:$COMMIT_SHA'
-  - 'us-central1-docker.pkg.dev/echo-dev-435808/cloud-run-source-deploy/echo-dev/echo-dev:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
