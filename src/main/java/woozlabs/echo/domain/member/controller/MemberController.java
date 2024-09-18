@@ -37,4 +37,10 @@ public class MemberController {
         memberService.hardDeleteMember(uid);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/account-info/{uid}")
+    public ResponseEntity<?> getAccountInfo(@PathVariable("uid") String uid) {
+        Object response = memberService.getAccountInfo(uid);
+        return ResponseEntity.ok(response);
+    }
 }

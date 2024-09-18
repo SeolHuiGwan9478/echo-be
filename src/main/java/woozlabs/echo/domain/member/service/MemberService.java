@@ -7,10 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import woozlabs.echo.domain.member.dto.AppearanceDto;
-import woozlabs.echo.domain.member.dto.NotificationDto;
-import woozlabs.echo.domain.member.dto.PreferenceDto;
-import woozlabs.echo.domain.member.dto.UpdatePreferenceRequestDto;
+import woozlabs.echo.domain.member.dto.*;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.entity.MemberAccount;
@@ -23,6 +20,8 @@ import woozlabs.echo.global.exception.ErrorCode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -154,5 +153,97 @@ public class MemberService {
         accountRepository.deleteAll(accountsToDelete);
 
         log.info("Successfully deleted member with UID: {}", primaryUid);
+    }
+
+    public Object getAccountInfo(String uid) {
+        Account currentAccount = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+        List<MemberAccount> memberAccounts = memberAccountRepository.findByAccount(currentAccount);
+        if (memberAccounts.isEmpty()) {
+            throw new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT);
+        }
+
+        Set<Member> members = memberAccounts.stream()
+                .map(MemberAccount::getMember)
+                .collect(Collectors.toSet());
+
+        Member firstMember = members.iterator().next(); // 첫 번째 멤버를 기준으로 확인, Primary는 한 번만 가능하기 떄문
+        boolean isPrimaryAccount = firstMember.getPrimaryUid().equals(uid);
+
+        if (isPrimaryAccount) {
+            List<Account> accounts = memberAccountRepository.findAllAccountsByMember(firstMember);
+
+            GetPrimaryAccountResponseDto.MemberDto memberDto = GetPrimaryAccountResponseDto.MemberDto.builder()
+                    .id(firstMember.getId())
+                    .displayName(firstMember.getDisplayName())
+                    .memberName(firstMember.getMemberName())
+                    .profileImageUrl(firstMember.getProfileImageUrl())
+                    .build();
+
+            GetPrimaryAccountResponseDto.AccountDto primaryAccountDto = GetPrimaryAccountResponseDto.AccountDto.builder()
+                    .id(currentAccount.getId())
+                    .uid(currentAccount.getUid())
+                    .email(currentAccount.getEmail())
+                    .displayName(currentAccount.getDisplayName())
+                    .profileImageUrl(currentAccount.getProfileImageUrl())
+                    .provider(currentAccount.getProvider())
+                    .providerId(currentAccount.getProviderId())
+                    .build();
+
+            List<GetPrimaryAccountResponseDto.AccountDto> accountDtos = accounts.stream()
+                    .map(account -> GetPrimaryAccountResponseDto.AccountDto.builder()
+                            .id(account.getId())
+                            .uid(account.getUid())
+                            .email(account.getEmail())
+                            .displayName(account.getDisplayName())
+                            .profileImageUrl(account.getProfileImageUrl())
+                            .provider(account.getProvider())
+                            .providerId(account.getProviderId())
+                            .build())
+                    .collect(Collectors.toList());
+
+            return GetPrimaryAccountResponseDto.builder()
+                    .member(memberDto)
+                    .primaryAccount(primaryAccountDto)
+                    .accounts(accountDtos)
+                    .build();
+        } else {
+            List<PrimaryAccountDto> primaryAccounts = members.stream()
+                    .map(member -> {
+                        Account memberPrimaryAccount = accountRepository.findByUid(member.getPrimaryUid())
+                                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+                        return PrimaryAccountDto.builder()
+                                .member(PrimaryAccountDto.MemberDto.builder()
+                                        .id(member.getId())
+                                        .displayName(member.getDisplayName())
+                                        .memberName(member.getMemberName())
+                                        .profileImageUrl(member.getProfileImageUrl())
+                                        .build())
+                                .account(PrimaryAccountDto.AccountDto.builder()
+                                        .id(memberPrimaryAccount.getUid())
+                                        .email(memberPrimaryAccount.getEmail())
+                                        .providerName(memberPrimaryAccount.getProvider())
+                                        .profileImageUrl(memberPrimaryAccount.getProfileImageUrl())
+                                        .build())
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+
+            GetAccountResponseDto.AccountDto currentAccountDto = GetAccountResponseDto.AccountDto.builder()
+                    .id(currentAccount.getId())
+                    .uid(currentAccount.getUid())
+                    .email(currentAccount.getEmail())
+                    .displayName(currentAccount.getDisplayName())
+                    .profileImageUrl(currentAccount.getProfileImageUrl())
+                    .provider(currentAccount.getProvider())
+                    .providerId(currentAccount.getProviderId())
+                    .build();
+
+            return GetAccountResponseDto.builder()
+                    .account(currentAccountDto)
+                    .primaryAccounts(primaryAccounts)
+                    .build();
+        }
     }
 }
