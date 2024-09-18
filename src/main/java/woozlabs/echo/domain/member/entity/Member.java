@@ -24,8 +24,10 @@ public class Member extends BaseEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String displayName;
+    private String memberName;
+    private String profileImageUrl;
     private String primaryUid;
-
     private String language = "en";
 
     @Enumerated(EnumType.STRING)

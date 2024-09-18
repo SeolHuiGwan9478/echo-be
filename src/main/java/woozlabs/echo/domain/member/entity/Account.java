@@ -26,17 +26,13 @@ public class Account extends BaseEntity {
 
     private String uid;
     private String provider;
-    private String googleProviderId;
+    private String providerId;
     private String displayName;
     private String email;
     private String profileImageUrl;
     private String accessToken;
     private String refreshToken;
     private LocalDateTime accessTokenFetchedAt;
-    private boolean isPrimary;
-
-    @Enumerated(EnumType.STRING)
-    private Role role;
 
     @Builder.Default
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
