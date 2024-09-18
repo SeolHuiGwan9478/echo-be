@@ -92,7 +92,7 @@ public class AuthService {
         String provider = GOOGLE_PROVIDER;
         String uuid = UUID.randomUUID().toString();
 
-        Account account = accountRepository.findByGoogleProviderId(providerId)
+        Account account = accountRepository.findByProviderId(providerId)
                 .map(existingMember -> {
                     existingMember.setDisplayName(displayName);
                     existingMember.setEmail(email);
@@ -151,7 +151,7 @@ public class AuthService {
         Map<String, Object> userInfo = getGoogleUserInfoAndTokens(code);
         String providerId = (String) userInfo.get("id");
 
-        Optional<Account> existingAccountOpt = accountRepository.findByGoogleProviderId(providerId);
+        Optional<Account> existingAccountOpt = accountRepository.findByProviderId(providerId);
 
         if (existingAccountOpt.isPresent()) {
             Account existingAccount = existingAccountOpt.get();
