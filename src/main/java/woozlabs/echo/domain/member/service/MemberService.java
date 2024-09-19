@@ -18,9 +18,7 @@ import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -112,14 +110,21 @@ public class MemberService {
         List<Member> expiredMember = memberRepository.findAllByDeletedAtBefore(thirtyDaysAgo);
 
         for (Member member : expiredMember) {
-            try {
-                FirebaseAuth.getInstance().deleteUser(member.getPrimaryUid());
-            } catch (FirebaseAuthException e) {
-                throw new CustomErrorException(ErrorCode.FIREBASE_ACCOUNT_DELETION_ERROR, e.getMessage());
+            List<Account> accountsToDelete = memberAccountRepository.findAllAccountsByMember(member);
+            for (Account account : accountsToDelete) {
+                List<MemberAccount> otherMemberAccounts = memberAccountRepository.findByAccount(account);
+                if (otherMemberAccounts.size() == 1) { // 이 계정이 다른 멤버와 연결되지 않은 경우에만 삭제
+                    accountRepository.delete(account);
+                }
+                try {
+                    FirebaseAuth.getInstance().deleteUser(account.getUid());
+                } catch (FirebaseAuthException e) {
+                    throw new CustomErrorException(ErrorCode.FIREBASE_ACCOUNT_DELETION_ERROR, e.getMessage());
+                }
             }
-        }
 
-        memberRepository.deleteAll(expiredMember);
+            memberRepository.delete(member);
+        }
     }
 
     @Transactional
@@ -164,12 +169,13 @@ public class MemberService {
             throw new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT);
         }
 
-        Set<Member> members = memberAccounts.stream()
+        Optional<Member> primaryMember = memberAccounts.stream()
                 .map(MemberAccount::getMember)
-                .collect(Collectors.toSet());
+                .filter(member -> member.getPrimaryUid().equals(uid))
+                .findFirst();
 
-        Member firstMember = members.iterator().next(); // 첫 번째 멤버를 기준으로 확인, Primary는 한 번만 가능하기 떄문
-        boolean isPrimaryAccount = firstMember.getPrimaryUid().equals(uid);
+        boolean isPrimaryAccount = primaryMember.isPresent();
+        Member firstMember = isPrimaryAccount ? primaryMember.get() : memberAccounts.get(0).getMember();
 
         if (isPrimaryAccount) {
             List<Account> accounts = memberAccountRepository.findAllAccountsByMember(firstMember);
@@ -181,16 +187,6 @@ public class MemberService {
                     .profileImageUrl(firstMember.getProfileImageUrl())
                     .build();
 
-            GetPrimaryAccountResponseDto.AccountDto primaryAccountDto = GetPrimaryAccountResponseDto.AccountDto.builder()
-                    .id(currentAccount.getId())
-                    .uid(currentAccount.getUid())
-                    .email(currentAccount.getEmail())
-                    .displayName(currentAccount.getDisplayName())
-                    .profileImageUrl(currentAccount.getProfileImageUrl())
-                    .provider(currentAccount.getProvider())
-                    .providerId(currentAccount.getProviderId())
-                    .build();
-
             List<GetPrimaryAccountResponseDto.AccountDto> accountDtos = accounts.stream()
                     .map(account -> GetPrimaryAccountResponseDto.AccountDto.builder()
                             .id(account.getId())
@@ -199,37 +195,29 @@ public class MemberService {
                             .displayName(account.getDisplayName())
                             .profileImageUrl(account.getProfileImageUrl())
                             .provider(account.getProvider())
-                            .providerId(account.getProviderId())
+                            .build())
+                    .collect(Collectors.toList());
+
+            List<GetPrimaryAccountResponseDto.RelatedAccountDto> relatedAccountDtos = accounts.stream()
+                    .map(account -> GetPrimaryAccountResponseDto.RelatedAccountDto.builder()
+                            .member(memberDto)
+                            .account(GetPrimaryAccountResponseDto.AccountDto.builder()
+                                    .id(account.getId())
+                                    .uid(account.getUid())
+                                    .email(account.getEmail())
+                                    .displayName(account.getDisplayName())
+                                    .profileImageUrl(account.getProfileImageUrl())
+                                    .provider(account.getProvider())
+                                    .build())
                             .build())
                     .collect(Collectors.toList());
 
             return GetPrimaryAccountResponseDto.builder()
                     .member(memberDto)
-                    .primaryAccount(primaryAccountDto)
                     .accounts(accountDtos)
+                    .relatedAccounts(relatedAccountDtos)
                     .build();
         } else {
-            List<PrimaryAccountDto> primaryAccounts = members.stream()
-                    .map(member -> {
-                        Account memberPrimaryAccount = accountRepository.findByUid(member.getPrimaryUid())
-                                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-                        return PrimaryAccountDto.builder()
-                                .member(PrimaryAccountDto.MemberDto.builder()
-                                        .id(member.getId())
-                                        .displayName(member.getDisplayName())
-                                        .memberName(member.getMemberName())
-                                        .profileImageUrl(member.getProfileImageUrl())
-                                        .build())
-                                .account(PrimaryAccountDto.AccountDto.builder()
-                                        .id(memberPrimaryAccount.getUid())
-                                        .email(memberPrimaryAccount.getEmail())
-                                        .providerName(memberPrimaryAccount.getProvider())
-                                        .profileImageUrl(memberPrimaryAccount.getProfileImageUrl())
-                                        .build())
-                                .build();
-                    })
-                    .collect(Collectors.toList());
-
             GetAccountResponseDto.AccountDto currentAccountDto = GetAccountResponseDto.AccountDto.builder()
                     .id(currentAccount.getId())
                     .uid(currentAccount.getUid())
@@ -237,12 +225,36 @@ public class MemberService {
                     .displayName(currentAccount.getDisplayName())
                     .profileImageUrl(currentAccount.getProfileImageUrl())
                     .provider(currentAccount.getProvider())
-                    .providerId(currentAccount.getProviderId())
                     .build();
 
+            List<GetAccountResponseDto.RelatedAccountDto> relatedAccountDtos = memberAccounts.stream()
+                    .map(MemberAccount::getMember)
+                    .map(member -> {
+                        Account primaryAccount = accountRepository.findByUid(member.getPrimaryUid())
+                                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+                        return GetAccountResponseDto.RelatedAccountDto.builder()
+                                .member(GetAccountResponseDto.MemberDto.builder()
+                                        .id(member.getId())
+                                        .displayName(member.getDisplayName())
+                                        .memberName(member.getMemberName())
+                                        .profileImageUrl(member.getProfileImageUrl())
+                                        .build())
+                                .account(GetAccountResponseDto.AccountDto.builder()
+                                        .id(primaryAccount.getId())
+                                        .uid(primaryAccount.getUid())
+                                        .email(primaryAccount.getEmail())
+                                        .displayName(primaryAccount.getDisplayName())
+                                        .profileImageUrl(primaryAccount.getProfileImageUrl())
+                                        .provider(primaryAccount.getProvider())
+                                        .build())
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+
             return GetAccountResponseDto.builder()
-                    .account(currentAccountDto)
-                    .primaryAccounts(primaryAccounts)
+                    .accounts(Collections.singletonList(currentAccountDto))
+                    .relatedAccounts(relatedAccountDtos)
                     .build();
         }
     }
