@@ -1,6 +1,5 @@
 package woozlabs.echo.domain.gmail.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,8 +14,6 @@ import woozlabs.echo.domain.gmail.dto.pubsub.PubSubMessage;
 import woozlabs.echo.domain.gmail.service.PubSubService;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.dto.ResponseDto;
-import woozlabs.echo.global.exception.CustomErrorException;
-import woozlabs.echo.global.exception.ErrorCode;
 
 @Slf4j
 @RestController
