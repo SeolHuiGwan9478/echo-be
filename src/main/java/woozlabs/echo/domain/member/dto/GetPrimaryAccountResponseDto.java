@@ -13,7 +13,7 @@ public class GetPrimaryAccountResponseDto {
 
     private MemberDto member;
     private List<AccountDto> accounts;
-    private AccountDto primaryAccount;
+    private List<RelatedAccountDto> relatedAccounts;
 
     @Getter
     @Builder
@@ -37,6 +37,14 @@ public class GetPrimaryAccountResponseDto {
         private String displayName;
         private String profileImageUrl;
         private String provider;
-        private String providerId;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RelatedAccountDto {
+        private MemberDto member;
+        private AccountDto account;
     }
 }

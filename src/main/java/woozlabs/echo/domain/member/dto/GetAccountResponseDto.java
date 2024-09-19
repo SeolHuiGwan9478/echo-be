@@ -11,8 +11,8 @@ import java.util.List;
 @AllArgsConstructor
 public class GetAccountResponseDto {
 
-    private AccountDto account;
-    private List<PrimaryAccountDto> primaryAccounts;
+    private List<AccountDto> accounts;
+    private List<RelatedAccountDto> relatedAccounts;
 
     @Getter
     @Builder
@@ -25,6 +25,25 @@ public class GetAccountResponseDto {
         private String displayName;
         private String profileImageUrl;
         private String provider;
-        private String providerId;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RelatedAccountDto {
+        private MemberDto member;
+        private AccountDto account;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MemberDto {
+        private Long id;
+        private String displayName;
+        private String memberName;
+        private String profileImageUrl;
     }
 }
