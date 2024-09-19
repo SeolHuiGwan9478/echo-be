@@ -196,22 +196,6 @@ public class GmailController {
         }
     }
 
-    @GetMapping("/api/v1/gmail/drafts")
-    public ResponseEntity<ResponseDto> getDrafts(HttpServletRequest httpServletRequest,
-                                                 @RequestParam(value = "pageToken", required = false) String pageToken,
-                                                 @RequestParam(value = "q", required = false) String q){
-        log.info("Request to get drafts");
-        try{
-            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-            GmailDraftListResponse response = gmailService.getUserEmailDrafts(uid, pageToken, q);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }catch (IOException e){
-            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
-        }catch (Exception e){
-            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
-        }
-    }
-
     @GetMapping("/api/v1/gmail/drafts/{id}")
     public ResponseEntity<ResponseDto> getDraft(HttpServletRequest httpServletRequest, @PathVariable("id") String id){
         log.info("Request to get draft");
@@ -228,10 +212,10 @@ public class GmailController {
 
     @PostMapping("/api/v1/gmail/drafts/create")
     public ResponseEntity<ResponseDto> createDraft(HttpServletRequest httpServletRequest,
-                                                   @RequestPart("toEmailAddress") String toEmailAddress,
-                                                   @RequestPart("subject") String subject,
-                                                   @RequestPart("bodyText") String bodyText,
-                                                   @RequestPart(value = "files", required = false) List<MultipartFile> files){
+                                                   @RequestParam("toEmailAddress") String toEmailAddress,
+                                                   @RequestParam("subject") String subject,
+                                                   @RequestParam("bodyText") String bodyText,
+                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files){
         log.info("Request to create draft");
         try{
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
@@ -252,10 +236,10 @@ public class GmailController {
     @PutMapping("/api/v1/gmail/drafts/{id}/modify")
     public ResponseEntity<ResponseDto> modifyDraft(HttpServletRequest httpServletRequest,
                                                    @PathVariable("id") String id,
-                                                   @RequestPart("toEmailAddress") String toEmailAddress,
-                                                   @RequestPart("subject") String subject,
-                                                   @RequestPart("bodyText") String bodyText,
-                                                   @RequestPart(value = "files", required = false) List<MultipartFile> files){
+                                                   @RequestParam("toEmailAddress") String toEmailAddress,
+                                                   @RequestParam("subject") String subject,
+                                                   @RequestParam("bodyText") String bodyText,
+                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files){
         log.info("Request to modify draft");
         try{
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
@@ -275,10 +259,10 @@ public class GmailController {
 
     @PostMapping(value = "/api/v1/gmail/drafts/send", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseDto> sendDraft(HttpServletRequest httpServletRequest,
-                                                   @RequestPart("toEmailAddress") String toEmailAddress,
-                                                   @RequestPart("subject") String subject,
-                                                   @RequestPart("bodyText") String bodyText,
-                                                   @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+                                                   @RequestParam("toEmailAddress") String toEmailAddress,
+                                                   @RequestParam("subject") String subject,
+                                                   @RequestParam("bodyText") String bodyText,
+                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files) {
         log.info("Request to send draft");
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);

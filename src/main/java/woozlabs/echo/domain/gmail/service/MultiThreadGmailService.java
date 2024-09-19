@@ -4,11 +4,8 @@ import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.*;
 import com.google.api.services.gmail.model.Thread;
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListAttachments;
-import woozlabs.echo.domain.gmail.dto.draft.GmailDraftListDrafts;
-import woozlabs.echo.domain.gmail.dto.message.GmailMessageInlineFileData;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesBcc;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesCc;
 import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesFrom;
@@ -16,17 +13,14 @@ import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.exception.GmailException;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
-import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.utils.GlobalUtility;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
-import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
 @Service
 @RequiredArgsConstructor
@@ -102,51 +96,6 @@ public class MultiThreadGmailService {
                 gmailThreadListThreads.addLabel(VERIFICATION_EMAIL_LABEL);
                 break;
             }
-        }
-    }
-
-    @Async
-    public CompletableFuture<GmailDraftListDrafts> asyncRequestGmailDraftGetForList(Draft draft, Gmail gmailService){
-        try {
-            String id = draft.getId();
-            GmailDraftListDrafts gmailDraftListDrafts= new GmailDraftListDrafts();
-            Draft detailedDraft = gmailService.users().drafts().get(USER_ID, id)
-                    .setFormat(DRAFTS_GET_FULL_FORMAT)
-                    .execute();
-            Message message = detailedDraft.getMessage();;
-
-            List<String> names = new ArrayList<>();
-            List<String> emails = new ArrayList<>();
-            List<GmailDraftListAttachments> attachments = new ArrayList<>();
-            MessagePart payload = message.getPayload();
-            List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
-            getDraftsAttachments(payload, attachments);
-
-            headers.forEach((header) -> {
-                String headerName = header.getName().toUpperCase();
-                // first message -> extraction subject
-                if (headerName.equals(DRAFT_PAYLOAD_HEADER_SUBJECT_KEY)){
-                    gmailDraftListDrafts.setSubject(header.getValue());
-                }
-                // all messages -> extraction emails & names
-                else if(headerName.equals(DRAFT_PAYLOAD_HEADER_FROM_KEY)){
-                    String sender = header.getValue();
-                    List<String> splitSender = splitSenderData(sender);
-                    if(!names.contains(splitSender.get(0))){
-                        names.add(splitSender.get(0));
-                        emails.add(splitSender.get(1));
-                    }
-                }
-            });
-
-            gmailDraftListDrafts.setId(id);
-            gmailDraftListDrafts.setFromEmail(emails);
-            gmailDraftListDrafts.setFromName(names);
-            gmailDraftListDrafts.setAttachments(attachments);
-            gmailDraftListDrafts.setAttachmentSize(attachments.size());
-            return CompletableFuture.completedFuture(gmailDraftListDrafts);
-        } catch (IOException e) {
-            throw new GmailException(e.getMessage());
         }
     }
 

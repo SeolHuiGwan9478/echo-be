@@ -132,22 +132,6 @@ public class GmailService {
         }
     }
 
-    public GmailDraftListResponse getUserEmailDrafts(String uid, String pageToken, String q) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE)
-        );
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
-        ListDraftsResponse response = getListDraftsResponse(gmailService, pageToken, q);
-        List<Draft> drafts = response.getDrafts();
-        drafts = isEmptyResult(drafts);
-        List<GmailDraftListDrafts> detailedDrafts = getDetailedDrafts(drafts, gmailService);
-        return GmailDraftListResponse.builder()
-                .drafts(detailedDrafts)
-                .nextPageToken(response.getNextPageToken())
-                .build();
-    }
-
     public GmailThreadGetResponse getUserEmailThread(String uid, String id){
         try {
             Account account = accountRepository.findByUid(uid).orElseThrow(
@@ -558,27 +542,6 @@ public class GmailService {
         }catch (Exception e){
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }
-    }
-
-    private List<GmailDraftListDrafts> getDetailedDrafts(List<Draft> drafts, Gmail gmailService) {
-        List<CompletableFuture<Optional<GmailDraftListDrafts>>> futures = drafts.stream()
-                .map((draft) -> multiThreadGmailService.asyncRequestGmailDraftGetForList(draft, gmailService)
-                        .thenApply(Optional::of)
-                        .exceptionally(error -> {
-                            log.error(error.getMessage());
-                            return Optional.empty();
-                        })
-                ).toList();
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        return futures.stream().map((future) -> {
-            try{
-                Optional<GmailDraftListDrafts> result = future.get();
-                if(result.isEmpty())throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
-                return result.get();
-            }catch (InterruptedException | CancellationException | ExecutionException e){
-                throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
-            }
-        }).collect(Collectors.toList());
     }
 
     private List<GmailThreadSearchListThreads> getSimpleThreads(List<Thread> threads){
