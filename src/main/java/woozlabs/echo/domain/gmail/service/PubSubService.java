@@ -7,8 +7,7 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.gmail.Gmail;
-import com.google.api.services.gmail.model.History;
-import com.google.api.services.gmail.model.ListHistoryResponse;
+import com.google.api.services.gmail.model.*;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -23,6 +22,7 @@ import woozlabs.echo.domain.gmail.entity.PubSubHistory;
 import woozlabs.echo.domain.gmail.entity.VerificationEmail;
 import woozlabs.echo.domain.gmail.repository.PubSubHistoryRepository;
 import woozlabs.echo.domain.gmail.repository.VerificationEmailRepository;
+import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.domain.gmail.validator.PubSubValidator;
 import woozlabs.echo.domain.gmail.entity.FcmToken;
 import woozlabs.echo.domain.member.entity.Account;
@@ -64,6 +64,7 @@ public class PubSubService {
     private final VerificationEmailRepository verificationEmailRepository;
     private final PubSubValidator pubSubValidator;
     private final GmailService gmailServiceImpl;
+    private final GmailUtility gmailUtility;
 
     @Transactional
     public void handleFirebaseCloudMessage(PubSubMessage pubsubMessage) throws Exception {
@@ -207,7 +208,7 @@ public class PubSubService {
         return new HttpCredentialsAdapter(googleCredentials);
     }
 
-    private void createMessageData(MessageInHistoryData historyData, Map<String, String> data, GmailMessageGetResponse gmailMessage, Account owner) {
+    private void createMessageData(MessageInHistoryData historyData, Map<String, String> data, GmailMessageGetResponse gmailMessage, Account owner) throws IOException {
         String FCM_MSG_ID_KEY = "id";
         String FCM_MSG_THREAD_ID_KEY = "threadId";
         String FCM_MSG_TYPE_KEY = "type";
@@ -224,6 +225,10 @@ public class PubSubService {
         if(historyType.equals(HistoryType.MESSAGE_ADDED)){
             // set verification data
             Boolean isVerification = gmailMessage.getVerification().getVerification();
+            // apply verification label
+            if(isVerification.equals(Boolean.TRUE)){
+                getOrCreateLabel(owner.getAccessToken(), gmailMessage);
+            }
             data.put(FCM_MSG_VERIFICATION_KEY, isVerification.toString());
             if(isVerification.equals(true)){ // save verification email
                 VerificationEmail verificationEmail = VerificationEmail.builder()
@@ -246,6 +251,7 @@ public class PubSubService {
         // set schedule data
     }
 
+    @Transactional
     public GetVerificationDataResponse getVerificationData(String uid, String uuid){
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
@@ -253,10 +259,36 @@ public class PubSubService {
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_VERIFICATION_EMAIL_DATA)
         );
         if(verificationEmail.getLinks().isEmpty()) throw new CustomErrorException(ErrorCode.IS_NOT_VERIFICATION_LINK);
+        // destroy verification email
+        verificationEmailRepository.delete(verificationEmail);
         return GetVerificationDataResponse.builder()
                 .uuid(verificationEmail.getUuid())
                 .links(verificationEmail.getLinks())
                 .shortenedLink(verificationEmail.getShortenedLink())
                 .build();
+    }
+
+    private void getOrCreateLabel(String accessToken, GmailMessageGetResponse gmailMessageGetResponse) throws IOException {
+        // find echo verification label
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
+        ListLabelsResponse listLabelsResponse = gmailService.users().labels().list(USER_ID).execute();
+        for(Label label : listLabelsResponse.getLabels()){
+            if(label.getName().equals(VERIFICATION_LABEL)){
+                applyLabel(accessToken, gmailMessageGetResponse.getId(), label.getId());
+                return;
+            }
+        }
+        // create echo verification label
+        Label label = new Label()
+                .setName(VERIFICATION_LABEL)
+                .setLabelListVisibility("labelShow")
+                .setLabelListVisibility("show");
+        applyLabel(accessToken, gmailMessageGetResponse.getId(), label.getId());
+    }
+
+    private void applyLabel(String accessToken, String messageId, String labelId) throws IOException {
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
+        ModifyMessageRequest modifyMessageRequest = new ModifyMessageRequest().setAddLabelIds(Collections.singletonList(labelId));
+        gmailService.users().messages().modify(USER_ID, messageId, modifyMessageRequest).execute();
     }
 }

@@ -75,16 +75,7 @@ public class GmailService {
     // constants
     private final String MULTI_PART_TEXT_PLAIN = "text/plain";
     private final String TEMP_FILE_PREFIX = "echo";
-    private final List<String> SCOPES = Arrays.asList(
-            "https://www.googleapis.com/auth/gmail.readonly",
-            "https://www.googleapis.com/auth/userinfo.profile",
-            "https://www.googleapis.com/auth/userinfo.email",
-            "https://www.googleapis.com/auth/gmail.modify",
-            "https://mail.google.com/"
-
-    );
     // injection & init
-    private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private final MultiThreadGmailService multiThreadGmailService;
     private final AccountRepository accountRepository;
     private final PubSubHistoryRepository pubSubHistoryRepository;
@@ -96,7 +87,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         // ---- temp data ----
         LocalDate currentDate = LocalDate.now();
         Boolean isBilling = Boolean.FALSE;
@@ -137,7 +128,7 @@ public class GmailService {
             Account account = accountRepository.findByUid(uid).orElseThrow(
                     () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
             String accessToken = account.getAccessToken();
-            Gmail gmailService = createGmailService(accessToken);
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
             GmailThreadGetResponse gmailThreadGetResponse = new GmailThreadGetResponse();
             Thread thread = getOneThreadResponse(id, gmailService);
             List<Message> messages = thread.getMessages();
@@ -196,7 +187,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         Thread trashedThread = gmailService.users().threads().trash(USER_ID, id)
                 .setPrettyPrint(Boolean.TRUE)
                 .execute();
@@ -207,7 +198,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         gmailService.users().threads().delete(USER_ID, id)
                 .setPrettyPrint(Boolean.TRUE)
                 .execute();
@@ -218,7 +209,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         ListThreadsResponse response = getSearchListThreadsResponse(params, gmailService);
         List<Thread> threads = response.getThreads();
         threads = isEmptyResult(threads);
@@ -233,7 +224,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
         return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
     }
@@ -242,7 +233,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
         return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
     }
@@ -251,7 +242,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         MessagePartBody attachment = gmailService.users().messages()
                 .attachments()
                 .get(USER_ID, messageId, id)
@@ -280,7 +271,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         Profile profile = gmailService.users().getProfile(USER_ID).execute();
         String fromEmailAddress = profile.getEmailAddress();
         request.setFromEmailAddress(fromEmailAddress);
@@ -298,7 +289,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         int totalCount = getTotalCountThreads(gmailService, label);
         return GmailThreadTotalCountResponse.builder()
                 .totalCount(totalCount)
@@ -309,7 +300,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         Profile profile = gmailService.users().getProfile(USER_ID).execute();
         String fromEmailAddress = profile.getEmailAddress();
         request.setFromEmailAddress(fromEmailAddress);
@@ -330,7 +321,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         Draft draft = getOneDraftResponse(id, gmailService);
         GmailDraftGetMessage message = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
         return GmailDraftGetResponse.builder()
@@ -343,7 +334,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         Profile profile = gmailService.users().getProfile(USER_ID).execute();
         String fromEmailAddress = profile.getEmailAddress();
         request.setFromEmailAddress(fromEmailAddress);
@@ -363,7 +354,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         Profile profile = gmailService.users().getProfile(USER_ID).execute();
         String fromEmailAddress = profile.getEmailAddress();
         request.setFromEmailAddress(fromEmailAddress);
@@ -383,7 +374,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         ModifyThreadRequest modifyThreadRequest = new ModifyThreadRequest();
         modifyThreadRequest.setAddLabelIds(request.getAddLabelIds());
         modifyThreadRequest.setRemoveLabelIds(request.getRemoveLabelIds());
@@ -398,7 +389,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         ModifyMessageRequest modifyMessageRequest = new ModifyMessageRequest();
         modifyMessageRequest.setAddLabelIds(request.getAddLabelIds());
         modifyMessageRequest.setRemoveLabelIds(request.getRemoveLabelIds());
@@ -416,7 +407,7 @@ public class GmailService {
         List<FcmToken> fcmTokens = fcmTokenRepository.findByAccount(account);
         pubSubValidator.validateWatch(fcmTokens);
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         WatchRequest watchRequest = new WatchRequest()
                 .setLabelIds(dto.getLabelIds())
                 .setLabelFilterBehavior("include")
@@ -443,7 +434,7 @@ public class GmailService {
                         , ErrorCode.NOT_FOUND_ACCESS_TOKEN.getMessage())
         );
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         gmailService.users().stop(USER_ID).execute();
     }
 
@@ -451,7 +442,7 @@ public class GmailService {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
         ListHistoryResponse historyResponse = gmailService
                 .users()
                 .history()
@@ -532,18 +523,6 @@ public class GmailService {
         }).collect(Collectors.toList());
     }
 
-    private Gmail createGmailService(String accessToken) {
-        try{
-            HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-            HttpRequestInitializer requestInitializer = createCredentialWithAccessToken(accessToken);
-            return new Gmail.Builder(httpTransport, JSON_FACTORY, requestInitializer)
-                    .setApplicationName("Echo")
-                    .build();
-        }catch (Exception e){
-            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
-        }
-    }
-
     private List<GmailThreadSearchListThreads> getSimpleThreads(List<Thread> threads){
         List<GmailThreadSearchListThreads> gmailThreadSearchListThreads = new ArrayList<>();
         threads.forEach((thread) ->{
@@ -622,15 +601,6 @@ public class GmailService {
     }
 
     // Methods : create something
-
-    private HttpRequestInitializer createCredentialWithAccessToken(String accessToken){
-        AccessToken token = AccessToken.newBuilder()
-                .setTokenValue(accessToken)
-                .setScopes(SCOPES)
-                .build();
-        GoogleCredentials googleCredentials = GoogleCredentials.create(token);
-        return new HttpCredentialsAdapter(googleCredentials);
-    }
 
     private MimeMessage createEmail(GmailMessageSendRequest request) throws MessagingException, IOException {
         Properties props = new Properties();

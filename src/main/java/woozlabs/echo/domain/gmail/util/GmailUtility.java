@@ -2,6 +2,15 @@ package woozlabs.echo.domain.gmail.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.HttpRequestInitializer;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.gmail.Gmail;
+import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
@@ -39,7 +48,16 @@ public class GmailUtility {
     private final ObjectMapper om;
     private final ChatGptService chatGptService;
     private final CalendarService calendarService;
+    private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private List<String> keywords;
+    private final List<String> SCOPES = Arrays.asList(
+            "https://www.googleapis.com/auth/gmail.readonly",
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/gmail.modify",
+            "https://mail.google.com/"
+
+    );
 
     @PostConstruct
     public void initKeywords(){
@@ -88,6 +106,27 @@ public class GmailUtility {
         List<String> unAvailableDates = unAvailableDatesResponse.getUnavailableDates();
         String result = chatGptService.generateScheduleEmailTemplate(decodedContent, unAvailableDates);
         return om.readValue(result, GenScheduleEmailTemplateResponse.class);
+    }
+
+    public Gmail createGmailService(String accessToken) {
+        try{
+            HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+            HttpRequestInitializer requestInitializer = createCredentialWithAccessToken(accessToken);
+            return new Gmail.Builder(httpTransport, JSON_FACTORY, requestInitializer)
+                    .setApplicationName("Echo")
+                    .build();
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    private HttpRequestInitializer createCredentialWithAccessToken(String accessToken){
+        AccessToken token = AccessToken.newBuilder()
+                .setTokenValue(accessToken)
+                .setScopes(SCOPES)
+                .build();
+        GoogleCredentials googleCredentials = GoogleCredentials.create(token);
+        return new HttpCredentialsAdapter(googleCredentials);
     }
 
     private List<String> getVerificationLink(String decodedContent){
