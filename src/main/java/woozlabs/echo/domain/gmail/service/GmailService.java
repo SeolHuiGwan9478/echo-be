@@ -29,6 +29,9 @@ import org.apache.commons.codec.binary.Base64;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingData;
+import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingRequest;
+import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingResponse;
 import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.history.*;
 import woozlabs.echo.domain.gmail.dto.message.*;
@@ -502,6 +505,20 @@ public class GmailService {
         return response;
     }
 
+    public AutoForwardingResponse setUpAutoForwarding(String uid, AutoForwardingRequest request) throws IOException {
+        Account account = accountRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+        String accessToken = account.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        for(AutoForwardingData autoForwardingData : request.getAutoForwardingData()){
+            addForwardingAddress(autoForwardingData.getForwardingEmailAddress(), gmailService);
+            createFilter(autoForwardingData.getForwardingSubject(), autoForwardingData.getForwardingEmailAddress(), gmailService);
+        }
+        return AutoForwardingResponse.builder()
+                .autoForwardingData(request.getAutoForwardingData())
+                .build();
+    }
+
     // Methods : get something
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
         //int nThreads = Runtime.getRuntime().availableProcessors();
@@ -796,5 +813,17 @@ public class GmailService {
                 }
             }
         }
+    }
+
+    private void addForwardingAddress(String forwardingEmailAddress, Gmail gmailService) throws IOException {
+        ForwardingAddress forwardingAddress = new ForwardingAddress().setForwardingEmail(forwardingEmailAddress);
+        gmailService.users().settings().forwardingAddresses().create(USER_ID, forwardingAddress).execute();
+    }
+
+    private void createFilter(String keyword, String forwardTo, Gmail gmailService) throws IOException {
+        FilterCriteria filterCriteria = new FilterCriteria().setQuery("subject:" + keyword);
+        FilterAction filterAction = new FilterAction().setForward(forwardTo);
+        Filter filter = new Filter().setCriteria(filterCriteria).setAction(filterAction);
+        gmailService.users().settings().filters().create(USER_ID, filter).execute();
     }
 }
