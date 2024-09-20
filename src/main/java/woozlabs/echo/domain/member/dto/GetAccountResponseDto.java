@@ -1,7 +1,9 @@
 package woozlabs.echo.domain.member.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -12,7 +14,7 @@ import java.util.List;
 public class GetAccountResponseDto {
 
     private List<AccountDto> accounts;
-    private List<RelatedAccountDto> relatedAccounts;
+    private List<RelatedMemberDto> relatedMembers;
 
     @Getter
     @Builder
@@ -31,19 +33,17 @@ public class GetAccountResponseDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class RelatedAccountDto {
-        private MemberDto member;
-        private AccountDto account;
-    }
-
-    @Getter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class MemberDto {
+    public static class RelatedMemberDto {
         private Long id;
         private String displayName;
         private String memberName;
+        private String email;
         private String profileImageUrl;
+
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+        private LocalDateTime createdAt;
+
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+        private LocalDateTime updatedAt;
     }
 }
