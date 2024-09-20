@@ -182,10 +182,10 @@ public class MemberService {
             List<Account> accounts = memberAccountRepository.findAllAccountsByMember(firstMember);
 
             GetPrimaryAccountResponseDto.MemberDto memberDto = GetPrimaryAccountResponseDto.MemberDto.builder()
-                    .id(firstMember.getId())
                     .displayName(firstMember.getDisplayName())
                     .memberName(firstMember.getMemberName())
                     .email(firstMember.getEmail())
+                    .primaryUid(firstMember.getPrimaryUid())
                     .profileImageUrl(firstMember.getProfileImageUrl())
                     .createdAt(firstMember.getCreatedAt())
                     .updatedAt(firstMember.getUpdatedAt())
@@ -193,7 +193,6 @@ public class MemberService {
 
             List<GetPrimaryAccountResponseDto.AccountDto> accountDtos = accounts.stream()
                     .map(account -> GetPrimaryAccountResponseDto.AccountDto.builder()
-                            .id(account.getId())
                             .uid(account.getUid())
                             .email(account.getEmail())
                             .displayName(account.getDisplayName())
@@ -205,10 +204,10 @@ public class MemberService {
             List<GetPrimaryAccountResponseDto.RelatedMemberDto> relatedMembers = memberAccounts.stream()
                     .map(MemberAccount::getMember)
                     .map(member -> GetPrimaryAccountResponseDto.RelatedMemberDto.builder()
-                            .id(member.getId())
                             .displayName(member.getDisplayName())
                             .memberName(member.getMemberName())
                             .email(member.getPrimaryUid())
+                            .primaryUid(member.getPrimaryUid())
                             .profileImageUrl(member.getProfileImageUrl())
                             .createdAt(member.getCreatedAt())
                             .updatedAt(member.getUpdatedAt())
@@ -222,7 +221,6 @@ public class MemberService {
                     .build();
         } else {
             GetAccountResponseDto.AccountDto currentAccountDto = GetAccountResponseDto.AccountDto.builder()
-                    .id(currentAccount.getId())
                     .uid(currentAccount.getUid())
                     .email(currentAccount.getEmail())
                     .displayName(currentAccount.getDisplayName())
@@ -233,10 +231,10 @@ public class MemberService {
             List<GetAccountResponseDto.RelatedMemberDto> relatedMembers = memberAccounts.stream()
                     .map(MemberAccount::getMember)
                     .map(member -> GetAccountResponseDto.RelatedMemberDto.builder()
-                            .id(member.getId())
                             .displayName(member.getDisplayName())
                             .memberName(member.getMemberName())
                             .email(member.getEmail())
+                            .primaryUid(member.getPrimaryUid())
                             .profileImageUrl(member.getProfileImageUrl())
                             .createdAt(member.getCreatedAt())
                             .updatedAt(member.getUpdatedAt())
@@ -263,6 +261,7 @@ public class MemberService {
                 .displayName(account.getDisplayName())
                 .memberName(memberName)
                 .email(account.getEmail())
+                .primaryUid(account.getUid())
                 .profileImageUrl(account.getProfileImageUrl())
                 .primaryUid(account.getUid())
                 .build();
@@ -275,10 +274,10 @@ public class MemberService {
 
         List<GetPrimaryAccountResponseDto.RelatedMemberDto> relatedMemberDtos = relatedMembers.stream()
                 .map(relatedMember -> GetPrimaryAccountResponseDto.RelatedMemberDto.builder()
-                        .id(relatedMember.getId())
                         .displayName(relatedMember.getDisplayName())
                         .memberName(relatedMember.getMemberName())
                         .email(relatedMember.getEmail())
+                        .primaryUid(relatedMember.getPrimaryUid())
                         .profileImageUrl(relatedMember.getProfileImageUrl())
                         .createdAt(relatedMember.getCreatedAt())
                         .updatedAt(relatedMember.getUpdatedAt())
@@ -286,10 +285,10 @@ public class MemberService {
                 .collect(Collectors.toList());
 
         GetPrimaryAccountResponseDto.MemberDto memberDto = GetPrimaryAccountResponseDto.MemberDto.builder()
-                .id(newMember.getId())
                 .displayName(newMember.getDisplayName())
                 .memberName(newMember.getMemberName())
                 .email(newMember.getEmail())
+                .primaryUid(newMember.getPrimaryUid())
                 .profileImageUrl(newMember.getProfileImageUrl())
                 .createdAt(newMember.getCreatedAt())
                 .updatedAt(newMember.getUpdatedAt())
@@ -298,7 +297,6 @@ public class MemberService {
         return GetPrimaryAccountResponseDto.builder()
                 .member(memberDto)
                 .accounts(Collections.singletonList(GetPrimaryAccountResponseDto.AccountDto.builder()
-                        .id(account.getId())
                         .uid(account.getUid())
                         .email(account.getEmail())
                         .displayName(account.getDisplayName())

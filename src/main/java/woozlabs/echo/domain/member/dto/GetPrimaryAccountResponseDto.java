@@ -22,10 +22,10 @@ public class GetPrimaryAccountResponseDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MemberDto {
-        private Long id;
         private String displayName;
         private String memberName;
         private String email;
+        private String primaryUid;
         private String profileImageUrl;
 
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -40,7 +40,6 @@ public class GetPrimaryAccountResponseDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AccountDto {
-        private Long id;
         private String uid;
         private String email;
         private String displayName;
@@ -53,10 +52,10 @@ public class GetPrimaryAccountResponseDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RelatedMemberDto {
-        private Long id;
         private String displayName;
         private String memberName;
         private String email;
+        private String primaryUid;
         private String profileImageUrl;
 
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
