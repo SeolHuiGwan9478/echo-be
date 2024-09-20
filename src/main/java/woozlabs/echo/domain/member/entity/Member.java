@@ -25,6 +25,7 @@ public class Member extends BaseEntity {
     private Long id;
 
     private String displayName;
+    private String email;
     private String memberName;
     private String profileImageUrl;
     private String primaryUid;
@@ -43,7 +44,7 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Density density = Density.COMPACT;
 
-    @OneToMany(mappedBy = "member")
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MemberAccount> memberAccounts = new ArrayList<>();
 
     @ElementCollection
