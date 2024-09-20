@@ -184,7 +184,10 @@ public class MemberService {
                     .id(firstMember.getId())
                     .displayName(firstMember.getDisplayName())
                     .memberName(firstMember.getMemberName())
+                    .email(firstMember.getEmail())
                     .profileImageUrl(firstMember.getProfileImageUrl())
+                    .createdAt(firstMember.getCreatedAt())
+                    .updatedAt(firstMember.getUpdatedAt())
                     .build();
 
             List<GetPrimaryAccountResponseDto.AccountDto> accountDtos = accounts.stream()
@@ -198,24 +201,23 @@ public class MemberService {
                             .build())
                     .collect(Collectors.toList());
 
-            List<GetPrimaryAccountResponseDto.RelatedAccountDto> relatedAccountDtos = accounts.stream()
-                    .map(account -> GetPrimaryAccountResponseDto.RelatedAccountDto.builder()
-                            .member(memberDto)
-                            .account(GetPrimaryAccountResponseDto.AccountDto.builder()
-                                    .id(account.getId())
-                                    .uid(account.getUid())
-                                    .email(account.getEmail())
-                                    .displayName(account.getDisplayName())
-                                    .profileImageUrl(account.getProfileImageUrl())
-                                    .provider(account.getProvider())
-                                    .build())
+            List<GetPrimaryAccountResponseDto.RelatedMemberDto> relatedMembers = memberAccounts.stream()
+                    .map(MemberAccount::getMember)
+                    .map(member -> GetPrimaryAccountResponseDto.RelatedMemberDto.builder()
+                            .id(member.getId())
+                            .displayName(member.getDisplayName())
+                            .memberName(member.getMemberName())
+                            .email(member.getPrimaryUid())
+                            .profileImageUrl(member.getProfileImageUrl())
+                            .createdAt(member.getCreatedAt())
+                            .updatedAt(member.getUpdatedAt())
                             .build())
                     .collect(Collectors.toList());
 
             return GetPrimaryAccountResponseDto.builder()
                     .member(memberDto)
                     .accounts(accountDtos)
-                    .relatedAccounts(relatedAccountDtos)
+                    .relatedMembers(relatedMembers)
                     .build();
         } else {
             GetAccountResponseDto.AccountDto currentAccountDto = GetAccountResponseDto.AccountDto.builder()
@@ -227,34 +229,22 @@ public class MemberService {
                     .provider(currentAccount.getProvider())
                     .build();
 
-            List<GetAccountResponseDto.RelatedAccountDto> relatedAccountDtos = memberAccounts.stream()
+            List<GetAccountResponseDto.RelatedMemberDto> relatedMembers = memberAccounts.stream()
                     .map(MemberAccount::getMember)
-                    .map(member -> {
-                        Account primaryAccount = accountRepository.findByUid(member.getPrimaryUid())
-                                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-
-                        return GetAccountResponseDto.RelatedAccountDto.builder()
-                                .member(GetAccountResponseDto.MemberDto.builder()
-                                        .id(member.getId())
-                                        .displayName(member.getDisplayName())
-                                        .memberName(member.getMemberName())
-                                        .profileImageUrl(member.getProfileImageUrl())
-                                        .build())
-                                .account(GetAccountResponseDto.AccountDto.builder()
-                                        .id(primaryAccount.getId())
-                                        .uid(primaryAccount.getUid())
-                                        .email(primaryAccount.getEmail())
-                                        .displayName(primaryAccount.getDisplayName())
-                                        .profileImageUrl(primaryAccount.getProfileImageUrl())
-                                        .provider(primaryAccount.getProvider())
-                                        .build())
-                                .build();
-                    })
+                    .map(member -> GetAccountResponseDto.RelatedMemberDto.builder()
+                            .id(member.getId())
+                            .displayName(member.getDisplayName())
+                            .memberName(member.getMemberName())
+                            .email(member.getEmail())
+                            .profileImageUrl(member.getProfileImageUrl())
+                            .createdAt(member.getCreatedAt())
+                            .updatedAt(member.getUpdatedAt())
+                            .build())
                     .collect(Collectors.toList());
 
             return GetAccountResponseDto.builder()
                     .accounts(Collections.singletonList(currentAccountDto))
-                    .relatedAccounts(relatedAccountDtos)
+                    .relatedMembers(relatedMembers)
                     .build();
         }
     }
