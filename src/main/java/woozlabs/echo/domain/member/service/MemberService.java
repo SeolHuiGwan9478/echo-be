@@ -203,10 +203,11 @@ public class MemberService {
 
             List<GetPrimaryAccountResponseDto.RelatedMemberDto> relatedMembers = memberAccounts.stream()
                     .map(MemberAccount::getMember)
+                    .filter(member -> !member.getId().equals(firstMember.getId()))
                     .map(member -> GetPrimaryAccountResponseDto.RelatedMemberDto.builder()
                             .displayName(member.getDisplayName())
                             .memberName(member.getMemberName())
-                            .email(member.getPrimaryUid())
+                            .email(member.getEmail())
                             .primaryUid(member.getPrimaryUid())
                             .profileImageUrl(member.getProfileImageUrl())
                             .createdAt(member.getCreatedAt())
@@ -270,6 +271,7 @@ public class MemberService {
 
         List<Member> relatedMembers = memberAccounts.stream()
                 .map(MemberAccount::getMember)
+                .filter(member -> !member.getId().equals(newMember.getId()))
                 .collect(Collectors.toList());
 
         List<GetPrimaryAccountResponseDto.RelatedMemberDto> relatedMemberDtos = relatedMembers.stream()
