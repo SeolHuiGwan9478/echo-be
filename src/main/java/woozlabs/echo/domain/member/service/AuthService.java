@@ -2,6 +2,7 @@ package woozlabs.echo.domain.member.service;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.UserRecord;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -12,24 +13,23 @@ import org.springframework.web.util.UriComponentsBuilder;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.entity.MemberAccount;
-import woozlabs.echo.domain.member.entity.Role;
 import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.domain.member.repository.MemberAccountRepository;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.domain.member.utils.AuthCookieUtils;
+import woozlabs.echo.domain.member.utils.AuthUtils;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 import woozlabs.echo.global.utils.FirebaseTokenVerifier;
 import woozlabs.echo.global.utils.GoogleOAuthUtils;
 
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -53,11 +53,12 @@ public class AuthService {
         }
     }
 
-    private void setCustomUidClaims(String uid, Map<String, Object> claims) {
+    private boolean checkIfEmailExists(String email) throws FirebaseAuthException {
         try {
-            FirebaseAuth.getInstance().setCustomUserClaims(uid, claims);
+            UserRecord userRecord = FirebaseAuth.getInstance().getUserByEmail(email);
+            return true;
         } catch (FirebaseAuthException e) {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_SET_CUSTOM_CLAIMS, e.getMessage());
+            return false;
         }
     }
 
@@ -80,7 +81,7 @@ public class AuthService {
     }
 
     @Transactional
-    public Account createOrUpdateAccount(Map<String, Object> userInfo, boolean isPrimary) {
+    public Account createOrUpdateAccount(Map<String, Object> userInfo) throws FirebaseAuthException {
         String providerId = (String) userInfo.get("id");
         String displayName = (String) userInfo.get("name");
         String email = (String) userInfo.get("email");
@@ -88,9 +89,19 @@ public class AuthService {
         String accessToken = (String) userInfo.get("access_token");
         String refreshToken = (String) userInfo.get("refresh_token");
         String provider = GOOGLE_PROVIDER;
-        String uuid = UUID.randomUUID().toString();
 
-        Account account = accountRepository.findByGoogleProviderId(providerId)
+        boolean emailExists = checkIfEmailExists(email);
+        String uuid;
+
+        if (emailExists) {
+            Account existingAccount = accountRepository.findByEmail(email)
+                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+            uuid = existingAccount.getUid();
+        } else {
+            uuid = UUID.nameUUIDFromBytes(email.getBytes(StandardCharsets.UTF_8)).toString();
+        }
+
+        Account account = accountRepository.findByProviderId(providerId)
                 .map(existingMember -> {
                     existingMember.setDisplayName(displayName);
                     existingMember.setEmail(email);
@@ -105,15 +116,13 @@ public class AuthService {
                 })
                 .orElse(Account.builder()
                         .uid(uuid)
-                        .googleProviderId(providerId)
+                        .providerId(providerId)
                         .displayName(displayName)
                         .email(email)
                         .profileImageUrl(profileImageUrl)
                         .accessToken(accessToken)
                         .refreshToken(refreshToken)
                         .accessTokenFetchedAt(LocalDateTime.now())
-                        .role(Role.ROLE_USER)
-                        .isPrimary(isPrimary)
                         .provider(provider)
                         .build());
 
@@ -151,7 +160,7 @@ public class AuthService {
         Map<String, Object> userInfo = getGoogleUserInfoAndTokens(code);
         String providerId = (String) userInfo.get("id");
 
-        Optional<Account> existingAccountOpt = accountRepository.findByGoogleProviderId(providerId);
+        Optional<Account> existingAccountOpt = accountRepository.findByProviderId(providerId);
 
         if (existingAccountOpt.isPresent()) {
             Account existingAccount = existingAccountOpt.get();
@@ -193,7 +202,7 @@ public class AuthService {
             log.info("Token verified successfully, UID: {}", uid);
 
             Member cookieTokenMember = memberRepository.findByPrimaryUid(uid)
-                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
+                    .orElse(null);
 
             if (cookieTokenMember != null) {
                 log.info("Member found with UID: {}, adding new account.", uid);
@@ -208,8 +217,9 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public void addNewAccountToExistingMember(Member member, Map<String, Object> userInfo, HttpServletResponse response) throws FirebaseAuthException {
-        Account newAccount = createOrUpdateAccount(userInfo, false);
+        Account newAccount = createOrUpdateAccount(userInfo);
 
         boolean accountExists = member.getMemberAccounts().stream()
                 .anyMatch(ma -> ma.getAccount().equals(newAccount));
@@ -220,7 +230,6 @@ public class AuthService {
             member.setDeletedAt(null);
 
             memberAccountRepository.save(memberAccount);
-            memberAccountRepository.flush();
 
             log.info("Added new account to existing Member. Account UID: {}", newAccount.getUid());
         } else {
@@ -229,25 +238,24 @@ public class AuthService {
 
         memberRepository.save(member);
         accountRepository.save(newAccount);
-        memberRepository.flush();
-        accountRepository.flush();
 
         constructAndRedirect(response, createCustomToken(newAccount.getUid()), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), true);
-
-        List<String> accountUids = member.getMemberAccounts().stream()
-                .map(ma -> ma.getAccount().getUid())
-                .collect(Collectors.toList());
-        Map<String, Object> customClaims = Map.of("accounts", accountUids);
-        setCustomUidClaims(member.getPrimaryUid(), customClaims);
-        log.info("Custom claims set for account UID: {}", newAccount.getUid());
     }
 
     @Transactional
     public void createNewMemberWithAccount(Map<String, Object> userInfo, HttpServletResponse response) throws FirebaseAuthException {
-        Account account = createOrUpdateAccount(userInfo, true);
+        Account account = createOrUpdateAccount(userInfo);
+
+        String displayName = (String) userInfo.get("name");
+        String memberName = displayName + "-" + AuthUtils.generateRandomString();
+        String email = (String) userInfo.get("email");
 
         Member member = new Member();
         member.setPrimaryUid(account.getUid());
+        member.setMemberName(memberName);
+        member.setDisplayName(displayName);
+        member.setEmail(email);
+        member.setProfileImageUrl((String) userInfo.get("picture"));
 
         MemberAccount memberAccount = new MemberAccount(member, account);
         member.addMemberAccount(memberAccount);
@@ -263,15 +271,6 @@ public class AuthService {
         log.info("Created new Member with a new account. Account UID: {}", account.getUid());
 
         constructAndRedirect(response, customToken, (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), false);
-
-        CompletableFuture.runAsync(() -> {
-            List<String> accountUids = member.getMemberAccounts().stream()
-                    .map(ma -> ma.getAccount().getUid())
-                    .collect(Collectors.toList());
-            Map<String, Object> customClaims = Map.of("accounts", accountUids);
-            setCustomUidClaims(member.getPrimaryUid(), customClaims);
-            log.info("Custom claims set for account UID: {}", account.getUid());
-        });
     }
 
     private void updateAccountInfo(Account account, Map<String, Object> userInfo) {

@@ -1,10 +1,7 @@
 package woozlabs.echo.domain.member.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
@@ -17,6 +14,7 @@ import java.util.Map;
 @Entity
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Member extends BaseEntity {
@@ -24,8 +22,11 @@ public class Member extends BaseEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String displayName;
+    private String email;
+    private String memberName;
+    private String profileImageUrl;
     private String primaryUid;
-
     private String language = "en";
 
     @Enumerated(EnumType.STRING)
@@ -41,7 +42,7 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Density density = Density.COMPACT;
 
-    @OneToMany(mappedBy = "member")
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MemberAccount> memberAccounts = new ArrayList<>();
 
     @ElementCollection

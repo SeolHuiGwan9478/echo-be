@@ -3,7 +3,7 @@ package woozlabs.echo.domain.member.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import woozlabs.echo.domain.member.dto.*;
+import woozlabs.echo.domain.member.dto.AccountProfileResponseDto;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.entity.MemberAccount;
@@ -12,8 +12,6 @@ import woozlabs.echo.domain.member.repository.MemberAccountRepository;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
-
-import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -33,7 +31,6 @@ public class AccountService {
                 .displayName(account.getDisplayName())
                 .profileImageUrl(account.getProfileImageUrl())
                 .email(account.getEmail())
-                .isPrimary(account.isPrimary())
                 .build();
     }
 
@@ -60,7 +57,7 @@ public class AccountService {
         MemberAccount memberAccount = memberAccountRepository.findByMemberAndAccount(member, account)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT));
 
-        if (account.isPrimary() || account.getUid().equals(member.getPrimaryUid())) {
+        if (account.getUid().equals(member.getPrimaryUid())) {
             throw new CustomErrorException(ErrorCode.CANNOT_UNLINK_PRIMARY_ACCOUNT);
         }
 
