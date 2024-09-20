@@ -17,6 +17,7 @@ import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.domain.member.repository.MemberAccountRepository;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.domain.member.utils.AuthCookieUtils;
+import woozlabs.echo.domain.member.utils.AuthUtils;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
@@ -43,19 +44,6 @@ public class AuthService {
     private final GoogleOAuthUtils googleOAuthUtils;
 
     private static final String GOOGLE_PROVIDER = "google";
-
-    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private static final int RANDOM_STRING_LENGTH = 10;
-
-    private String generateRandomString(int length) {
-        SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            int randomIndex = random.nextInt(CHARACTERS.length());
-            sb.append(CHARACTERS.charAt(randomIndex));
-        }
-        return sb.toString();
-    }
 
     private String createCustomToken(String uid) throws FirebaseAuthException {
         try {
@@ -259,7 +247,7 @@ public class AuthService {
         Account account = createOrUpdateAccount(userInfo);
 
         String displayName = (String) userInfo.get("name");
-        String memberName = displayName + "-" + generateRandomString(RANDOM_STRING_LENGTH);
+        String memberName = displayName + "-" + AuthUtils.generateRandomString();
         String email = (String) userInfo.get("email");
 
         Member member = new Member();
