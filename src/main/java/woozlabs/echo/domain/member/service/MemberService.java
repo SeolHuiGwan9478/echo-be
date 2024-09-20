@@ -248,4 +248,63 @@ public class MemberService {
                     .build();
         }
     }
+
+    @Transactional
+    public GetPrimaryAccountResponseDto createMember(String uid) {
+        Account account = accountRepository.findByUid(uid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+        List<MemberAccount> memberAccounts = memberAccountRepository.findByAccount(account);
+
+        String memberName = account.getDisplayName() + "-" + AuthUtils.generateRandomString();
+
+        Member newMember = Member.builder()
+                .displayName(account.getDisplayName())
+                .memberName(memberName)
+                .email(account.getEmail())
+                .profileImageUrl(account.getProfileImageUrl())
+                .primaryUid(account.getUid())
+                .build();
+
+        memberRepository.save(newMember);
+
+        List<Member> relatedMembers = memberAccounts.stream()
+                .map(MemberAccount::getMember)
+                .collect(Collectors.toList());
+
+        List<GetPrimaryAccountResponseDto.RelatedMemberDto> relatedMemberDtos = relatedMembers.stream()
+                .map(relatedMember -> GetPrimaryAccountResponseDto.RelatedMemberDto.builder()
+                        .id(relatedMember.getId())
+                        .displayName(relatedMember.getDisplayName())
+                        .memberName(relatedMember.getMemberName())
+                        .email(relatedMember.getEmail())
+                        .profileImageUrl(relatedMember.getProfileImageUrl())
+                        .createdAt(relatedMember.getCreatedAt())
+                        .updatedAt(relatedMember.getUpdatedAt())
+                        .build())
+                .collect(Collectors.toList());
+
+        GetPrimaryAccountResponseDto.MemberDto memberDto = GetPrimaryAccountResponseDto.MemberDto.builder()
+                .id(newMember.getId())
+                .displayName(newMember.getDisplayName())
+                .memberName(newMember.getMemberName())
+                .email(newMember.getEmail())
+                .profileImageUrl(newMember.getProfileImageUrl())
+                .createdAt(newMember.getCreatedAt())
+                .updatedAt(newMember.getUpdatedAt())
+                .build();
+
+        return GetPrimaryAccountResponseDto.builder()
+                .member(memberDto)
+                .accounts(Collections.singletonList(GetPrimaryAccountResponseDto.AccountDto.builder()
+                        .id(account.getId())
+                        .uid(account.getUid())
+                        .email(account.getEmail())
+                        .displayName(account.getDisplayName())
+                        .profileImageUrl(account.getProfileImageUrl())
+                        .provider(account.getProvider())
+                        .build()))
+                .relatedMembers(relatedMemberDtos)
+                .build();
+    }
 }
