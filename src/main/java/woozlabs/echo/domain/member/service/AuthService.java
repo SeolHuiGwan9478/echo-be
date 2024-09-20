@@ -2,6 +2,7 @@ package woozlabs.echo.domain.member.service;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.UserRecord;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import woozlabs.echo.global.exception.ErrorCode;
 import woozlabs.echo.global.utils.FirebaseTokenVerifier;
 import woozlabs.echo.global.utils.GoogleOAuthUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -63,6 +65,11 @@ public class AuthService {
         }
     }
 
+    private boolean checkIfEmailExists(String email) throws FirebaseAuthException {
+        UserRecord userRecord = FirebaseAuth.getInstance().getUserByEmail(email);
+        return true;
+    }
+
     private Map<String, Object> getGoogleUserInfoAndTokens(String code) {
         try {
             // Google Token 추출
@@ -82,7 +89,7 @@ public class AuthService {
     }
 
     @Transactional
-    public Account createOrUpdateAccount(Map<String, Object> userInfo) {
+    public Account createOrUpdateAccount(Map<String, Object> userInfo) throws FirebaseAuthException {
         String providerId = (String) userInfo.get("id");
         String displayName = (String) userInfo.get("name");
         String email = (String) userInfo.get("email");
@@ -90,7 +97,17 @@ public class AuthService {
         String accessToken = (String) userInfo.get("access_token");
         String refreshToken = (String) userInfo.get("refresh_token");
         String provider = GOOGLE_PROVIDER;
-        String uuid = UUID.randomUUID().toString();
+
+        boolean emailExists = checkIfEmailExists(email);
+        String uuid;
+
+        if (emailExists) {
+            Account existingAccount = accountRepository.findByEmail(email)
+                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+            uuid = existingAccount.getUid();
+        } else {
+            uuid = UUID.nameUUIDFromBytes(email.getBytes(StandardCharsets.UTF_8)).toString();
+        }
 
         Account account = accountRepository.findByProviderId(providerId)
                 .map(existingMember -> {
