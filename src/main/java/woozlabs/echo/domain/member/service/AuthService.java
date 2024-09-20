@@ -66,8 +66,12 @@ public class AuthService {
     }
 
     private boolean checkIfEmailExists(String email) throws FirebaseAuthException {
-        UserRecord userRecord = FirebaseAuth.getInstance().getUserByEmail(email);
-        return true;
+        try {
+            UserRecord userRecord = FirebaseAuth.getInstance().getUserByEmail(email);
+            return true;
+        } catch (FirebaseAuthException e) {
+            return false;
+        }
     }
 
     private Map<String, Object> getGoogleUserInfoAndTokens(String code) {
@@ -256,11 +260,13 @@ public class AuthService {
 
         String displayName = (String) userInfo.get("name");
         String memberName = displayName + "-" + generateRandomString(RANDOM_STRING_LENGTH);
+        String email = (String) userInfo.get("email");
 
         Member member = new Member();
         member.setPrimaryUid(account.getUid());
         member.setMemberName(memberName);
         member.setDisplayName(displayName);
+        member.setEmail(email);
         member.setProfileImageUrl((String) userInfo.get("picture"));
 
         MemberAccount memberAccount = new MemberAccount(member, account);
