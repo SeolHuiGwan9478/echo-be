@@ -1,10 +1,7 @@
 package woozlabs.echo.domain.member.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
@@ -17,6 +14,7 @@ import java.util.Map;
 @Entity
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Member extends BaseEntity {
