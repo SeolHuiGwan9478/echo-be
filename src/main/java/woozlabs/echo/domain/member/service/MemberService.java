@@ -129,33 +129,35 @@ public class MemberService {
     }
 
     @Transactional
-    public void hardDeleteMember(String primaryUid) {
+    public void superHardDeleteMember(String primaryUid) {
         Member member = memberRepository.findByPrimaryUid(primaryUid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
 
-        try {
-            FirebaseAuth.getInstance().deleteUser(member.getPrimaryUid());
-        } catch (FirebaseAuthException e) {
-            throw new CustomErrorException(ErrorCode.FIREBASE_ACCOUNT_DELETION_ERROR, e.getMessage());
-        }
-
         List<Account> accountsToDelete = new ArrayList<>();
+        List<MemberAccount> memberAccountsToDelete = new ArrayList<>();
 
-        List<MemberAccount> memberAccounts = new ArrayList<>(member.getMemberAccounts());
-        for (MemberAccount memberAccount : memberAccounts) {
+        for (MemberAccount memberAccount : member.getMemberAccounts()) {
             Account account = memberAccount.getAccount();
             account.getMemberAccounts().remove(memberAccount);
-            member.getMemberAccounts().remove(memberAccount);
+            memberAccountsToDelete.add(memberAccount);
 
-            memberAccountRepository.delete(memberAccount);
-
-            // 해당 계정이 다른 멤버와 연결되어 있지 않으면 삭제 대상에 추가
             if (account.getMemberAccounts().isEmpty()) {
                 accountsToDelete.add(account);
             }
         }
 
+        member.getMemberAccounts().clear();
+        memberAccountRepository.deleteAll(memberAccountsToDelete);
         memberRepository.delete(member);
+
+        for (Account account : accountsToDelete) {
+            try {
+                FirebaseAuth.getInstance().deleteUser(account.getUid());
+            } catch (FirebaseAuthException e) {
+                throw new CustomErrorException(ErrorCode.FIREBASE_ACCOUNT_DELETION_ERROR, e.getMessage());
+            }
+        }
+
         accountRepository.deleteAll(accountsToDelete);
 
         log.info("Successfully deleted member with UID: {}", primaryUid);
@@ -267,7 +269,15 @@ public class MemberService {
                 .primaryUid(account.getUid())
                 .build();
 
+        newMember.setMemberAccounts(new ArrayList<>());
+
         memberRepository.save(newMember);
+
+        MemberAccount newMemberAccount = new MemberAccount(newMember, account);
+        newMember.addMemberAccount(newMemberAccount);
+        account.getMemberAccounts().add(newMemberAccount);
+
+        memberAccountRepository.save(newMemberAccount);
 
         List<Member> relatedMembers = memberAccounts.stream()
                 .map(MemberAccount::getMember)
