@@ -33,9 +33,9 @@ public class MemberController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{uid}/hard-delete")
-    public ResponseEntity<Void> hardDeleteMember(@PathVariable("uid") String uid) {
-        memberService.hardDeleteMember(uid);
+    @PostMapping("/{uid}/super-hard-delete")
+    public ResponseEntity<Void> superHardDeleteMember(@PathVariable("uid") String uid) {
+        memberService.superHardDeleteMember(uid);
         return ResponseEntity.ok().build();
     }
 
