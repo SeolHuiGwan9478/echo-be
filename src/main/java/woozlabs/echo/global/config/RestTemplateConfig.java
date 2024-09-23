@@ -48,7 +48,7 @@ public class RestTemplateConfig {
     private HttpClient createHttpClient() {
         // Connection request timeout
         RequestConfig requestConfig = RequestConfig.custom()
-                .setConnectionRequestTimeout(Timeout.ofMilliseconds(5000))
+                .setConnectionRequestTimeout(Timeout.ofMilliseconds(10000))
                 .build();
         return HttpClientBuilder.create()
                 .setConnectionManager(createHttpClientConnectionManager())
@@ -59,12 +59,12 @@ public class RestTemplateConfig {
     private HttpClientConnectionManager createHttpClientConnectionManager() {
         // Connect timeout
         ConnectionConfig connectionConfig = ConnectionConfig.custom()
-                .setConnectTimeout(Timeout.ofMilliseconds(5000))
+                .setConnectTimeout(Timeout.ofMilliseconds(10000))
                 .build();
 
         // Socket timeout
         SocketConfig socketConfig = SocketConfig.custom()
-                .setSoTimeout(Timeout.ofMilliseconds(5000))
+                .setSoTimeout(Timeout.ofMilliseconds(10000))
                 .build();
         return PoolingHttpClientConnectionManagerBuilder.create()
                 .setMaxConnTotal(200)
