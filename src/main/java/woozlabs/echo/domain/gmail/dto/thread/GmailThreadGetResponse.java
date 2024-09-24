@@ -1,12 +1,11 @@
 package woozlabs.echo.domain.gmail.dto.thread;
 
-
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import woozlabs.echo.global.dto.ResponseDto;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -17,9 +16,9 @@ public class GmailThreadGetResponse implements ResponseDto {
     private BigInteger historyId;
     private List<String> labelIds;
     private int attachmentSize;
-    private List<GmailThreadListAttachments> attachments;
+    private Map<String, GmailThreadListAttachments> attachments;
     private int inlineImageSize;
-    private List<GmailThreadListInlineImages> inlineImages;
+    private Map<String, GmailThreadListInlineImages> inlineImages;
     private List<GmailThreadGetMessagesResponse> messages;
     private List<GmailThreadGetMessagesFrom> from;
     private List<GmailThreadGetMessagesCc> cc;

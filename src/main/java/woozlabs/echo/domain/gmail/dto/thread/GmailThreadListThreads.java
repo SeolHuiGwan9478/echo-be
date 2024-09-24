@@ -6,6 +6,7 @@ import lombok.Data;
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class GmailThreadListThreads {
@@ -20,9 +21,9 @@ public class GmailThreadListThreads {
     private List<GmailThreadGetMessagesCc> cc;
     private List<GmailThreadGetMessagesBcc> bcc;
     private int attachmentSize;
-    private List<GmailThreadListAttachments> attachments;
+    private Map<String, GmailThreadListAttachments> attachments;
     private int inlineImageSize;
-    private List<GmailThreadListInlineImages> inlineImages;
+    private Map<String, GmailThreadListInlineImages> inlineImages;
     private List<GmailThreadGetMessagesResponse> messages;
 
     public void addLabel(String newLabel){

@@ -41,8 +41,8 @@ public class MultiThreadGmailService {
             List<GmailThreadGetMessagesFrom> froms = new ArrayList<>();
             List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
             List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
-            List<GmailThreadListAttachments> attachments = new ArrayList<>();
-            List<GmailThreadListInlineImages> inlineImages = new ArrayList<>();
+            Map<String, GmailThreadListAttachments> attachments = new HashMap<>();
+            Map<String, GmailThreadListInlineImages> inlineImages = new HashMap<>();
             List<GmailThreadGetMessagesResponse> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
             for(int idx = 0;idx < messages.size();idx++){
@@ -99,43 +99,43 @@ public class MultiThreadGmailService {
         }
     }
 
-    private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments, List<GmailThreadListInlineImages> inlineImages) throws IOException {
+    private void getThreadsAttachments(MessagePart part, Map<String, GmailThreadListAttachments> attachments, Map<String, GmailThreadListInlineImages> inlineImages) throws IOException {
         if(part.getParts() == null){ // base condition
             if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
+                String contentId = "";
                 for(MessagePartHeader header : headers){
                     if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_CONTENT_ID_KEY)){
-                        String contentId = header.getValue();
+                        contentId = header.getValue();
                         contentId = contentId.replace("<", "").replace(">", "");
-                        attachment.setContentId(contentId);
                     }
                 }
                 attachment.setMimeType(part.getMimeType());
                 attachment.setAttachmentId(body.getAttachmentId());
                 attachment.setSize(body.getSize());
                 attachment.setFileName(part.getFilename());
-                if(!attachments.contains(attachment)){
-                    attachments.add(attachment);
+                if(!attachments.containsKey(contentId)){
+                    attachments.put(contentId, attachment);
                 }
             }else if(part.getFilename() != null && !part.getFilename().isBlank() && GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListInlineImages inlineImage = GmailThreadListInlineImages.builder().build();
+                String contentId = "";
                 for(MessagePartHeader header : headers){
                     if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_CONTENT_ID_KEY)){
-                        String contentId = header.getValue();
+                        contentId = header.getValue();
                         contentId = contentId.replace("<", "").replace(">", "");
-                        inlineImage.setContentId(contentId);
                     }
                 }
                 inlineImage.setMimeType(part.getMimeType());
                 inlineImage.setAttachmentId(body.getAttachmentId());
                 inlineImage.setSize(body.getSize());
                 inlineImage.setFileName(part.getFilename());
-                if(!inlineImages.contains(inlineImage)){
-                    inlineImages.add(inlineImage);
+                if(!inlineImages.containsKey(contentId)){
+                    inlineImages.put(contentId, inlineImage);
                 }
             }
         }else{ // recursion
@@ -146,37 +146,37 @@ public class MultiThreadGmailService {
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
+                String contentId = "";
                 for(MessagePartHeader header : headers){
                     if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_CONTENT_ID_KEY)){
-                        String contentId = header.getValue();
+                        contentId = header.getValue();
                         contentId = contentId.replace("<", "").replace(">", "");
-                        attachment.setContentId(contentId);
                     }
                 }
                 attachment.setMimeType(part.getMimeType());
                 attachment.setAttachmentId(body.getAttachmentId());
                 attachment.setSize(body.getSize());
                 attachment.setFileName(part.getFilename());
-                if(!attachments.contains(attachment)){
-                    attachments.add(attachment);
+                if(!attachments.containsKey(contentId)){
+                    attachments.put(contentId, attachment);
                 }
             }else if(part.getFilename() != null && !part.getFilename().isBlank() && GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListInlineImages inlineImage = GmailThreadListInlineImages.builder().build();
+                String contentId = "";
                 for(MessagePartHeader header : headers){
                     if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_CONTENT_ID_KEY)){
-                        String contentId = header.getValue();
+                        contentId = header.getValue();
                         contentId = contentId.replace("<", "").replace(">", "");
-                        inlineImage.setContentId(contentId);
                     }
                 }
                 inlineImage.setMimeType(part.getMimeType());
                 inlineImage.setAttachmentId(body.getAttachmentId());
                 inlineImage.setSize(body.getSize());
                 inlineImage.setFileName(part.getFilename());
-                if(!inlineImages.contains(inlineImage)){
-                    inlineImages.add(inlineImage);
+                if(!inlineImages.containsKey(contentId)){
+                    inlineImages.put(contentId, inlineImage);
                 }
             }
         }
