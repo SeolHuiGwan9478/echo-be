@@ -47,7 +47,6 @@ public class GmailUtility {
 
     private final ObjectMapper om;
     private final ChatGptService chatGptService;
-    private final CalendarService calendarService;
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private List<String> keywords;
     private final List<String> SCOPES = Arrays.asList(
@@ -99,13 +98,6 @@ public class GmailUtility {
     public ExtractScheduleInfo extractSchedule(String decodedContent) throws JsonProcessingException {
         String result = chatGptService.analyzeScheduleEmail(decodedContent);
         return om.readValue(result, ExtractScheduleInfo.class);
-    }
-
-    public GenScheduleEmailTemplateResponse generateScheduleEmailTemplate(String uid, String decodedContent) throws IOException, GeneralSecurityException {
-        UnAvailableDatesResponse unAvailableDatesResponse = calendarService.getDatesWithNoEventsInTwoWeeks(uid);
-        List<String> unAvailableDates = unAvailableDatesResponse.getUnavailableDates();
-        String result = chatGptService.generateScheduleEmailTemplate(decodedContent, unAvailableDates);
-        return om.readValue(result, GenScheduleEmailTemplateResponse.class);
     }
 
     public Gmail createGmailService(String accessToken) {
