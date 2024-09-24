@@ -1,21 +1,12 @@
 package woozlabs.echo.domain.gmail.service;
 
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
-import com.google.api.client.http.HttpRequestInitializer;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.*;
 import com.google.api.services.gmail.model.Thread;
-import com.google.auth.http.HttpCredentialsAdapter;
-import com.google.auth.oauth2.AccessToken;
-import com.google.auth.oauth2.GoogleCredentials;
 import jakarta.activation.DataHandler;
 import jakarta.activation.DataSource;
 import jakarta.activation.FileDataSource;
-import jakarta.mail.BodyPart;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
 import jakarta.mail.Session;
@@ -29,8 +20,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingData;
-import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingRequest;
 import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingResponse;
 import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.history.*;
@@ -49,24 +38,20 @@ import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.domain.gmail.validator.PubSubValidator;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.repository.AccountRepository;
-import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 import woozlabs.echo.global.utils.GlobalUtility;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
@@ -494,18 +479,37 @@ public class GmailService {
         return response;
     }
 
-    public AutoForwardingResponse setUpAutoForwarding(String uid, AutoForwardingRequest request) throws IOException {
+    public AutoForwardingResponse setUpAutoForwarding(String uid, String q, String email) throws IOException {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
-        for(AutoForwardingData autoForwardingData : request.getAutoForwardingData()){
-            addForwardingAddress(autoForwardingData.getForwardingEmailAddress(), gmailService);
-            createFilter(autoForwardingData.getForwardingSubject(), autoForwardingData.getForwardingEmailAddress(), gmailService);
-        }
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
+        addForwardingAddress(email, gmailService);
+        createFilter(q, email, gmailService);
         return AutoForwardingResponse.builder()
-                .autoForwardingData(request.getAutoForwardingData())
+                .q(q)
+                .forwardingEmail(email)
                 .build();
+    }
+
+    public void generateVerificationLabel(String uid) throws IOException {
+        Account account = accountRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+        String accessToken = account.getAccessToken();
+        // find echo verification label
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
+        ListLabelsResponse listLabelsResponse = gmailService.users().labels().list(USER_ID).execute();
+        for(Label label : listLabelsResponse.getLabels()){
+            if(label.getName().equals(VERIFICATION_LABEL)){
+                return;
+            }
+        }
+        // create echo verification label
+        Label label = new Label()
+                .setName(VERIFICATION_LABEL)
+                .setLabelListVisibility("labelShow")
+                .setLabelListVisibility("show");
+        gmailService.users().labels().create(USER_ID, label).execute();
     }
 
     // Methods : get something
@@ -788,8 +792,8 @@ public class GmailService {
         gmailService.users().settings().forwardingAddresses().create(USER_ID, forwardingAddress).execute();
     }
 
-    private void createFilter(String keyword, String forwardTo, Gmail gmailService) throws IOException {
-        FilterCriteria filterCriteria = new FilterCriteria().setQuery("subject:" + keyword);
+    private void createFilter(String q, String forwardTo, Gmail gmailService) throws IOException {
+        FilterCriteria filterCriteria = new FilterCriteria().setQuery(q);
         FilterAction filterAction = new FilterAction().setForward(forwardTo);
         Filter filter = new Filter().setCriteria(filterCriteria).setAction(filterAction);
         gmailService.users().settings().filters().create(USER_ID, filter).execute();
