@@ -8,6 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingRequest;
+import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingResponse;
 import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.history.GmailHistoryListResponse;
 import woozlabs.echo.domain.gmail.dto.message.*;
@@ -131,7 +133,7 @@ public class GmailController {
 
     // messages
     @GetMapping("/api/v1/gmail/messages/{messageId}")
-    public ResponseEntity<ResponseDto> getMessage(HttpServletRequest httpServletRequest,
+    public ResponseEntity<?> getMessage(HttpServletRequest httpServletRequest,
                                                   @PathVariable("messageId") String messageId){
         log.info("Request to get message({})", messageId);
         try {
@@ -158,7 +160,7 @@ public class GmailController {
     }
 
     @GetMapping("/api/v1/gmail/messages/{messageId}/attachments/{id}")
-    public ResponseEntity<ResponseDto> getAttachment(HttpServletRequest httpServletRequest,
+    public ResponseEntity<?> getAttachment(HttpServletRequest httpServletRequest,
                                                      @PathVariable("messageId") String messageId, @PathVariable("id") String id,
                                                      @RequestParam("mimeType") String mimeType){
         log.info("Request to get attachment in message");
@@ -174,7 +176,7 @@ public class GmailController {
     }
 
     @PostMapping("/api/v1/gmail/messages/send")
-    public ResponseEntity<ResponseDto> sendMessage(HttpServletRequest httpServletRequest,
+    public ResponseEntity<?> sendMessage(HttpServletRequest httpServletRequest,
                                                    @RequestParam("toEmailAddress") String toEmailAddress,
                                                    @RequestParam("subject") String subject,
                                                    @RequestParam("bodyText") String bodyText,
@@ -189,22 +191,6 @@ public class GmailController {
             request.setFiles(Objects.requireNonNullElseGet(files, ArrayList::new));
             GmailMessageSendResponse response = gmailService.sendUserEmailMessage(uid, request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
-        }catch (IOException e){
-            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
-        }catch (Exception e){
-            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
-        }
-    }
-
-    @GetMapping("/api/v1/gmail/drafts")
-    public ResponseEntity<ResponseDto> getDrafts(HttpServletRequest httpServletRequest,
-                                                 @RequestParam(value = "pageToken", required = false) String pageToken,
-                                                 @RequestParam(value = "q", required = false) String q){
-        log.info("Request to get drafts");
-        try{
-            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-            GmailDraftListResponse response = gmailService.getUserEmailDrafts(uid, pageToken, q);
-            return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (IOException e){
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
         }catch (Exception e){
@@ -227,11 +213,11 @@ public class GmailController {
     }
 
     @PostMapping("/api/v1/gmail/drafts/create")
-    public ResponseEntity<ResponseDto> createDraft(HttpServletRequest httpServletRequest,
-                                                   @RequestPart("toEmailAddress") String toEmailAddress,
-                                                   @RequestPart("subject") String subject,
-                                                   @RequestPart("bodyText") String bodyText,
-                                                   @RequestPart(value = "files", required = false) List<MultipartFile> files){
+    public ResponseEntity<?> createDraft(HttpServletRequest httpServletRequest,
+                                                   @RequestParam("toEmailAddress") String toEmailAddress,
+                                                   @RequestParam("subject") String subject,
+                                                   @RequestParam("bodyText") String bodyText,
+                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files){
         log.info("Request to create draft");
         try{
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
@@ -250,12 +236,12 @@ public class GmailController {
     }
 
     @PutMapping("/api/v1/gmail/drafts/{id}/modify")
-    public ResponseEntity<ResponseDto> modifyDraft(HttpServletRequest httpServletRequest,
+    public ResponseEntity<?> modifyDraft(HttpServletRequest httpServletRequest,
                                                    @PathVariable("id") String id,
-                                                   @RequestPart("toEmailAddress") String toEmailAddress,
-                                                   @RequestPart("subject") String subject,
-                                                   @RequestPart("bodyText") String bodyText,
-                                                   @RequestPart(value = "files", required = false) List<MultipartFile> files){
+                                                   @RequestParam("toEmailAddress") String toEmailAddress,
+                                                   @RequestParam("subject") String subject,
+                                                   @RequestParam("bodyText") String bodyText,
+                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files){
         log.info("Request to modify draft");
         try{
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
@@ -274,11 +260,11 @@ public class GmailController {
     }
 
     @PostMapping(value = "/api/v1/gmail/drafts/send", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseDto> sendDraft(HttpServletRequest httpServletRequest,
-                                                   @RequestPart("toEmailAddress") String toEmailAddress,
-                                                   @RequestPart("subject") String subject,
-                                                   @RequestPart("bodyText") String bodyText,
-                                                   @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+    public ResponseEntity<?> sendDraft(HttpServletRequest httpServletRequest,
+                                                   @RequestParam("toEmailAddress") String toEmailAddress,
+                                                   @RequestParam("subject") String subject,
+                                                   @RequestParam("bodyText") String bodyText,
+                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files) {
         log.info("Request to send draft");
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
@@ -296,7 +282,7 @@ public class GmailController {
         }
     }
     @PostMapping("/api/v1/gmail/watch")
-    public ResponseEntity<ResponseDto> postWatch(HttpServletRequest httpServletRequest, @RequestBody PubSubWatchRequest request){
+    public ResponseEntity<?> postWatch(HttpServletRequest httpServletRequest, @RequestBody PubSubWatchRequest request){
         log.info("Request to watch pub/sub");
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
@@ -312,7 +298,7 @@ public class GmailController {
     }
 
     @PostMapping("/api/v1/gmail/stop")
-    public ResponseEntity<ResponseDto> getStop(HttpServletRequest httpServletRequest){
+    public ResponseEntity<?> getStop(HttpServletRequest httpServletRequest){
         log.info("Request to stop pub/sub");
         try{
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
@@ -326,13 +312,25 @@ public class GmailController {
     }
 
     @GetMapping("/api/v1/gmail/histories")
-    public ResponseEntity<ResponseDto> getHistories(HttpServletRequest httpServletRequest,
+    public ResponseEntity<?> getHistories(HttpServletRequest httpServletRequest,
                                                     @RequestParam("historyId") String historyId,
                                                     @RequestParam(value = "pageToken", required = false) String pageToken){
         log.info("Request to get histories from {}", historyId);
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             GmailHistoryListResponse response = gmailService.getHistories(uid, historyId, pageToken);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    @PostMapping("/api/v1/gmail/auto-forwarding")
+    public ResponseEntity<?> setAutoForwarding(HttpServletRequest httpServletRequest, @RequestBody AutoForwardingRequest request){
+        log.info("Request to set auto forwarding");
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            AutoForwardingResponse response = gmailService.setUpAutoForwarding(uid, request);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (Exception e){
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());

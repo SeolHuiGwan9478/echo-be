@@ -7,9 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 @Data
 @Builder
-@EqualsAndHashCode(of = "contentId")
 public class GmailThreadListAttachments{
-    private String contentId;
     private String mimeType;
     private String fileName;
     private String attachmentId;

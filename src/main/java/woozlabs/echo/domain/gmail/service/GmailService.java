@@ -29,6 +29,9 @@ import org.apache.commons.codec.binary.Base64;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingData;
+import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingRequest;
+import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingResponse;
 import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.history.*;
 import woozlabs.echo.domain.gmail.dto.message.*;
@@ -132,22 +135,6 @@ public class GmailService {
         }
     }
 
-    public GmailDraftListResponse getUserEmailDrafts(String uid, String pageToken, String q) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE)
-        );
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
-        ListDraftsResponse response = getListDraftsResponse(gmailService, pageToken, q);
-        List<Draft> drafts = response.getDrafts();
-        drafts = isEmptyResult(drafts);
-        List<GmailDraftListDrafts> detailedDrafts = getDetailedDrafts(drafts, gmailService);
-        return GmailDraftListResponse.builder()
-                .drafts(detailedDrafts)
-                .nextPageToken(response.getNextPageToken())
-                .build();
-    }
-
     public GmailThreadGetResponse getUserEmailThread(String uid, String id){
         try {
             Account account = accountRepository.findByUid(uid).orElseThrow(
@@ -160,8 +147,8 @@ public class GmailService {
             List<GmailThreadGetMessagesFrom> froms = new ArrayList<>();
             List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
             List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
-            List<GmailThreadListAttachments> attachments = new ArrayList<>();
-            List<GmailThreadListInlineImages> inlineImages = new ArrayList<>();
+            Map<String, GmailThreadListAttachments> attachments = new HashMap<>();
+            Map<String, GmailThreadListInlineImages> inlineImages = new HashMap<>();
             List<GmailThreadGetMessagesResponse> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
             for (int idx = 0; idx < messages.size(); idx++) {
@@ -282,13 +269,11 @@ public class GmailService {
         }
         byte[] decodedBinaryContent = java.util.Base64.getDecoder().decode(standardBase64);
         //byte[] attachmentData = java.util.Base64.getDecoder().decode(attachment.getData());
-        String base64Image = java.util.Base64.getEncoder().encodeToString(decodedBinaryContent);
-        String base64Src = "data:" + mimeType + ";base64," + base64Image;
+        String standardData = java.util.Base64.getEncoder().encodeToString(decodedBinaryContent);
         return GmailMessageAttachmentResponse.builder()
                 .attachmentId(attachment.getAttachmentId())
                 .size(attachment.getSize())
-                .data(attachment.getData())
-                .base64Src(base64Src)
+                .data(standardData)
                 .build();
     }
 
@@ -518,6 +503,20 @@ public class GmailService {
         return response;
     }
 
+    public AutoForwardingResponse setUpAutoForwarding(String uid, AutoForwardingRequest request) throws IOException {
+        Account account = accountRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+        String accessToken = account.getAccessToken();
+        Gmail gmailService = createGmailService(accessToken);
+        for(AutoForwardingData autoForwardingData : request.getAutoForwardingData()){
+            addForwardingAddress(autoForwardingData.getForwardingEmailAddress(), gmailService);
+            createFilter(autoForwardingData.getForwardingSubject(), autoForwardingData.getForwardingEmailAddress(), gmailService);
+        }
+        return AutoForwardingResponse.builder()
+                .autoForwardingData(request.getAutoForwardingData())
+                .build();
+    }
+
     // Methods : get something
     private List<GmailThreadListThreads> getDetailedThreads(List<Thread> threads, Gmail gmailService) {
         //int nThreads = Runtime.getRuntime().availableProcessors();
@@ -558,27 +557,6 @@ public class GmailService {
         }catch (Exception e){
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }
-    }
-
-    private List<GmailDraftListDrafts> getDetailedDrafts(List<Draft> drafts, Gmail gmailService) {
-        List<CompletableFuture<Optional<GmailDraftListDrafts>>> futures = drafts.stream()
-                .map((draft) -> multiThreadGmailService.asyncRequestGmailDraftGetForList(draft, gmailService)
-                        .thenApply(Optional::of)
-                        .exceptionally(error -> {
-                            log.error(error.getMessage());
-                            return Optional.empty();
-                        })
-                ).toList();
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        return futures.stream().map((future) -> {
-            try{
-                Optional<GmailDraftListDrafts> result = future.get();
-                if(result.isEmpty())throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
-                return result.get();
-            }catch (InterruptedException | CancellationException | ExecutionException e){
-                throw new GmailException(GlobalConstant.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG);
-            }
-        }).collect(Collectors.toList());
     }
 
     private List<GmailThreadSearchListThreads> getSimpleThreads(List<Thread> threads){
@@ -752,43 +730,43 @@ public class GmailService {
         return result.getThreadsTotal();
     }
 
-    private void getThreadsAttachments(MessagePart part, List<GmailThreadListAttachments> attachments, List<GmailThreadListInlineImages> inlineImages) throws IOException {
+    private void getThreadsAttachments(MessagePart part, Map<String, GmailThreadListAttachments> attachments, Map<String, GmailThreadListInlineImages> inlineImages) throws IOException {
         if(part.getParts() == null){ // base condition
             if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
+                String contentId = "";
                 for(MessagePartHeader header : headers){
                     if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_CONTENT_ID_KEY)){
-                        String contentId = header.getValue();
+                        contentId = header.getValue();
                         contentId = contentId.replace("<", "").replace(">", "");
-                        attachment.setContentId(contentId);
                     }
                 }
                 attachment.setMimeType(part.getMimeType());
                 attachment.setAttachmentId(body.getAttachmentId());
                 attachment.setSize(body.getSize());
                 attachment.setFileName(part.getFilename());
-                if(!attachments.contains(attachment)){
-                    attachments.add(attachment);
+                if(!attachments.containsKey(contentId)){
+                    attachments.put(contentId, attachment);
                 }
             }else if(part.getFilename() != null && !part.getFilename().isBlank() && GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListInlineImages inlineImage = GmailThreadListInlineImages.builder().build();
+                String contentId = "";
                 for(MessagePartHeader header : headers){
                     if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_CONTENT_ID_KEY)){
-                        String contentId = header.getValue();
+                        contentId = header.getValue();
                         contentId = contentId.replace("<", "").replace(">", "");
-                        inlineImage.setContentId(contentId);
                     }
                 }
                 inlineImage.setMimeType(part.getMimeType());
                 inlineImage.setAttachmentId(body.getAttachmentId());
                 inlineImage.setSize(body.getSize());
                 inlineImage.setFileName(part.getFilename());
-                if(!inlineImages.contains(inlineImage)){
-                    inlineImages.add(inlineImage);
+                if(!inlineImages.containsKey(contentId)){
+                    inlineImages.put(contentId, inlineImage);
                 }
             }
         }else{ // recursion
@@ -799,39 +777,51 @@ public class GmailService {
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListAttachments attachment = GmailThreadListAttachments.builder().build();
+                String contentId = "";
                 for(MessagePartHeader header : headers){
                     if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_CONTENT_ID_KEY)){
-                        String contentId = header.getValue();
+                        contentId = header.getValue();
                         contentId = contentId.replace("<", "").replace(">", "");
-                        attachment.setContentId(contentId);
                     }
                 }
                 attachment.setMimeType(part.getMimeType());
                 attachment.setAttachmentId(body.getAttachmentId());
                 attachment.setSize(body.getSize());
                 attachment.setFileName(part.getFilename());
-                if(!attachments.contains(attachment)){
-                    attachments.add(attachment);
+                if(!attachments.containsKey(contentId)){
+                    attachments.put(contentId, attachment);
                 }
             }else if(part.getFilename() != null && !part.getFilename().isBlank() && GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
                 List<MessagePartHeader> headers = part.getHeaders();
                 GmailThreadListInlineImages inlineImage = GmailThreadListInlineImages.builder().build();
+                String contentId = "";
                 for(MessagePartHeader header : headers){
                     if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_CONTENT_ID_KEY)){
-                        String contentId = header.getValue();
+                        contentId = header.getValue();
                         contentId = contentId.replace("<", "").replace(">", "");
-                        inlineImage.setContentId(contentId);
                     }
                 }
                 inlineImage.setMimeType(part.getMimeType());
                 inlineImage.setAttachmentId(body.getAttachmentId());
                 inlineImage.setSize(body.getSize());
                 inlineImage.setFileName(part.getFilename());
-                if(!inlineImages.contains(inlineImage)){
-                    inlineImages.add(inlineImage);
+                if(!inlineImages.containsKey(contentId)){
+                    inlineImages.put(contentId, inlineImage);
                 }
             }
         }
+    }
+
+    private void addForwardingAddress(String forwardingEmailAddress, Gmail gmailService) throws IOException {
+        ForwardingAddress forwardingAddress = new ForwardingAddress().setForwardingEmail(forwardingEmailAddress);
+        gmailService.users().settings().forwardingAddresses().create(USER_ID, forwardingAddress).execute();
+    }
+
+    private void createFilter(String keyword, String forwardTo, Gmail gmailService) throws IOException {
+        FilterCriteria filterCriteria = new FilterCriteria().setQuery("subject:" + keyword);
+        FilterAction filterAction = new FilterAction().setForward(forwardTo);
+        Filter filter = new Filter().setCriteria(filterCriteria).setAction(filterAction);
+        gmailService.users().settings().filters().create(USER_ID, filter).execute();
     }
 }

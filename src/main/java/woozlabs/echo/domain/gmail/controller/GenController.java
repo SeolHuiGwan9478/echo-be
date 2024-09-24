@@ -28,7 +28,7 @@ import java.security.GeneralSecurityException;
 public class GenController {
     private final GmailUtility gmailUtility;
     @PostMapping("/ner-test")
-    public ResponseEntity<ResponseDto> testNer(@RequestBody String text){
+    public ResponseEntity<?> testNer(@RequestBody String text){
         try{
             ExtractScheduleInfo response = gmailUtility.extractSchedule(text);
             return new ResponseEntity<>(response, HttpStatus.OK);
@@ -38,7 +38,7 @@ public class GenController {
     }
 
     @PostMapping("/api/v1/gen/template")
-    public ResponseEntity<ResponseDto> genEmailTemplate(HttpServletRequest httpServletRequest, @RequestBody GenScheduleEmailTemplateRequest dto){
+    public ResponseEntity<?> genEmailTemplate(HttpServletRequest httpServletRequest, @RequestBody GenScheduleEmailTemplateRequest dto){
         try{
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             GenScheduleEmailTemplateResponse response = gmailUtility.generateScheduleEmailTemplate(uid, dto.getContent());
