@@ -28,8 +28,8 @@ public class MemberController {
     }
 
     @PostMapping("/{uid}/delete")
-    public ResponseEntity<Void> deleteMember(@PathVariable("uid") String uid) {
-        memberService.deleteMember(uid);
+    public ResponseEntity<Void> softDeleteMember(@PathVariable("uid") String uid) {
+        memberService.softDeleteMember(uid);
         return ResponseEntity.ok().build();
     }
 
