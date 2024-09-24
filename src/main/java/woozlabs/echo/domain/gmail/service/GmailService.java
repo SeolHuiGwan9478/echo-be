@@ -494,18 +494,37 @@ public class GmailService {
         return response;
     }
 
-    public AutoForwardingResponse setUpAutoForwarding(String uid, AutoForwardingRequest request) throws IOException {
+    public AutoForwardingResponse setUpAutoForwarding(String uid, String q, String email) throws IOException {
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
-        Gmail gmailService = createGmailService(accessToken);
-        for(AutoForwardingData autoForwardingData : request.getAutoForwardingData()){
-            addForwardingAddress(autoForwardingData.getForwardingEmailAddress(), gmailService);
-            createFilter(autoForwardingData.getForwardingSubject(), autoForwardingData.getForwardingEmailAddress(), gmailService);
-        }
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
+        addForwardingAddress(email, gmailService);
+        createFilter(q, email, gmailService);
         return AutoForwardingResponse.builder()
-                .autoForwardingData(request.getAutoForwardingData())
+                .q(q)
+                .forwardingEmail(email)
                 .build();
+    }
+
+    public void generateVerificationLabel(String uid) throws IOException {
+        Account account = accountRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+        String accessToken = account.getAccessToken();
+        // find echo verification label
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
+        ListLabelsResponse listLabelsResponse = gmailService.users().labels().list(USER_ID).execute();
+        for(Label label : listLabelsResponse.getLabels()){
+            if(label.getName().equals(VERIFICATION_LABEL)){
+                return;
+            }
+        }
+        // create echo verification label
+        Label label = new Label()
+                .setName(VERIFICATION_LABEL)
+                .setLabelListVisibility("labelShow")
+                .setLabelListVisibility("show");
+        gmailService.users().labels().create(USER_ID, label).execute();
     }
 
     // Methods : get something
@@ -788,8 +807,8 @@ public class GmailService {
         gmailService.users().settings().forwardingAddresses().create(USER_ID, forwardingAddress).execute();
     }
 
-    private void createFilter(String keyword, String forwardTo, Gmail gmailService) throws IOException {
-        FilterCriteria filterCriteria = new FilterCriteria().setQuery("subject:" + keyword);
+    private void createFilter(String q, String forwardTo, Gmail gmailService) throws IOException {
+        FilterCriteria filterCriteria = new FilterCriteria().setQuery(q);
         FilterAction filterAction = new FilterAction().setForward(forwardTo);
         Filter filter = new Filter().setCriteria(filterCriteria).setAction(filterAction);
         gmailService.users().settings().filters().create(USER_ID, filter).execute();

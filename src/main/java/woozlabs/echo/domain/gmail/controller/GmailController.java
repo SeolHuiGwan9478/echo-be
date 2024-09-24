@@ -8,7 +8,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingRequest;
 import woozlabs.echo.domain.gmail.dto.autoForwarding.AutoForwardingResponse;
 import woozlabs.echo.domain.gmail.dto.draft.*;
 import woozlabs.echo.domain.gmail.dto.history.GmailHistoryListResponse;
@@ -326,13 +325,25 @@ public class GmailController {
     }
 
     @PostMapping("/api/v1/gmail/auto-forwarding")
-    public ResponseEntity<?> setAutoForwarding(HttpServletRequest httpServletRequest, @RequestBody AutoForwardingRequest request){
+    public ResponseEntity<?> setAutoForwarding(HttpServletRequest httpServletRequest, @RequestParam("q") String q, @RequestParam("email") String email){
         log.info("Request to set auto forwarding");
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-            AutoForwardingResponse response = gmailService.setUpAutoForwarding(uid, request);
+            AutoForwardingResponse response = gmailService.setUpAutoForwarding(uid, q, email);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    @PostMapping("/api/v1/gmail/gen-verification-label")
+    public ResponseEntity<?> generateVerificationLabel(HttpServletRequest httpServletRequest) {
+        log.info("Request to generate verification label");
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            gmailService.generateVerificationLabel(uid);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }
     }

@@ -8,5 +8,6 @@ import java.util.List;
 @Getter
 @Builder
 public class AutoForwardingResponse {
-    List<AutoForwardingData> autoForwardingData;
+    private String q;
+    private String forwardingEmail;
 }
