@@ -31,7 +31,11 @@ public class ScheduleEmailTemplatePrompt {
            c) If there is a conflict or no specific date was proposed, suggest the nearest available date and time that doesn't conflict with the unavailable dates.
            d) Make sure to double-check that your suggested time does not fall within any of the unavailable time ranges.
         
-        3. Output the result in JSON format with the following structure:
+        3. If the email is not about scheduling a meeting:
+           a) Set "isSchedule" to false.
+           b) In the "template" field, create an appropriate email reply template based on your analysis of the email content
+        
+        4. Output the result in JSON format with the following structure:
            {
              "isSchedule": boolean,
              "template": string

@@ -269,13 +269,11 @@ public class GmailService {
         }
         byte[] decodedBinaryContent = java.util.Base64.getDecoder().decode(standardBase64);
         //byte[] attachmentData = java.util.Base64.getDecoder().decode(attachment.getData());
-        String base64Image = java.util.Base64.getEncoder().encodeToString(decodedBinaryContent);
-        String base64Src = "data:" + mimeType + ";base64," + base64Image;
+        String standardData = java.util.Base64.getEncoder().encodeToString(decodedBinaryContent);
         return GmailMessageAttachmentResponse.builder()
                 .attachmentId(attachment.getAttachmentId())
                 .size(attachment.getSize())
-                .data(attachment.getData())
-                .base64Src(base64Src)
+                .data(standardData)
                 .build();
     }
 
