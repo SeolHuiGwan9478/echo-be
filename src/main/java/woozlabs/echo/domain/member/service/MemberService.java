@@ -87,20 +87,11 @@ public class MemberService {
     }
 
     @Transactional
-    public void deleteMember(String primaryUid) {
+    public void softDeleteMember(String primaryUid) {
         Member member = memberRepository.findByPrimaryUid(primaryUid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
 
         member.setDeletedAt(LocalDateTime.now());
-
-        List<MemberAccount> memberAccounts = member.getMemberAccounts();
-        for (MemberAccount memberAccount : memberAccounts) {
-            Account account = memberAccount.getAccount();
-            account.getMemberAccounts().remove(memberAccount);
-            accountRepository.save(account);
-        }
-
-        member.getMemberAccounts().clear();
         memberRepository.save(member);
     }
 
@@ -108,23 +99,39 @@ public class MemberService {
     @Transactional
     public void hardDeleteExpiredMembers() {
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-        List<Member> expiredMember = memberRepository.findAllByDeletedAtBefore(thirtyDaysAgo);
 
-        for (Member member : expiredMember) {
-            List<Account> accountsToDelete = memberAccountRepository.findAllAccountsByMember(member);
-            for (Account account : accountsToDelete) {
-                List<MemberAccount> otherMemberAccounts = memberAccountRepository.findByAccount(account);
-                if (otherMemberAccounts.size() == 1) { // 이 계정이 다른 멤버와 연결되지 않은 경우에만 삭제
-                    accountRepository.delete(account);
-                }
-                try {
-                    FirebaseAuth.getInstance().deleteUser(account.getUid());
-                } catch (FirebaseAuthException e) {
-                    throw new CustomErrorException(ErrorCode.FIREBASE_ACCOUNT_DELETION_ERROR, e.getMessage());
-                }
+        // 1. Find expired members
+        List<Long> expiredMemberIds = memberRepository.findExpiredMemberIds(thirtyDaysAgo);
+
+        if (expiredMemberIds.isEmpty()) {
+            log.info("No expired members found");
+            return;
+        }
+
+        // 2. Find accounts associated only with expired members
+        List<String> accountUidsToDelete = accountRepository.findUidsAssociatedOnlyWithExpiredMembers(expiredMemberIds);
+
+        // 3. Bulk delete MemberAccounts for expired members
+        int deletedMemberAccounts = memberAccountRepository.bulkDeleteByMemberIds(expiredMemberIds);
+        log.info("Deleted {} MemberAccounts for expired members", deletedMemberAccounts);
+
+        // 4. Bulk delete expired Members
+        int deletedMembers = memberRepository.bulkDeleteByIds(expiredMemberIds);
+        log.info("Hard deleted {} expired members", deletedMembers);
+
+        // 5. Bulk delete Accounts associated only with expired members
+        int deletedAccounts = accountRepository.bulkDeleteByUids(accountUidsToDelete);
+        log.info("Deleted {} associated accounts", deletedAccounts);
+
+        // 6. Delete Firebase accounts
+        FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
+        for (String uid : accountUidsToDelete) {
+            try {
+                firebaseAuth.deleteUser(uid);
+                log.info("Deleted Firebase account: {}", uid);
+            } catch (FirebaseAuthException e) {
+                log.error("Failed to delete Firebase account: " + uid, e);
             }
-
-            memberRepository.delete(member);
         }
     }
 
