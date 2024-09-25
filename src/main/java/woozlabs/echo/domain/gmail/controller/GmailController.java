@@ -160,12 +160,11 @@ public class GmailController {
 
     @GetMapping("/api/v1/gmail/messages/{messageId}/attachments/{id}")
     public ResponseEntity<?> getAttachment(HttpServletRequest httpServletRequest,
-                                                     @PathVariable("messageId") String messageId, @PathVariable("id") String id,
-                                                     @RequestParam("mimeType") String mimeType){
+                                                     @PathVariable("messageId") String messageId, @PathVariable("id") String id){
         log.info("Request to get attachment in message");
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-            GmailMessageAttachmentResponse response = gmailService.getAttachment(uid, messageId, id, mimeType);
+            GmailMessageAttachmentResponse response = gmailService.getAttachment(uid, messageId, id);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (IOException e){
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());

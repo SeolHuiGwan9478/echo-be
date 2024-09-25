@@ -226,7 +226,7 @@ public class GmailService {
         return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
     }
 
-    public GmailMessageAttachmentResponse getAttachment(String uid, String messageId, String id, String mimeType) throws Exception{
+    public GmailMessageAttachmentResponse getAttachment(String uid, String messageId, String id) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
