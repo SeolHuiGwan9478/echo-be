@@ -5,16 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.repository.AccountRepository;
-import woozlabs.echo.global.exception.CustomErrorException;
-import woozlabs.echo.global.exception.ErrorCode;
-import woozlabs.echo.global.utils.GoogleOAuthUtils;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -22,30 +16,20 @@ import java.util.Map;
 public class AccessTokenScheduler {
 
     private final AccountRepository accountRepository;
-    private final GoogleOAuthUtils googleOAuthUtils;
+    private final TokenRefreshExecutor tokenRefreshExecutor;
 
     @Scheduled(fixedDelay = 5 * 60 * 1000)
     @Transactional
     public void checkAndRefreshTokens() {
-        LocalDateTime cutoffTime = LocalDateTime.now().minus(50, ChronoUnit.MINUTES);
-        List<Account> accounts = accountRepository.findAccountsByCutoffTime(cutoffTime);
-        for (Account account : accounts) {
-            refreshToken(account);
-        }
-    }
+        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(50);
+        List<Long> expiredAccountIds = accountRepository.findExpiredAccountIds(cutoffTime);
 
-    @Transactional
-    public void refreshToken(Account account) {
-        try {
-            Map<String, String> newTokens = googleOAuthUtils.refreshAccessToken(account.getRefreshToken());
-            String newAccessToken = newTokens.get("access_token");
-
-            account.setAccessToken(newAccessToken);
-            account.setAccessTokenFetchedAt(LocalDateTime.now());
-            accountRepository.save(account);
-        } catch (Exception e) {
-            log.error("Failed to refresh token for Account: {}", account.getId(), e);
-            throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN, "Failed to refresh token for Account: " + account.getId(), e);
+        if (expiredAccountIds.isEmpty()) {
+            log.debug("No expired tokens found.");
+            return;
         }
+
+        log.info("Found {} accounts with expired tokens. Starting refresh process.", expiredAccountIds.size());
+        tokenRefreshExecutor.refreshTokensAsync(expiredAccountIds);
     }
 }

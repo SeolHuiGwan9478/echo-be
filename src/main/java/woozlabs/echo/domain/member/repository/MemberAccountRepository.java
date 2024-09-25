@@ -1,6 +1,7 @@
 package woozlabs.echo.domain.member.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import woozlabs.echo.domain.member.entity.Account;
@@ -18,4 +19,8 @@ public interface MemberAccountRepository extends JpaRepository<MemberAccount, Lo
 
     @Query("SELECT ma.account FROM MemberAccount ma WHERE ma.member = :member")
     List<Account> findAllAccountsByMember(@Param("member") Member member);
+
+    @Modifying
+    @Query(value = "DELETE FROM member_account WHERE member_id IN :memberIds", nativeQuery = true)
+    int bulkDeleteByMemberIds(@Param("memberIds") List<Long> memberIds);
 }
