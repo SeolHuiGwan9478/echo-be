@@ -25,9 +25,6 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 @Service
 @RequiredArgsConstructor
 public class MultiThreadGmailService {
-    private final String VERIFICATION_EMAIL_LABEL = "VERIFICATION";
-    private final GmailUtility gmailUtility;
-
     public GmailThreadListThreads multiThreadRequestGmailThreadGetForList(Thread thread, Gmail gmailService){
         try {
             // init
@@ -42,7 +39,6 @@ public class MultiThreadGmailService {
             List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
             List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
             Map<String, GmailThreadListAttachments> attachments = new HashMap<>();
-            Map<String, GmailThreadListInlineImages> inlineImages = new HashMap<>();
             List<GmailThreadGetMessagesResponse> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
             for(int idx = 0;idx < messages.size();idx++){
@@ -58,7 +54,7 @@ public class MultiThreadGmailService {
                     gmailThreadListThreads.setTimestamp(date);
                 }
                 // get attachments
-                getThreadsAttachments(payload, attachments, inlineImages);
+                getThreadsAttachments(payload, attachments);
                 headers.forEach((header) -> {
                     String headerName = header.getName().toUpperCase();
                     // first message -> extraction subject
@@ -80,26 +76,14 @@ public class MultiThreadGmailService {
             gmailThreadListThreads.setThreadSize(messages.size());
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());
-            gmailThreadListThreads.setInlineImages(inlineImages);
-            gmailThreadListThreads.setInlineImageSize(inlineImages.size());
             gmailThreadListThreads.setMessages(convertedMessages);
-            //addVerificationLabel(convertedMessages, gmailThreadListThreads);
             return gmailThreadListThreads;
         } catch (IOException e) {
             throw new GmailException(e.getMessage());
         }
     }
 
-    private void addVerificationLabel(List<GmailThreadGetMessagesResponse> convertedMessages, GmailThreadListThreads gmailThreadListThreads) {
-        for(GmailThreadGetMessagesResponse convertedMessage : convertedMessages){
-            if(convertedMessage.getVerification().getVerification()){
-                gmailThreadListThreads.addLabel(VERIFICATION_EMAIL_LABEL);
-                break;
-            }
-        }
-    }
-
-    private void getThreadsAttachments(MessagePart part, Map<String, GmailThreadListAttachments> attachments, Map<String, GmailThreadListInlineImages> inlineImages) throws IOException {
+    private void getThreadsAttachments(MessagePart part, Map<String, GmailThreadListAttachments> attachments) throws IOException {
         if(part.getParts() == null){ // base condition
             if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
@@ -119,28 +103,10 @@ public class MultiThreadGmailService {
                 if(!attachments.containsKey(contentId)){
                     attachments.put(contentId, attachment);
                 }
-            }else if(part.getFilename() != null && !part.getFilename().isBlank() && GlobalUtility.isInlineFile(part)){
-                MessagePartBody body = part.getBody();
-                List<MessagePartHeader> headers = part.getHeaders();
-                GmailThreadListInlineImages inlineImage = GmailThreadListInlineImages.builder().build();
-                String contentId = "";
-                for(MessagePartHeader header : headers){
-                    if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_CONTENT_ID_KEY)){
-                        contentId = header.getValue();
-                        contentId = contentId.replace("<", "").replace(">", "");
-                    }
-                }
-                inlineImage.setMimeType(part.getMimeType());
-                inlineImage.setAttachmentId(body.getAttachmentId());
-                inlineImage.setSize(body.getSize());
-                inlineImage.setFileName(part.getFilename());
-                if(!inlineImages.containsKey(contentId)){
-                    inlineImages.put(contentId, inlineImage);
-                }
             }
         }else{ // recursion
             for(MessagePart subPart : part.getParts()){
-                getThreadsAttachments(subPart, attachments, inlineImages);
+                getThreadsAttachments(subPart, attachments);
             }
             if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();
@@ -159,24 +125,6 @@ public class MultiThreadGmailService {
                 attachment.setFileName(part.getFilename());
                 if(!attachments.containsKey(contentId)){
                     attachments.put(contentId, attachment);
-                }
-            }else if(part.getFilename() != null && !part.getFilename().isBlank() && GlobalUtility.isInlineFile(part)){
-                MessagePartBody body = part.getBody();
-                List<MessagePartHeader> headers = part.getHeaders();
-                GmailThreadListInlineImages inlineImage = GmailThreadListInlineImages.builder().build();
-                String contentId = "";
-                for(MessagePartHeader header : headers){
-                    if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_CONTENT_ID_KEY)){
-                        contentId = header.getValue();
-                        contentId = contentId.replace("<", "").replace(">", "");
-                    }
-                }
-                inlineImage.setMimeType(part.getMimeType());
-                inlineImage.setAttachmentId(body.getAttachmentId());
-                inlineImage.setSize(body.getSize());
-                inlineImage.setFileName(part.getFilename());
-                if(!inlineImages.containsKey(contentId)){
-                    inlineImages.put(contentId, inlineImage);
                 }
             }
         }

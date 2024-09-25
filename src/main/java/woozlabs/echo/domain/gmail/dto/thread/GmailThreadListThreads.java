@@ -22,11 +22,5 @@ public class GmailThreadListThreads {
     private List<GmailThreadGetMessagesBcc> bcc;
     private int attachmentSize;
     private Map<String, GmailThreadListAttachments> attachments;
-    private int inlineImageSize;
-    private Map<String, GmailThreadListInlineImages> inlineImages;
     private List<GmailThreadGetMessagesResponse> messages;
-
-    public void addLabel(String newLabel){
-        this.labelIds.add(newLabel);
-    }
 }
