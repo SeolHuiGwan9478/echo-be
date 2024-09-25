@@ -50,5 +50,6 @@ public final class GlobalConstant {
     public static final String TIMEZONE_PATTERN_2 = "[+-]\\d{4}";
 
     // Verification
-    public static final String VERIFICATION_LABEL = "Echo/Verification";
+    public static final String PARENT_VERIFICATION_LABEL = "Echo";
+    public static final String CHILD_VERIFICATION_LABEL = "Verification";
 }

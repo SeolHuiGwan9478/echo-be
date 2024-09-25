@@ -273,17 +273,23 @@ public class PubSubService {
         Gmail gmailService = gmailUtility.createGmailService(accessToken);
         ListLabelsResponse listLabelsResponse = gmailService.users().labels().list(USER_ID).execute();
         for(Label label : listLabelsResponse.getLabels()){
-            if(label.getName().equals(VERIFICATION_LABEL)){
+            if(label.getName().equals(PARENT_VERIFICATION_LABEL + "/" + CHILD_VERIFICATION_LABEL)){
                 applyLabel(accessToken, gmailMessageGetResponse.getId(), label.getId());
                 return;
             }
         }
         // create echo verification label
-        Label label = new Label()
-                .setName(VERIFICATION_LABEL)
+        Label parentLabel = new Label()
+                .setName(PARENT_VERIFICATION_LABEL)
                 .setLabelListVisibility("labelShow")
-                .setLabelListVisibility("show");
-        applyLabel(accessToken, gmailMessageGetResponse.getId(), label.getId());
+                .setMessageListVisibility("show");
+        gmailService.users().labels().create(USER_ID, parentLabel).execute();
+        Label childLabel = new Label()
+                .setName(PARENT_VERIFICATION_LABEL + "/" + CHILD_VERIFICATION_LABEL)
+                .setLabelListVisibility("labelShow")
+                .setMessageListVisibility("show");
+        gmailService.users().labels().create(USER_ID, childLabel).execute();
+        applyLabel(accessToken, gmailMessageGetResponse.getId(), childLabel.getId());
     }
 
     private void applyLabel(String accessToken, String messageId, String labelId) throws IOException {
