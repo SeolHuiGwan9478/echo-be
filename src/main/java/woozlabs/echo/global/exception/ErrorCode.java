@@ -116,7 +116,9 @@ public enum ErrorCode {
     DATA_ALREADY_SHARED(403, "The shared email already shared"),
     NOT_FOUND_SHARED_EMAIL_PERMISSION(404, "The shared email resource you are trying to access does not exist."),
     INVITEE_NOT_FOUND_ERROR(403, "This email is not invited"),
-    FORBIDDEN_ACCESS_TO_SHARED_EMAIL(403, "You do not have permission to access this shared email resource.");
+    FORBIDDEN_ACCESS_TO_SHARED_EMAIL(403, "You do not have permission to access this shared email resource."),
+    INVALID_SHARED_DATA_TYPE(400, "Invalid shared data type"),
+    EMAIL_DATA_NOT_FOUND_AND_REMOVED(404, "The email data was deleted and the shared email has been removed.");
 
     private final int status;
     private final String message;
