@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import woozlabs.echo.domain.member.dto.ChangePrimaryAccountResponseDto;
 import woozlabs.echo.domain.member.dto.GetAccountResponseDto;
 import woozlabs.echo.domain.member.dto.GetPrimaryAccountResponseDto;
 import woozlabs.echo.domain.member.dto.preference.AppearanceDto;
@@ -21,6 +22,7 @@ import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.domain.member.repository.MemberAccountRepository;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.domain.member.utils.AuthUtils;
+import woozlabs.echo.domain.member.utils.FirebaseUtils;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
@@ -40,6 +42,7 @@ public class MemberService {
     private final AccountRepository accountRepository;
     private final MemberRepository memberRepository;
     private final MemberAccountRepository memberAccountRepository;
+    private final FirebaseUtils firebaseUtils;
 
     @Transactional
     public void updatePreference(String primaryUid, UpdatePreferenceRequestDto updatePreferenceRequest) {
@@ -353,5 +356,32 @@ public class MemberService {
         if (language != null) {
             member.setLanguage(language);
         }
+    }
+
+    @Transactional
+    public ChangePrimaryAccountResponseDto changePrimaryAccount(String primaryUid, String newPrimaryUid) throws FirebaseAuthException {
+        Member member = memberRepository.findByPrimaryUid(primaryUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
+
+        boolean isValidAccount = member.getMemberAccounts().stream()
+                        .anyMatch(ma -> ma.getAccount().getUid().equals(newPrimaryUid));
+
+        if (!isValidAccount) {
+            throw new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT);
+        }
+
+        member.setPrimaryUid(newPrimaryUid);
+        memberRepository.save(member);
+
+        String primaryToken;
+        try {
+            primaryToken = firebaseUtils.createCustomToken(newPrimaryUid);
+        } catch (FirebaseAuthException e) {
+            log.error("Failed to create Firebase custom token", e);
+            throw new CustomErrorException(ErrorCode.FIREBASE_AUTH_ERROR, e.getMessage());
+        }
+
+        log.info("Primary account changed for member: {}", member.getId());
+        return new ChangePrimaryAccountResponseDto(primaryToken);
     }
 }

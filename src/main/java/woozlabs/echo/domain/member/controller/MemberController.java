@@ -1,8 +1,11 @@
 package woozlabs.echo.domain.member.controller;
 
+import com.google.firebase.auth.FirebaseAuthException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import woozlabs.echo.domain.member.dto.ChangePrimaryAccountRequestDto;
+import woozlabs.echo.domain.member.dto.ChangePrimaryAccountResponseDto;
 import woozlabs.echo.domain.member.dto.GetPrimaryAccountResponseDto;
 import woozlabs.echo.domain.member.dto.preference.PreferenceDto;
 import woozlabs.echo.domain.member.dto.preference.UpdatePreferenceRequestDto;
@@ -57,5 +60,12 @@ public class MemberController {
                                               @RequestBody ChangeProfileRequestDto changeProfileRequestDto) {
         memberService.changeProfile(primaryUid, changeProfileRequestDto);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{uid}/change-primary-account")
+    public ResponseEntity<ChangePrimaryAccountResponseDto> changePrimaryAccount(@PathVariable("uid") String primaryUid,
+                                                                                @RequestBody ChangePrimaryAccountRequestDto changePrimaryAccountRequestDto) throws FirebaseAuthException {
+        ChangePrimaryAccountResponseDto responseDto = memberService.changePrimaryAccount(primaryUid, changePrimaryAccountRequestDto.getNewPrimaryUid());
+        return ResponseEntity.ok(responseDto);
     }
 }
