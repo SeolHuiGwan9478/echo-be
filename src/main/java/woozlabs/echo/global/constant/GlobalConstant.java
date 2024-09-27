@@ -36,6 +36,7 @@ public final class GlobalConstant {
     public static final String DRAFTS_GET_FULL_FORMAT = "full";
     public static final String DRAFT_PAYLOAD_HEADER_FROM_KEY = "FROM";
     public static final String DRAFT_PAYLOAD_HEADER_DATE_KEY = "DATE";
+    public static final String MULTI_PART_TEXT_PLAIN = "text/plain; charset=UTF-8";
 
     // Gmail History
     public static final String HISTORY_INBOX_LABEL = "INBOX";
@@ -52,4 +53,5 @@ public final class GlobalConstant {
     // Verification
     public static final String PARENT_VERIFICATION_LABEL = "Echo";
     public static final String CHILD_VERIFICATION_LABEL = "Verification";
+    public static final String CHILD_AI_TEMPLATE_LABEL = "AI-Draft";
 }

@@ -61,7 +61,6 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 @RequiredArgsConstructor
 public class GmailService {
     // constants
-    private final String MULTI_PART_TEXT_PLAIN = "text/plain";
     private final String TEMP_FILE_PREFIX = "echo";
     // injection & init
     private final MultiThreadGmailService multiThreadGmailService;
@@ -349,10 +348,10 @@ public class GmailService {
         // create new draft
         Draft draft = new Draft().setMessage(message);
         draft = gmailService.users().drafts().create(USER_ID, draft).execute();
-        GmailDraftGetMessage changedMessage = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
+        //GmailDraftGetMessage changedMessage = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
         return GmailDraftCreateResponse.builder()
                 .id(draft.getId())
-                .message(changedMessage)
+                //.message(changedMessage)
                 .build();
     }
 
@@ -670,8 +669,8 @@ public class GmailService {
         MimeBodyPart mimeBodyPart = new MimeBodyPart();
         mimeBodyPart.setContent(request.getBodyText(), MULTI_PART_TEXT_PLAIN);
         multipart.addBodyPart(mimeBodyPart); // set bodyText
-
-        for(MultipartFile mimFile : request.getFiles()){
+        List<MultipartFile> files = request.getFiles() != null ? request.getFiles() : new ArrayList<>();
+        for(MultipartFile mimFile : files){
             MimeBodyPart fileMimeBodyPart = new MimeBodyPart();
             if(mimFile.getOriginalFilename() == null) throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_DRAFTS_SEND_API_ERROR_MESSAGE);
             File file = File.createTempFile(TEMP_FILE_PREFIX, mimFile.getOriginalFilename());
