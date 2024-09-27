@@ -22,6 +22,7 @@ public enum ErrorCode {
     DUPLICATE_FCM_TOKEN_ERR(400,"Is already exist this token"),
     EXCEED_FCM_TOKEN_SIZE_ERR(400, "Exceed maximum token size"),
     FIREBASE_ACCOUNT_DELETION_ERROR(500, "Can not firebase account deleted"),
+    FIREBASE_AUTH_ERROR(500, "Failed to create Firebase custom token"),
 
     // account
     NOT_FOUND_ACCOUNT_ERROR_MESSAGE(404, "Not found: Account"),
