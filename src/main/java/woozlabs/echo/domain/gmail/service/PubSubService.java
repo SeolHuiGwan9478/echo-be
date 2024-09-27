@@ -269,7 +269,6 @@ public class PubSubService {
         return GetVerificationDataResponse.builder()
                 .uuid(verificationEmail.getUuid())
                 .links(verificationEmail.getLinks())
-                .shortenedLink(verificationEmail.getShortenedLink())
                 .build();
     }
 
