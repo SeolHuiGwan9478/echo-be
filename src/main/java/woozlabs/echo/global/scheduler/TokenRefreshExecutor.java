@@ -25,20 +25,20 @@ public class TokenRefreshExecutor {
 
     @Async
     public void refreshTokensAsync(List<Long> accountIds) {
-        for (Long accountId : accountIds) {
+        List<Account> accounts = accountRepository.findAllById(accountIds);
+
+        for (Account account : accounts) {
             try {
-                refreshTokenForAccount(accountId);
+                refreshTokenForAccount(account);
             } catch (Exception e) {
-                log.error("Failed to refresh token for Account ID: {}", accountId, e);
+                log.error("Failed to refresh token for Account ID: {}", account.getId(), e);
             }
         }
     }
 
+    @Async
     @Transactional
-    public void refreshTokenForAccount(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-
+    public void refreshTokenForAccount(Account account) {
         try {
             Map<String, String> newTokens = googleOAuthUtils.refreshAccessToken(account.getRefreshToken());
             String newAccessToken = newTokens.get("access_token");
@@ -46,11 +46,11 @@ public class TokenRefreshExecutor {
             account.setAccessToken(newAccessToken);
             account.setAccessTokenFetchedAt(LocalDateTime.now());
             accountRepository.save(account);
-            log.info("Successfully refreshed token for Account ID: {}", accountId);
+            log.info("Successfully refreshed token for Account ID: {}", account.getId());
         } catch (Exception e) {
-            log.error("Failed to refresh token for Account ID: {}", accountId, e);
+            log.error("Failed to refresh token for Account ID: {}", account.getId(), e);
             throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN,
-                    "Failed to refresh token for Account ID: " + accountId, e);
+                    "Failed to refresh token for Account ID: " + account.getId(), e);
         }
     }
 }
