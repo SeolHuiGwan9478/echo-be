@@ -10,6 +10,7 @@ import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.domain.sharedEmail.dto.*;
 import woozlabs.echo.domain.sharedEmail.entity.Permission;
+import woozlabs.echo.domain.sharedEmail.entity.SharedDataType;
 import woozlabs.echo.domain.sharedEmail.entity.SharedEmail;
 import woozlabs.echo.domain.sharedEmail.entity.SharedEmailPermission;
 import woozlabs.echo.domain.sharedEmail.repository.SharedEmailPermissionRepository;
@@ -186,6 +187,9 @@ public class SharedInboxService {
     public GetSharedEmailResponseDto getSharedEmail(String uid, UUID sharedEmailId) {
         log.info("Fetching shared email for UID: {}", uid);
 
+        SharedEmail sharedEmail = sharedInboxRepository.findById(sharedEmailId)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL));
+
         SharedEmailPermission sharedEmailPermission = sharedEmailPermissionRepository.findBySharedEmailId(sharedEmailId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL_PERMISSION));
 
@@ -207,16 +211,24 @@ public class SharedInboxService {
             permissionLevel = Permission.PUBLIC_VIEWER;
         }
 
-        GmailThreadGetResponse gmailThreadResponse;
+        Object sharedEmailData;
         try {
-            gmailThreadResponse = gmailService.getUserEmailThread(sharedEmailPermission.getSharedEmail().getOwner().getUid(), sharedEmailPermission.getSharedEmail().getDataId());
+            if (sharedEmail.getSharedDataType() == SharedDataType.THREAD) {
+                sharedEmailData = gmailService.getUserEmailThread(sharedEmailPermission.getSharedEmail().getOwner().getUid(), sharedEmailPermission.getSharedEmail().getDataId());
+            } else if (sharedEmail.getSharedDataType() == SharedDataType.MESSAGE) {
+                sharedEmailData = gmailService.getUserEmailMessage(sharedEmailPermission.getSharedEmail().getOwner().getUid(), sharedEmailPermission.getSharedEmail().getDataId());
+            } else {
+                throw new CustomErrorException(ErrorCode.INVALID_SHARED_DATA_TYPE);
+            }
         } catch (CustomErrorException e) {
             if (e.getErrorCode() == ErrorCode.NOT_FOUND_GMAIL_THREAD) {
                 sharedInboxRepository.delete(sharedEmailPermission.getSharedEmail());
                 log.warn("Shared email deleted for dataId: {} due to missing Gmail thread", sharedEmailPermission.getSharedEmail().getDataId());
-                throw new CustomErrorException(ErrorCode.THREAD_NOT_FOUND_AND_REMOVED, e.getMessage());
+                throw new CustomErrorException(ErrorCode.EMAIL_DATA_NOT_FOUND_AND_REMOVED, e.getMessage());
             }
             throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         Map<String, Permission> inviteePermissions = new HashMap<>();
@@ -258,7 +270,7 @@ public class SharedInboxService {
         }
 
         GetSharedEmailResponseDto responseDto = GetSharedEmailResponseDto.builder()
-                .gmailThreadGetResponse(gmailThreadResponse)
+                .sharedEmailData(sharedEmailData)
                 .dataId(sharedEmailPermission.getSharedEmail().getDataId())
                 .permissionLevel(permissionLevel)
                 .canEdit(permissionLevel == Permission.EDITOR && sharedEmailPermission.getSharedEmail().isCanEditorEditPermission())
