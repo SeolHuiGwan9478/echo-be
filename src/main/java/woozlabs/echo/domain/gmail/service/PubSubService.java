@@ -215,8 +215,8 @@ public class PubSubService {
         String FCM_MSG_TYPE_KEY = "type";
         String FCM_MSG_VERIFICATION_KEY = "verification";
         String FCM_MSG_LABEL_KEY = "label";
-        String FCM_MSG_UUID_KEY = "uuid";
-        String FCM_MSG_SHORTEN_LINK_KEY = "shortenedLink";
+        String FCM_MSG_LINK_ID_KEY = "link";
+        String FCM_MSG_CODE_KEY = "code";
         HistoryType historyType = historyData.getHistoryType();
         // set base info
         data.put(FCM_MSG_ID_KEY, historyData.getId());
@@ -228,23 +228,25 @@ public class PubSubService {
             data.put(FCM_MSG_VERIFICATION_KEY, isVerification.toString());
             // process verification label
             if(isVerification.equals(Boolean.TRUE)){
-                String uuid = UUID.randomUUID().toString();
-                data.put(FCM_MSG_UUID_KEY, uuid);
                 getOrCreateLabel(owner.getAccessToken(), gmailMessage);
                 VerificationEmail verificationEmail = VerificationEmail.builder()
                         .threadId(historyData.getThreadId())
                         .messageId(historyData.getId())
                         .codes(String.join(",",gmailMessage.getVerification().getCodes()))
                         .links(String.join(",",gmailMessage.getVerification().getLinks()))
-                        .uuid(uuid)
                         .account(owner)
                         .build();
                 if(!gmailMessage.getVerification().getLinks().isEmpty()){ // save shortened link
-                    String shortenedLink = "https://echo.woozlabs.com/verification/" + uuid;
-                    verificationEmail.setShortenedLink(shortenedLink);
-                    data.put(FCM_MSG_SHORTEN_LINK_KEY, shortenedLink);
+                    String linkId = UUID.randomUUID().toString();
+                    data.put(FCM_MSG_LINK_ID_KEY, linkId);
+                    data.put(FCM_MSG_CODE_KEY, "");
+                    verificationEmail.setUuid(linkId);
+                    verificationEmailRepository.save(verificationEmail);
+                }else{
+                    String code = gmailMessage.getVerification().getCodes().get(0);
+                    data.put(FCM_MSG_LINK_ID_KEY, "");
+                    data.put(FCM_MSG_CODE_KEY, code);
                 }
-                verificationEmailRepository.save(verificationEmail);
             }
             // process gen reply template
             // write my code
