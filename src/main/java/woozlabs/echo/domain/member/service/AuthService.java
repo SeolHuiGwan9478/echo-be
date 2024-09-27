@@ -1,8 +1,6 @@
 package woozlabs.echo.domain.member.service;
 
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.UserRecord;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +16,7 @@ import woozlabs.echo.domain.member.repository.MemberAccountRepository;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.domain.member.utils.AuthCookieUtils;
 import woozlabs.echo.domain.member.utils.AuthUtils;
+import woozlabs.echo.domain.member.utils.FirebaseUtils;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
@@ -25,7 +24,6 @@ import woozlabs.echo.global.utils.FirebaseTokenVerifier;
 import woozlabs.echo.global.utils.GoogleOAuthUtils;
 
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -41,26 +39,10 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final MemberAccountRepository memberAccountRepository;
     private final FirebaseTokenVerifier firebaseTokenVerifier;
+    private final FirebaseUtils firebaseUtils;
     private final GoogleOAuthUtils googleOAuthUtils;
 
     private static final String GOOGLE_PROVIDER = "google";
-
-    private String createCustomToken(String uid) throws FirebaseAuthException {
-        try {
-            return FirebaseAuth.getInstance().createCustomToken(uid);
-        } catch (FirebaseAuthException e) {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_CREATE_CUSTOM_TOKEN, e.getMessage());
-        }
-    }
-
-    private boolean checkIfEmailExists(String email) throws FirebaseAuthException {
-        try {
-            UserRecord userRecord = FirebaseAuth.getInstance().getUserByEmail(email);
-            return true;
-        } catch (FirebaseAuthException e) {
-            return false;
-        }
-    }
 
     private Map<String, Object> getGoogleUserInfoAndTokens(String code) {
         try {
@@ -90,7 +72,7 @@ public class AuthService {
         String refreshToken = (String) userInfo.get("refresh_token");
         String provider = GOOGLE_PROVIDER;
 
-        boolean emailExists = checkIfEmailExists(email);
+        boolean emailExists = firebaseUtils.checkIfEmailExists(email);
         String uuid;
 
         if (emailExists) {
@@ -187,7 +169,7 @@ public class AuthService {
 
             log.info("Updated existing Account. Account UID: {}", existingAccount.getUid());
 
-            constructAndRedirect(response, createCustomToken(existingAccount.getUid()), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), false);
+            constructAndRedirect(response, firebaseUtils.createCustomToken(existingAccount.getUid()), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), false);
         }
     }
 
@@ -239,7 +221,7 @@ public class AuthService {
         memberRepository.save(member);
         accountRepository.save(newAccount);
 
-        constructAndRedirect(response, createCustomToken(newAccount.getUid()), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), true);
+        constructAndRedirect(response, firebaseUtils.createCustomToken(newAccount.getUid()), (String) userInfo.get("name"), (String) userInfo.get("picture"), (String) userInfo.get("email"), true);
     }
 
     @Transactional
@@ -263,7 +245,7 @@ public class AuthService {
 
         member.setDeletedAt(null);
 
-        String customToken = createCustomToken(account.getUid());
+        String customToken = firebaseUtils.createCustomToken(account.getUid());
 
         memberRepository.save(member);
         accountRepository.save(account);
