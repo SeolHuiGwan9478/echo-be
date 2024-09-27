@@ -2,6 +2,7 @@ package woozlabs.echo.domain.gmail.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -215,22 +216,21 @@ public class PubSubService {
         String FCM_MSG_VERIFICATION_KEY = "verification";
         String FCM_MSG_LABEL_KEY = "label";
         String FCM_MSG_UUID_KEY = "uuid";
-        String uuid = UUID.randomUUID().toString();
+        String FCM_MSG_SHORTEN_LINK_KEY = "shortenedLink";
         HistoryType historyType = historyData.getHistoryType();
         // set base info
         data.put(FCM_MSG_ID_KEY, historyData.getId());
         data.put(FCM_MSG_THREAD_ID_KEY, historyData.getThreadId());
         data.put(FCM_MSG_TYPE_KEY, historyData.getHistoryType().getType());
-        data.put(FCM_MSG_UUID_KEY, uuid);
         if(historyType.equals(HistoryType.MESSAGE_ADDED)){
             // set verification data
             Boolean isVerification = gmailMessage.getVerification().getVerification();
-            // apply verification label
-            if(isVerification.equals(Boolean.TRUE)){
-                getOrCreateLabel(owner.getAccessToken(), gmailMessage);
-            }
             data.put(FCM_MSG_VERIFICATION_KEY, isVerification.toString());
-            if(isVerification.equals(true)){ // save verification email
+            // process verification label
+            if(isVerification.equals(Boolean.TRUE)){
+                String uuid = UUID.randomUUID().toString();
+                data.put(FCM_MSG_UUID_KEY, uuid);
+                getOrCreateLabel(owner.getAccessToken(), gmailMessage);
                 VerificationEmail verificationEmail = VerificationEmail.builder()
                         .threadId(historyData.getThreadId())
                         .messageId(historyData.getId())
@@ -240,15 +240,18 @@ public class PubSubService {
                         .account(owner)
                         .build();
                 if(!gmailMessage.getVerification().getLinks().isEmpty()){ // save shortened link
-                    verificationEmail.setShortenedLink("https://echo.woozlabs.com/verification/" + uuid);
+                    String shortenedLink = "https://echo.woozlabs.com/verification/" + uuid;
+                    verificationEmail.setShortenedLink(shortenedLink);
+                    data.put(FCM_MSG_SHORTEN_LINK_KEY, shortenedLink);
                 }
                 verificationEmailRepository.save(verificationEmail);
             }
+            // process gen reply template
+            // write my code
         }else if(historyType.equals(HistoryType.LABEL_ADDED) || historyType.equals(HistoryType.LABEL_REMOVED)){
             List<String> labelIds = historyData.getLabelIds();
             data.put(FCM_MSG_LABEL_KEY, String.join(",", labelIds));
         }
-        // set schedule data
     }
 
     @Transactional
@@ -279,17 +282,22 @@ public class PubSubService {
             }
         }
         // create echo verification label
-        Label parentLabel = new Label()
-                .setName(PARENT_VERIFICATION_LABEL)
-                .setLabelListVisibility("labelShow")
-                .setMessageListVisibility("show");
-        gmailService.users().labels().create(USER_ID, parentLabel).execute();
-        Label childLabel = new Label()
-                .setName(PARENT_VERIFICATION_LABEL + "/" + CHILD_VERIFICATION_LABEL)
-                .setLabelListVisibility("labelShow")
-                .setMessageListVisibility("show");
-        gmailService.users().labels().create(USER_ID, childLabel).execute();
-        applyLabel(accessToken, gmailMessageGetResponse.getId(), childLabel.getId());
+        try{
+            Label parentLabel = new Label()
+                    .setName(PARENT_VERIFICATION_LABEL)
+                    .setLabelListVisibility("labelShow")
+                    .setMessageListVisibility("show");
+            gmailService.users().labels().create(USER_ID, parentLabel).execute();
+        }catch (GoogleJsonResponseException e){
+            log.info("Already exists Echo Label");
+        }finally {
+            Label childLabel = new Label()
+                    .setName(PARENT_VERIFICATION_LABEL + "/" + CHILD_VERIFICATION_LABEL)
+                    .setLabelListVisibility("labelShow")
+                    .setMessageListVisibility("show");
+            gmailService.users().labels().create(USER_ID, childLabel).execute();
+            applyLabel(accessToken, gmailMessageGetResponse.getId(), childLabel.getId());
+        }
     }
 
     private void applyLabel(String accessToken, String messageId, String labelId) throws IOException {
