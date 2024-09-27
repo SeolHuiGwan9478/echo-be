@@ -118,7 +118,7 @@ public class GlobalUtility {
             if(header.getName().toUpperCase().equals(THREAD_PAYLOAD_HEADER_CONTENT_ID_KEY)){
                 String contentId = header.getValue();
                 contentId = contentId.replace("<", "").replace(">", "");
-                if(!contentId.startsWith("f")){
+                if(!contentId.startsWith("f_")){
                     return Boolean.TRUE;
                 }
                 else break;
