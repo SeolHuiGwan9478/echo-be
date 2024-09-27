@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.member.dto;
+package woozlabs.echo.domain.member.dto.preference;
 
 import lombok.*;
 import woozlabs.echo.domain.member.entity.Density;

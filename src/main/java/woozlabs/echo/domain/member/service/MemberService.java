@@ -7,7 +7,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import woozlabs.echo.domain.member.dto.*;
+import woozlabs.echo.domain.member.dto.GetAccountResponseDto;
+import woozlabs.echo.domain.member.dto.GetPrimaryAccountResponseDto;
+import woozlabs.echo.domain.member.dto.preference.AppearanceDto;
+import woozlabs.echo.domain.member.dto.preference.NotificationDto;
+import woozlabs.echo.domain.member.dto.preference.PreferenceDto;
+import woozlabs.echo.domain.member.dto.preference.UpdatePreferenceRequestDto;
+import woozlabs.echo.domain.member.dto.profile.ChangeProfileRequestDto;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.entity.MemberAccount;
@@ -19,7 +25,10 @@ import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service

@@ -3,7 +3,7 @@ package woozlabs.echo.domain.member.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import woozlabs.echo.domain.member.dto.AccountProfileResponseDto;
+import woozlabs.echo.domain.member.dto.profile.AccountProfileResponseDto;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.entity.MemberAccount;

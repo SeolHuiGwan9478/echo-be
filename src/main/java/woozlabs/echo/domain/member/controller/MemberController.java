@@ -3,10 +3,10 @@ package woozlabs.echo.domain.member.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import woozlabs.echo.domain.member.dto.ChangeProfileRequestDto;
 import woozlabs.echo.domain.member.dto.GetPrimaryAccountResponseDto;
-import woozlabs.echo.domain.member.dto.PreferenceDto;
-import woozlabs.echo.domain.member.dto.UpdatePreferenceRequestDto;
+import woozlabs.echo.domain.member.dto.preference.PreferenceDto;
+import woozlabs.echo.domain.member.dto.preference.UpdatePreferenceRequestDto;
+import woozlabs.echo.domain.member.dto.profile.ChangeProfileRequestDto;
 import woozlabs.echo.domain.member.service.MemberService;
 
 @RestController
