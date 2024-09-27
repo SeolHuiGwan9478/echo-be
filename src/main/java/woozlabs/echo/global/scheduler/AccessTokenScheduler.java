@@ -19,7 +19,6 @@ public class AccessTokenScheduler {
     private final TokenRefreshExecutor tokenRefreshExecutor;
 
     @Scheduled(fixedDelay = 5 * 60 * 1000)
-    @Transactional
     public void checkAndRefreshTokens() {
         LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(50);
         List<Long> expiredAccountIds = accountRepository.findExpiredAccountIds(cutoffTime);

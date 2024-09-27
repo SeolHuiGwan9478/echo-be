@@ -1,11 +1,15 @@
 package woozlabs.echo.domain.member.controller;
 
+import com.google.firebase.auth.FirebaseAuthException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import woozlabs.echo.domain.member.dto.ChangePrimaryAccountRequestDto;
+import woozlabs.echo.domain.member.dto.ChangePrimaryAccountResponseDto;
 import woozlabs.echo.domain.member.dto.GetPrimaryAccountResponseDto;
-import woozlabs.echo.domain.member.dto.PreferenceDto;
-import woozlabs.echo.domain.member.dto.UpdatePreferenceRequestDto;
+import woozlabs.echo.domain.member.dto.preference.PreferenceDto;
+import woozlabs.echo.domain.member.dto.preference.UpdatePreferenceRequestDto;
+import woozlabs.echo.domain.member.dto.profile.ChangeProfileRequestDto;
 import woozlabs.echo.domain.member.service.MemberService;
 
 @RestController
@@ -48,6 +52,20 @@ public class MemberController {
     @PostMapping("/create")
     public ResponseEntity<GetPrimaryAccountResponseDto> createMember(@RequestParam String uid) {
         GetPrimaryAccountResponseDto responseDto = memberService.createMember(uid);
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @PatchMapping("/{uid}/profile")
+    public ResponseEntity<Void> changeProfile(@PathVariable("uid") String primaryUid,
+                                              @RequestBody ChangeProfileRequestDto changeProfileRequestDto) {
+        memberService.changeProfile(primaryUid, changeProfileRequestDto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{uid}/change-primary-account")
+    public ResponseEntity<ChangePrimaryAccountResponseDto> changePrimaryAccount(@PathVariable("uid") String primaryUid,
+                                                                                @RequestBody ChangePrimaryAccountRequestDto changePrimaryAccountRequestDto) throws FirebaseAuthException {
+        ChangePrimaryAccountResponseDto responseDto = memberService.changePrimaryAccount(primaryUid, changePrimaryAccountRequestDto.getNewPrimaryUid());
         return ResponseEntity.ok(responseDto);
     }
 }

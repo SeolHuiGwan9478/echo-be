@@ -7,7 +7,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import woozlabs.echo.domain.member.dto.*;
+import woozlabs.echo.domain.member.dto.ChangePrimaryAccountResponseDto;
+import woozlabs.echo.domain.member.dto.GetAccountResponseDto;
+import woozlabs.echo.domain.member.dto.GetPrimaryAccountResponseDto;
+import woozlabs.echo.domain.member.dto.preference.AppearanceDto;
+import woozlabs.echo.domain.member.dto.preference.NotificationDto;
+import woozlabs.echo.domain.member.dto.preference.PreferenceDto;
+import woozlabs.echo.domain.member.dto.preference.UpdatePreferenceRequestDto;
+import woozlabs.echo.domain.member.dto.profile.ChangeProfileRequestDto;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.entity.MemberAccount;
@@ -15,11 +22,15 @@ import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.domain.member.repository.MemberAccountRepository;
 import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.domain.member.utils.AuthUtils;
+import woozlabs.echo.domain.member.utils.FirebaseUtils;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +42,7 @@ public class MemberService {
     private final AccountRepository accountRepository;
     private final MemberRepository memberRepository;
     private final MemberAccountRepository memberAccountRepository;
+    private final FirebaseUtils firebaseUtils;
 
     @Transactional
     public void updatePreference(String primaryUid, UpdatePreferenceRequestDto updatePreferenceRequest) {
@@ -324,5 +336,52 @@ public class MemberService {
                         .build()))
                 .relatedMembers(relatedMemberDtos)
                 .build();
+    }
+
+    @Transactional
+    public void changeProfile(String primaryUid, ChangeProfileRequestDto changeProfileRequestDto) {
+        Member member = memberRepository.findByPrimaryUid(primaryUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
+
+        String displayName = changeProfileRequestDto.getDisplayName();
+        String profileImageUrl = changeProfileRequestDto.getProfileImageUrl();
+        String language = changeProfileRequestDto.getLanguage();
+
+        if (displayName != null) {
+            member.setDisplayName(displayName);
+        }
+        if (profileImageUrl != null) {
+            member.setProfileImageUrl(profileImageUrl);
+        }
+        if (language != null) {
+            member.setLanguage(language);
+        }
+    }
+
+    @Transactional
+    public ChangePrimaryAccountResponseDto changePrimaryAccount(String primaryUid, String newPrimaryUid) throws FirebaseAuthException {
+        Member member = memberRepository.findByPrimaryUid(primaryUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
+
+        boolean isValidAccount = member.getMemberAccounts().stream()
+                        .anyMatch(ma -> ma.getAccount().getUid().equals(newPrimaryUid));
+
+        if (!isValidAccount) {
+            throw new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT);
+        }
+
+        member.setPrimaryUid(newPrimaryUid);
+        memberRepository.save(member);
+
+        String primaryToken;
+        try {
+            primaryToken = firebaseUtils.createCustomToken(newPrimaryUid);
+        } catch (FirebaseAuthException e) {
+            log.error("Failed to create Firebase custom token", e);
+            throw new CustomErrorException(ErrorCode.FIREBASE_AUTH_ERROR, e.getMessage());
+        }
+
+        log.info("Primary account changed for member: {}", member.getId());
+        return new ChangePrimaryAccountResponseDto(primaryToken);
     }
 }

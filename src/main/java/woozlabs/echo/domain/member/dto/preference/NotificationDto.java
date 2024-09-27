@@ -1,4 +1,4 @@
-package woozlabs.echo.domain.member.dto;
+package woozlabs.echo.domain.member.dto.preference;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

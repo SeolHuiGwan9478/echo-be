@@ -3,7 +3,7 @@ package woozlabs.echo.domain.member.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import woozlabs.echo.domain.member.dto.AccountProfileResponseDto;
+import woozlabs.echo.domain.member.dto.profile.AccountProfileResponseDto;
 import woozlabs.echo.domain.member.service.AccountService;
 
 @RestController
