@@ -3,6 +3,7 @@ package woozlabs.echo.domain.member.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import woozlabs.echo.domain.member.dto.ChangeProfileRequestDto;
 import woozlabs.echo.domain.member.dto.GetPrimaryAccountResponseDto;
 import woozlabs.echo.domain.member.dto.PreferenceDto;
 import woozlabs.echo.domain.member.dto.UpdatePreferenceRequestDto;
@@ -49,5 +50,12 @@ public class MemberController {
     public ResponseEntity<GetPrimaryAccountResponseDto> createMember(@RequestParam String uid) {
         GetPrimaryAccountResponseDto responseDto = memberService.createMember(uid);
         return ResponseEntity.ok(responseDto);
+    }
+
+    @PatchMapping("/{uid}/profile")
+    public ResponseEntity<Void> changeProfile(@PathVariable("uid") String primaryUid,
+                                              @RequestBody ChangeProfileRequestDto changeProfileRequestDto) {
+        memberService.changeProfile(primaryUid, changeProfileRequestDto);
+        return ResponseEntity.ok().build();
     }
 }

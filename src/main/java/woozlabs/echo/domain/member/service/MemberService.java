@@ -325,4 +325,24 @@ public class MemberService {
                 .relatedMembers(relatedMemberDtos)
                 .build();
     }
+
+    @Transactional
+    public void changeProfile(String primaryUid, ChangeProfileRequestDto changeProfileRequestDto) {
+        Member member = memberRepository.findByPrimaryUid(primaryUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
+
+        String displayName = changeProfileRequestDto.getDisplayName();
+        String profileImageUrl = changeProfileRequestDto.getProfileImageUrl();
+        String language = changeProfileRequestDto.getLanguage();
+
+        if (displayName != null) {
+            member.setDisplayName(displayName);
+        }
+        if (profileImageUrl != null) {
+            member.setProfileImageUrl(profileImageUrl);
+        }
+        if (language != null) {
+            member.setLanguage(language);
+        }
+    }
 }
