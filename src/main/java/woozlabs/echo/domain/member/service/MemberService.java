@@ -363,6 +363,9 @@ public class MemberService {
         Member member = memberRepository.findByPrimaryUid(primaryUid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
 
+        Account account = accountRepository.findByUid(newPrimaryUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
         boolean isValidAccount = member.getMemberAccounts().stream()
                         .anyMatch(ma -> ma.getAccount().getUid().equals(newPrimaryUid));
 
@@ -371,6 +374,7 @@ public class MemberService {
         }
 
         member.setPrimaryUid(newPrimaryUid);
+        member.setEmail(account.getEmail());
         memberRepository.save(member);
 
         String primaryToken;
