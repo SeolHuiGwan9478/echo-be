@@ -7,5 +7,5 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ChangePrimaryAccountResponseDto {
 
-    private String primaryUidToken;
+    private String token;
 }

@@ -5,5 +5,5 @@ import lombok.Getter;
 @Getter
 public class ChangePrimaryAccountRequestDto {
 
-    private String newPrimaryUid;
+    private String uid;
 }
