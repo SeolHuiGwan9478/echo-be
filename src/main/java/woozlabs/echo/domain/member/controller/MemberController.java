@@ -65,7 +65,7 @@ public class MemberController {
     @PostMapping("/{uid}/change-primary-account")
     public ResponseEntity<ChangePrimaryAccountResponseDto> changePrimaryAccount(@PathVariable("uid") String primaryUid,
                                                                                 @RequestBody ChangePrimaryAccountRequestDto changePrimaryAccountRequestDto) throws FirebaseAuthException {
-        ChangePrimaryAccountResponseDto responseDto = memberService.changePrimaryAccount(primaryUid, changePrimaryAccountRequestDto.getNewPrimaryUid());
+        ChangePrimaryAccountResponseDto responseDto = memberService.changePrimaryAccount(primaryUid, changePrimaryAccountRequestDto.getUid());
         return ResponseEntity.ok(responseDto);
     }
 }
