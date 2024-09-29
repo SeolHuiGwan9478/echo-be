@@ -1,10 +1,12 @@
 package woozlabs.echo.domain.member.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import woozlabs.echo.domain.member.dto.profile.AccountProfileResponseDto;
 import woozlabs.echo.domain.member.service.AccountService;
+import woozlabs.echo.global.constant.GlobalConstant;
 
 @RestController
 @RequestMapping("/api/v1/echo/user")
@@ -25,9 +27,10 @@ public class AccountController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/{uid}/unlink")
-    public ResponseEntity<Void> unlinkAccountFromMember(@PathVariable("uid") String uid,
-                                                        @RequestParam("accountUid") String accountUid) {
+    @PostMapping("/unlink")
+    public ResponseEntity<Void> unlinkAccountFromMember(HttpServletRequest httpServletRequest,
+                                                        @RequestParam("uid") String accountUid) {
+        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
         accountService.unlinkAccount(uid, accountUid);
         return ResponseEntity.noContent().build();
     }
