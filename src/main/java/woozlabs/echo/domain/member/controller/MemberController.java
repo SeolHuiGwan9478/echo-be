@@ -50,8 +50,9 @@ public class MemberController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/account-info/{uid}")
-    public ResponseEntity<?> getAccountInfo(@PathVariable("uid") String uid) {
+    @GetMapping("/account-info")
+    public ResponseEntity<Object> getAccountInfo(HttpServletRequest httpServletRequest) {
+        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
         Object response = memberService.getAccountInfo(uid);
         return ResponseEntity.ok(response);
     }
