@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.member.dto.ChangePrimaryAccountResponseDto;
+import woozlabs.echo.domain.member.dto.CheckPrimaryAccountEligibilityRequestDto;
 import woozlabs.echo.domain.member.dto.GetAccountResponseDto;
 import woozlabs.echo.domain.member.dto.GetPrimaryAccountResponseDto;
 import woozlabs.echo.domain.member.dto.preference.AppearanceDto;
@@ -27,10 +28,7 @@ import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -366,11 +364,8 @@ public class MemberService {
         Account account = accountRepository.findByUid(newPrimaryUid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
-        boolean isValidAccount = member.getMemberAccounts().stream()
-                        .anyMatch(ma -> ma.getAccount().getUid().equals(newPrimaryUid));
-
-        if (!isValidAccount) {
-            throw new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT);
+        if (!isValidAccountToChangePrimary(member, newPrimaryUid)) {
+            throw new CustomErrorException(ErrorCode.INVALID_ACCOUNT_CHANGE);
         }
 
         member.setPrimaryUid(newPrimaryUid);
@@ -387,5 +382,28 @@ public class MemberService {
 
         log.info("Primary account changed for member: {}", member.getId());
         return new ChangePrimaryAccountResponseDto(primaryToken);
+    }
+
+    public Map<String, Boolean> checkPrimaryAccountEligibility(CheckPrimaryAccountEligibilityRequestDto requestDto) {
+        Member member = memberRepository.findByPrimaryUid(requestDto.getPrimaryUid())
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
+
+        Map<String, Boolean> eligibilityMap = new HashMap<>();
+
+        for (String uid : requestDto.getAccountUids()) {
+            boolean isEligible = isValidAccountToChangePrimary(member, uid);
+            eligibilityMap.put(uid, isEligible);
+        }
+
+        return eligibilityMap;
+    }
+
+    private boolean isValidAccountToChangePrimary(Member member, String newPrimaryUid) {
+        boolean isValidAccount = member.getMemberAccounts().stream()
+                .anyMatch(ma -> ma.getAccount().getUid().equals(newPrimaryUid));
+
+        boolean isNotPrimaryAccount = !memberRepository.findByPrimaryUid(newPrimaryUid).isPresent();
+
+        return isValidAccount && isNotPrimaryAccount;
     }
 }
