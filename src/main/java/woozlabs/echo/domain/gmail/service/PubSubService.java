@@ -257,10 +257,8 @@ public class PubSubService {
     }
 
     @Transactional
-    public GetVerificationDataResponse getVerificationData(String uid, String uuid){
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        VerificationEmail verificationEmail = verificationEmailRepository.findByUuidAndAccount(uuid, account).orElseThrow(
+    public GetVerificationDataResponse getVerificationData(String uuid){
+        VerificationEmail verificationEmail = verificationEmailRepository.findByUuid(uuid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_VERIFICATION_EMAIL_DATA)
         );
         if(verificationEmail.getLinks().isEmpty()) throw new CustomErrorException(ErrorCode.IS_NOT_VERIFICATION_LINK);
