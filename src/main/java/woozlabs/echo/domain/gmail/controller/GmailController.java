@@ -3,6 +3,7 @@ package woozlabs.echo.domain.gmail.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import static org.springframework.web.servlet.function.RequestPredicates.contentType;
 
 @Slf4j
 @RestController
@@ -168,6 +171,28 @@ public class GmailController {
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch (IOException e){
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE, e.getMessage());
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    @GetMapping("/api/v1/gmail/messages/{messageId}/attachments/{id}/download")
+    public ResponseEntity<?> downloadAttachment(HttpServletRequest httpServletRequest,
+                                                @PathVariable("messageId") String messageId, @PathVariable("id") String attachmentId){
+        log.info("Request to download attachment in message");
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            GmailMessageAttachmentDownloadResponse response = gmailService.downloadAttachment(uid, messageId, attachmentId);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + "echo-test.pdf");
+            headers.add(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
+            headers.add(HttpHeaders.PRAGMA, "no-cache");
+            headers.add(HttpHeaders.EXPIRES, "0");
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(response.getByteData().length)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(response.getByteData());
         }catch (Exception e){
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }

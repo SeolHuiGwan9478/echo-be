@@ -17,6 +17,7 @@ import jakarta.mail.internet.MimeMultipart;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,6 +45,7 @@ import woozlabs.echo.global.utils.GlobalUtility;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -514,6 +516,37 @@ public class GmailService {
                 .setLabelListVisibility("labelShow")
                 .setMessageListVisibility("show");
         gmailService.users().labels().create(USER_ID, childLabel).execute();
+    }
+
+    public GmailMessageAttachmentDownloadResponse downloadAttachment(String uid, String messageId, String attachmentId) throws Exception {
+        Account account = accountRepository.findByUid(uid).orElseThrow(
+                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+        String accessToken = account.getAccessToken();
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
+        MessagePartBody attachPart = gmailService
+                .users()
+                .messages()
+                .attachments()
+                .get(USER_ID, messageId, attachmentId).execute();
+        String standardBase64 = attachPart.getData()
+                .replace('-', '+')
+                .replace('_', '/');
+        // Add padding if necessary
+        int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
+        for (int i = 0; i < paddingCount; i++) {
+            standardBase64 += "=";
+        }
+        byte[] decodedBinaryContent = java.util.Base64.getDecoder().decode(standardBase64);
+        ByteArrayResource resource = new ByteArrayResource(decodedBinaryContent);
+        return GmailMessageAttachmentDownloadResponse.builder()
+                .attachmentId(attachmentId)
+                .size(attachPart.getSize())
+                .byteData(decodedBinaryContent)
+                .resource(resource)
+                .build();
+//        FileOutputStream fileOutFile = new FileOutputStream("echo-file-download-test.pdf");
+//        fileOutFile.write(decodedBinaryContent);
+//        fileOutFile.close();
     }
 
     // Methods : get something
