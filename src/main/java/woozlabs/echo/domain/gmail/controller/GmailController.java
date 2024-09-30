@@ -178,13 +178,14 @@ public class GmailController {
 
     @GetMapping("/api/v1/gmail/messages/{messageId}/attachments/{id}/download")
     public ResponseEntity<?> downloadAttachment(HttpServletRequest httpServletRequest,
-                                                @PathVariable("messageId") String messageId, @PathVariable("id") String attachmentId){
+                                                @PathVariable("messageId") String messageId, @PathVariable("id") String attachmentId,
+                                                @RequestParam("fileName") String fileName){
         log.info("Request to download attachment in message");
         try {
             String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
             GmailMessageAttachmentDownloadResponse response = gmailService.downloadAttachment(uid, messageId, attachmentId);
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + "echo-test.pdf");
+            HttpHeaders headers = new HttpHeaders(); // set response header
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName);
             headers.add(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
             headers.add(HttpHeaders.PRAGMA, "no-cache");
             headers.add(HttpHeaders.EXPIRES, "0");
@@ -193,6 +194,19 @@ public class GmailController {
                     .contentLength(response.getByteData().length)
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(response.getByteData());
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
+        }
+    }
+
+    @GetMapping("/api/v1/gmail/messages/{messageId}/google-drive-attachments")
+    public ResponseEntity<?> downloadGoogleDriveAttachment(HttpServletRequest httpServletRequest,
+                                                            @PathVariable("messageId") String messageId){
+        log.info("Request to download google drive attachment in message");
+        try {
+            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+            gmailService.getGoogleDriveFileId(uid, messageId);
+            return new ResponseEntity<>(HttpStatus.OK);
         }catch (Exception e){
             throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
         }
