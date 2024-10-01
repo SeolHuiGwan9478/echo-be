@@ -49,6 +49,9 @@ public class TokenRefreshBatchJob {
                 .reader(accountReader())
                 .processor(tokenRefreshProcessor())
                 .writer(accountWriter())
+                .faultTolerant()
+                .retry(Exception.class)
+                .retryLimit(3)
                 .build();
     }
 
@@ -78,7 +81,7 @@ public class TokenRefreshBatchJob {
                 return account;
             } catch (Exception e) {
                 log.error("TokenRefreshBatchJob: Failed to refresh token for Account ID: {}", account.getId(), e);
-                return null;
+                throw e; // Rethrow the exception to trigger retry
             }
         };
     }
