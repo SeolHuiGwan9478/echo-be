@@ -11,5 +11,4 @@ public class GmailMessageAttachmentResponse implements ResponseDto {
     private String attachmentId;
     private int size;
     private String data;
-    private String mimeType;
 }

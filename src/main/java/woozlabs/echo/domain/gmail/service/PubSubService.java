@@ -116,8 +116,6 @@ public class PubSubService {
                         .addAllTokens(fcmTokens)
                         .build();
                 FirebaseMessaging.getInstance().sendEachForMulticastAsync(message);
-            }catch (FirebaseMessagingException e) {
-                throw new CustomErrorException(ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR, ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR.getMessage());
             } catch (Exception e) {
                 throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST.getMessage());
             }
@@ -257,10 +255,8 @@ public class PubSubService {
     }
 
     @Transactional
-    public GetVerificationDataResponse getVerificationData(String uid, String uuid){
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        VerificationEmail verificationEmail = verificationEmailRepository.findByUuidAndAccount(uuid, account).orElseThrow(
+    public GetVerificationDataResponse getVerificationData(String uuid){
+        VerificationEmail verificationEmail = verificationEmailRepository.findByUuid(uuid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_VERIFICATION_EMAIL_DATA)
         );
         if(verificationEmail.getLinks().isEmpty()) throw new CustomErrorException(ErrorCode.IS_NOT_VERIFICATION_LINK);

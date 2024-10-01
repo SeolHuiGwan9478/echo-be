@@ -5,12 +5,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import woozlabs.echo.global.interceptor.ActiveAccountAuthInterceptor;
 import woozlabs.echo.global.interceptor.FirebaseAuthInterceptor;
 
 @Configuration
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
     private final FirebaseAuthInterceptor firebaseAuthInterceptor;
+    private final ActiveAccountAuthInterceptor activeAccountAuthInterceptor;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -50,8 +52,14 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/v1/gemini/**",
                         "/api/v1/fcm",
                         "/api/v1/echo/**",
-                        "/api/v1/gen/**",
-                        "/api/v1/verification/**"
+                        "/api/v1/gen/**"
+                );
+        registry.addInterceptor(activeAccountAuthInterceptor)
+                .addPathPatterns(
+                        "/api/v1/gmail/**",
+                        "/api/v1/calendar/**",
+                        "/api/v1/fcm",
+                        "/api/v1/gen/**"
                 );
     }
 }

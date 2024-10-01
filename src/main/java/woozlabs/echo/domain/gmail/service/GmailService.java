@@ -17,6 +17,7 @@ import jakarta.mail.internet.MimeMultipart;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,6 +45,7 @@ import woozlabs.echo.global.utils.GlobalUtility;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -52,6 +54,8 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
@@ -70,10 +74,7 @@ public class GmailService {
     private final GmailUtility gmailUtility;
     private final PubSubValidator pubSubValidator;
 
-    public GmailThreadListResponse getQueryUserEmailThreads(String uid, String pageToken, Long maxResults, String q) {
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
+    public GmailThreadListResponse getQueryUserEmailThreads(String accessToken, String pageToken, Long maxResults, String q) {
         Gmail gmailService = gmailUtility.createGmailService(accessToken);
         // ---- temp data ----
         LocalDate currentDate = LocalDate.now();
@@ -110,92 +111,88 @@ public class GmailService {
         }
     }
 
-    public GmailThreadGetResponse getUserEmailThread(String uid, String id){
-        try {
-            Account account = accountRepository.findByUid(uid).orElseThrow(
-                    () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-            String accessToken = account.getAccessToken();
-            Gmail gmailService = gmailUtility.createGmailService(accessToken);
-            GmailThreadGetResponse gmailThreadGetResponse = new GmailThreadGetResponse();
-            Thread thread = getOneThreadResponse(id, gmailService);
-            List<Message> messages = thread.getMessages();
-            List<GmailThreadGetMessagesFrom> froms = new ArrayList<>();
-            List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
-            List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
-            Map<String, GmailThreadListAttachments> attachments = new HashMap<>();
-            Map<String, GmailThreadListInlineImages> inlineImages = new HashMap<>();
-            List<GmailThreadGetMessagesResponse> convertedMessages = new ArrayList<>();
-            List<String> labelIds = new ArrayList<>();
-            for (int idx = 0; idx < messages.size(); idx++) {
-                int idxForLambda = idx;
-                Message message = messages.get(idx);
-                MessagePart payload = message.getPayload();
-                convertedMessages.add(GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message));
-                List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
-                labelIds.addAll(message.getLabelIds());
-                if (idxForLambda == messages.size() - 1) {
-                    Long date = convertedMessages.get(convertedMessages.size() - 1).getTimestamp();
-                    gmailThreadGetResponse.setSnippet(message.getSnippet());
-                    gmailThreadGetResponse.setTimestamp(date);
-                }
-                // get attachments
-                getThreadsAttachments(payload, attachments, inlineImages);
-                headers.forEach((header) -> {
-                    String headerName = header.getName().toUpperCase();
-                    // first message -> extraction subject
-                    if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)) {
-                        gmailThreadGetResponse.setSubject(header.getValue());
-                    }
-                });
-                GmailThreadGetMessagesResponse gmailThreadGetMessage = convertedMessages.get(convertedMessages.size() - 1);
-                froms.add(gmailThreadGetMessage.getFrom());
-                ccs.addAll(gmailThreadGetMessage.getCc());
-                bccs.addAll(gmailThreadGetMessage.getBcc());
+    public GmailThreadGetResponse getUserEmailThread(String accessToken, String id){
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
+        GmailThreadGetResponse gmailThreadGetResponse = new GmailThreadGetResponse();
+        Thread thread = getOneThreadResponse(id, gmailService);
+        List<Message> messages = thread.getMessages();
+        List<GmailThreadGetMessagesFrom> froms = new ArrayList<>();
+        List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
+        List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
+        Map<String, GmailThreadListAttachments> attachments = new HashMap<>();
+        Map<String, GmailThreadListInlineImages> inlineImages = new HashMap<>();
+        List<GmailThreadGetMessagesResponse> convertedMessages = new ArrayList<>();
+        List<String> labelIds = new ArrayList<>();
+        for (int idx = 0; idx < messages.size(); idx++) {
+            int idxForLambda = idx;
+            Message message = messages.get(idx);
+            MessagePart payload = message.getPayload();
+            convertedMessages.add(GmailThreadGetMessagesResponse.toGmailThreadGetMessages(message));
+            List<MessagePartHeader> headers = payload.getHeaders(); // parsing header
+            labelIds.addAll(message.getLabelIds());
+            if (idxForLambda == messages.size() - 1) {
+                Long date = convertedMessages.get(convertedMessages.size() - 1).getTimestamp();
+                gmailThreadGetResponse.setSnippet(message.getSnippet());
+                gmailThreadGetResponse.setTimestamp(date);
             }
-            gmailThreadGetResponse.setLabelIds(labelIds.stream().distinct().collect(Collectors.toList()));
-            gmailThreadGetResponse.setId(id);
-            gmailThreadGetResponse.setHistoryId(thread.getHistoryId());
-            gmailThreadGetResponse.setFrom(froms.stream().distinct().toList());
-            gmailThreadGetResponse.setCc(ccs.stream().distinct().toList());
-            gmailThreadGetResponse.setBcc(bccs.stream().distinct().toList());
-            gmailThreadGetResponse.setThreadSize(messages.size());
-            gmailThreadGetResponse.setAttachments(attachments);
-            gmailThreadGetResponse.setAttachmentSize(attachments.size());
-            gmailThreadGetResponse.setInlineImages(inlineImages);
-            gmailThreadGetResponse.setInlineImageSize(inlineImages.size());
-            gmailThreadGetResponse.setMessages(convertedMessages);
-            return gmailThreadGetResponse;
-        }catch (IOException e) {
-            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST.getMessage());
+            // get attachments
+            getThreadsAttachments(payload, attachments, inlineImages);
+            headers.forEach((header) -> {
+                String headerName = header.getName().toUpperCase();
+                // first message -> extraction subject
+                if (idxForLambda == 0 && headerName.equals(THREAD_PAYLOAD_HEADER_SUBJECT_KEY)) {
+                    gmailThreadGetResponse.setSubject(header.getValue());
+                }
+            });
+            GmailThreadGetMessagesResponse gmailThreadGetMessage = convertedMessages.get(convertedMessages.size() - 1);
+            froms.add(gmailThreadGetMessage.getFrom());
+            ccs.addAll(gmailThreadGetMessage.getCc());
+            bccs.addAll(gmailThreadGetMessage.getBcc());
+        }
+        gmailThreadGetResponse.setLabelIds(labelIds.stream().distinct().collect(Collectors.toList()));
+        gmailThreadGetResponse.setId(id);
+        gmailThreadGetResponse.setHistoryId(thread.getHistoryId());
+        gmailThreadGetResponse.setFrom(froms.stream().distinct().toList());
+        gmailThreadGetResponse.setCc(ccs.stream().distinct().toList());
+        gmailThreadGetResponse.setBcc(bccs.stream().distinct().toList());
+        gmailThreadGetResponse.setThreadSize(messages.size());
+        gmailThreadGetResponse.setAttachments(attachments);
+        gmailThreadGetResponse.setAttachmentSize(attachments.size());
+        gmailThreadGetResponse.setInlineImages(inlineImages);
+        gmailThreadGetResponse.setInlineImageSize(inlineImages.size());
+        gmailThreadGetResponse.setMessages(convertedMessages);
+        return gmailThreadGetResponse;
+    }
+
+    public GmailThreadTrashResponse trashUserEmailThread(String accessToken, String id){
+        Gmail gmailService = gmailUtility.createGmailService(accessToken);
+        try{
+            Thread trashedThread = gmailService.users().threads().trash(USER_ID, id)
+                    .setPrettyPrint(Boolean.TRUE)
+                    .execute();
+            return new GmailThreadTrashResponse(trashedThread.getId());
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREAD_TRASH_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_THREAD_TRASH_API_ERROR_MESSAGE.getMessage()
+            );
         }
     }
 
-    public GmailThreadTrashResponse trashUserEmailThread(String uid, String id) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
+    public GmailThreadDeleteResponse deleteUserEmailThread(String accessToken, String id) {
         Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        Thread trashedThread = gmailService.users().threads().trash(USER_ID, id)
-                .setPrettyPrint(Boolean.TRUE)
-                .execute();
-        return new GmailThreadTrashResponse(trashedThread.getId());
+        try {
+            gmailService.users().threads().delete(USER_ID, id)
+                    .setPrettyPrint(Boolean.TRUE)
+                    .execute();
+            return new GmailThreadDeleteResponse(id);
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREAD_DELETE_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_THREAD_DELETE_API_ERROR_MESSAGE.getMessage()
+            );
+        }
     }
 
-    public GmailThreadDeleteResponse deleteUserEmailThread(String uid, String id) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        gmailService.users().threads().delete(USER_ID, id)
-                .setPrettyPrint(Boolean.TRUE)
-                .execute();
-        return new GmailThreadDeleteResponse(id);
-    }
-
-    public GmailThreadSearchListResponse searchUserEmailThreads(String uid, GmailSearchParams params) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
+    public GmailThreadSearchListResponse searchUserEmailThreads(String accessToken, GmailSearchParams params){
         Gmail gmailService = gmailUtility.createGmailService(accessToken);
         ListThreadsResponse response = getSearchListThreadsResponse(params, gmailService);
         List<Thread> threads = response.getThreads();
@@ -207,13 +204,16 @@ public class GmailService {
                 .build();
     }
 
-    public GmailMessageGetResponse getUserEmailMessage(String uid, String messageId) throws Exception {
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
-        return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
+    public GmailMessageGetResponse getUserEmailMessage(String accessToken, String messageId){
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
+            return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERROR_MESSAGE.getMessage()
+            );
+        }
     }
 
     public GmailMessageGetResponse getUserEmailMessageWithoutVerification(String uid, String messageId) throws Exception {
@@ -225,55 +225,58 @@ public class GmailService {
         return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
     }
 
-    public GmailMessageAttachmentResponse getAttachment(String uid, String messageId, String id) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        MessagePartBody attachment = gmailService.users().messages()
-                .attachments()
-                .get(USER_ID, messageId, id)
-                .execute();
-        String standardBase64 = attachment.getData()
-                .replace('-', '+')
-                .replace('_', '/');
-        // Add padding if necessary
-        int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
-        for (int i = 0; i < paddingCount; i++) {
-            standardBase64 += "=";
+    public GmailMessageAttachmentResponse getAttachment(String accessToken, String messageId, String id){
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            MessagePartBody attachment = gmailService.users().messages()
+                    .attachments()
+                    .get(USER_ID, messageId, id)
+                    .execute();
+            String standardBase64 = attachment.getData()
+                    .replace('-', '+')
+                    .replace('_', '/');
+            // Add padding if necessary
+            int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
+            for (int i = 0; i < paddingCount; i++) {
+                standardBase64 += "=";
+            }
+            byte[] decodedBinaryContent = java.util.Base64.getDecoder().decode(standardBase64);
+            //byte[] attachmentData = java.util.Base64.getDecoder().decode(attachment.getData());
+            String standardData = java.util.Base64.getEncoder().encodeToString(decodedBinaryContent);
+            return GmailMessageAttachmentResponse.builder()
+                    .attachmentId(attachment.getAttachmentId())
+                    .size(attachment.getSize())
+                    .data(standardData)
+                    .build();
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_ATTACHMENTS_GET_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_MESSAGES_ATTACHMENTS_GET_API_ERROR_MESSAGE.getMessage()
+            );
         }
-        byte[] decodedBinaryContent = java.util.Base64.getDecoder().decode(standardBase64);
-        //byte[] attachmentData = java.util.Base64.getDecoder().decode(attachment.getData());
-        String standardData = java.util.Base64.getEncoder().encodeToString(decodedBinaryContent);
-        return GmailMessageAttachmentResponse.builder()
-                .attachmentId(attachment.getAttachmentId())
-                .size(attachment.getSize())
-                .data(standardData)
-                .build();
     }
 
-    public GmailMessageSendResponse sendUserEmailMessage(String uid, GmailMessageSendRequest request) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        Profile profile = gmailService.users().getProfile(USER_ID).execute();
-        String fromEmailAddress = profile.getEmailAddress();
-        request.setFromEmailAddress(fromEmailAddress);
-        MimeMessage mimeMessage = createEmail(request);
-        Message message = createMessage(mimeMessage);
-        Message responseMessage = gmailService.users().messages().send(USER_ID, message).execute();
-        return GmailMessageSendResponse.builder()
-                .id(responseMessage.getId())
-                .threadId(responseMessage.getThreadId())
-                .labelsId(responseMessage.getLabelIds())
-                .snippet(responseMessage.getSnippet()).build();
+    public GmailMessageSendResponse sendUserEmailMessage(String accessToken, GmailMessageSendRequest request) {
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            Profile profile = gmailService.users().getProfile(USER_ID).execute();
+            String fromEmailAddress = profile.getEmailAddress();
+            request.setFromEmailAddress(fromEmailAddress);
+            MimeMessage mimeMessage = createEmail(request);
+            Message message = createMessage(mimeMessage);
+            Message responseMessage = gmailService.users().messages().send(USER_ID, message).execute();
+            return GmailMessageSendResponse.builder()
+                    .id(responseMessage.getId())
+                    .threadId(responseMessage.getThreadId())
+                    .labelsId(responseMessage.getLabelIds())
+                    .snippet(responseMessage.getSnippet()).build();
+        }catch (Exception e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE.getMessage()
+            );
+        }
     }
 
-    public GmailThreadTotalCountResponse getUserEmailThreadsTotalCount(String uid, String label) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
+    public GmailThreadTotalCountResponse getUserEmailThreadsTotalCount(String accessToken, String label){
         Gmail gmailService = gmailUtility.createGmailService(accessToken);
         int totalCount = getTotalCountThreads(gmailService, label);
         return GmailThreadTotalCountResponse.builder()
@@ -281,239 +284,333 @@ public class GmailService {
                 .build();
     }
 
-    public GmailDraftSendResponse sendUserEmailDraft(String uid, GmailDraftCommonRequest request) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        Profile profile = gmailService.users().getProfile(USER_ID).execute();
-        String fromEmailAddress = profile.getEmailAddress();
-        request.setFromEmailAddress(fromEmailAddress);
-        MimeMessage mimeMessage = createDraft(request);
-        Message message = createMessage(mimeMessage);
-        // create draft
-        Draft draft = new Draft();
-        draft.setMessage(message);
-        Message responseMessage = gmailService.users().drafts().send(USER_ID, draft).execute();
-        return GmailDraftSendResponse.builder()
-                .id(responseMessage.getId())
-                .threadId(responseMessage.getThreadId())
-                .labelsId(responseMessage.getLabelIds())
-                .snippet(responseMessage.getSnippet()).build();
+    public GmailDraftSendResponse sendUserEmailDraft(String accessToken, GmailDraftCommonRequest request){
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            Profile profile = gmailService.users().getProfile(USER_ID).execute();
+            String fromEmailAddress = profile.getEmailAddress();
+            request.setFromEmailAddress(fromEmailAddress);
+            MimeMessage mimeMessage = createDraft(request);
+            Message message = createMessage(mimeMessage);
+            // create draft
+            Draft draft = new Draft();
+            draft.setMessage(message);
+            Message responseMessage = gmailService.users().drafts().send(USER_ID, draft).execute();
+            return GmailDraftSendResponse.builder()
+                    .id(responseMessage.getId())
+                    .threadId(responseMessage.getThreadId())
+                    .labelsId(responseMessage.getLabelIds())
+                    .snippet(responseMessage.getSnippet()).build();
+        }catch (Exception e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_DRAFTS_SEND_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_DRAFTS_SEND_API_ERROR_MESSAGE.getMessage()
+            );
+        }
     }
 
-    public GmailDraftGetResponse getUserEmailDraft(String uid, String id) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        Draft draft = getOneDraftResponse(id, gmailService);
-        GmailDraftGetMessage message = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
-        return GmailDraftGetResponse.builder()
-                .id(draft.getId())
-                .message(message)
-                .build();
+    public GmailDraftGetResponse getUserEmailDraft(String accessToken, String id){
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            Draft draft = getOneDraftResponse(id, gmailService);
+            GmailDraftGetMessage message = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
+            return GmailDraftGetResponse.builder()
+                    .id(draft.getId())
+                    .message(message)
+                    .build();
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_DRAFTS_GET_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_DRAFTS_GET_API_ERROR_MESSAGE.getMessage()
+            );
+        }
     }
 
-    public GmailDraftUpdateResponse updateUserEmailDraft(String uid, String id, GmailDraftCommonRequest request) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        Profile profile = gmailService.users().getProfile(USER_ID).execute();
-        String fromEmailAddress = profile.getEmailAddress();
-        request.setFromEmailAddress(fromEmailAddress);
-        MimeMessage mimeMessage = createDraft(request);
-        Message message = createMessage(mimeMessage);
-        // create new draft
-        Draft draft = new Draft().setMessage(message);
-        draft = gmailService.users().drafts().update(USER_ID, id, draft).execute();
-        GmailDraftGetMessage changedMessage = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
-        return GmailDraftUpdateResponse.builder()
-                .id(draft.getId())
-                .message(changedMessage)
-                .build();
+    public GmailDraftUpdateResponse updateUserEmailDraft(String accessToken, String id, GmailDraftCommonRequest request){
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            Profile profile = gmailService.users().getProfile(USER_ID).execute();
+            String fromEmailAddress = profile.getEmailAddress();
+            request.setFromEmailAddress(fromEmailAddress);
+            MimeMessage mimeMessage = createDraft(request);
+            Message message = createMessage(mimeMessage);
+            // create new draft
+            Draft draft = new Draft().setMessage(message);
+            draft = gmailService.users().drafts().update(USER_ID, id, draft).execute();
+            GmailDraftGetMessage changedMessage = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
+            return GmailDraftUpdateResponse.builder()
+                    .id(draft.getId())
+                    .message(changedMessage)
+                    .build();
+        }catch (Exception e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_DRAFTS_UPDATE_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_DRAFTS_UPDATE_API_ERROR_MESSAGE.getMessage()
+            );
+        }
     }
 
-    public GmailDraftCreateResponse createUserEmailDraft(String uid, GmailDraftCommonRequest request) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        Profile profile = gmailService.users().getProfile(USER_ID).execute();
-        String fromEmailAddress = profile.getEmailAddress();
-        request.setFromEmailAddress(fromEmailAddress);
-        MimeMessage mimeMessage = createDraft(request);
-        Message message = createMessage(mimeMessage);
-        // create new draft
-        Draft draft = new Draft().setMessage(message);
-        draft = gmailService.users().drafts().create(USER_ID, draft).execute();
-        //GmailDraftGetMessage changedMessage = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
-        return GmailDraftCreateResponse.builder()
-                .id(draft.getId())
-                //.message(changedMessage)
-                .build();
+    public GmailDraftCreateResponse createUserEmailDraft(String accessToken, GmailDraftCommonRequest request){
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            Profile profile = gmailService.users().getProfile(USER_ID).execute();
+            String fromEmailAddress = profile.getEmailAddress();
+            request.setFromEmailAddress(fromEmailAddress);
+            MimeMessage mimeMessage = createDraft(request);
+            Message message = createMessage(mimeMessage);
+            // create new draft
+            Draft draft = new Draft().setMessage(message);
+            draft = gmailService.users().drafts().create(USER_ID, draft).execute();
+            //GmailDraftGetMessage changedMessage = GmailDraftGetMessage.toGmailDraftGetMessages(draft.getMessage());
+            return GmailDraftCreateResponse.builder()
+                    .id(draft.getId())
+                    //.message(changedMessage)
+                    .build();
+        }catch (Exception e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_DRAFTS_CREATE_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_DRAFTS_CREATE_API_ERROR_MESSAGE.getMessage()
+            );
+        }
     }
 
-    public GmailThreadUpdateResponse updateUserEmailThread(String uid, String id, GmailThreadUpdateRequest request) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        ModifyThreadRequest modifyThreadRequest = new ModifyThreadRequest();
-        modifyThreadRequest.setAddLabelIds(request.getAddLabelIds());
-        modifyThreadRequest.setRemoveLabelIds(request.getRemoveLabelIds());
-        gmailService.users().threads().modify(USER_ID, id, modifyThreadRequest).execute();
-        return GmailThreadUpdateResponse.builder()
-                .addLabelIds(request.getAddLabelIds())
-                .removeLabelIds(request.getRemoveLabelIds())
-                .build();
+    public GmailThreadUpdateResponse updateUserEmailThread(String accessToken, String id, GmailThreadUpdateRequest request){
+        try {
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            ModifyThreadRequest modifyThreadRequest = new ModifyThreadRequest();
+            modifyThreadRequest.setAddLabelIds(request.getAddLabelIds());
+            modifyThreadRequest.setRemoveLabelIds(request.getRemoveLabelIds());
+            gmailService.users().threads().modify(USER_ID, id, modifyThreadRequest).execute();
+            return GmailThreadUpdateResponse.builder()
+                    .addLabelIds(request.getAddLabelIds())
+                    .removeLabelIds(request.getRemoveLabelIds())
+                    .build();
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_MODIFY_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_THREADS_MODIFY_API_ERROR_MESSAGE.getMessage()
+            );
+        }
     }
 
-    public GmailMessageUpdateResponse updateUserEmailMessage(String uid, String id, GmailMessageUpdateRequest request) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        ModifyMessageRequest modifyMessageRequest = new ModifyMessageRequest();
-        modifyMessageRequest.setAddLabelIds(request.getAddLabelIds());
-        modifyMessageRequest.setRemoveLabelIds(request.getRemoveLabelIds());
-        gmailService.users().messages().modify(USER_ID, id, modifyMessageRequest).execute();
-        return GmailMessageUpdateResponse.builder()
-                .addLabelIds(request.getAddLabelIds())
-                .removeLabelIds(request.getRemoveLabelIds())
-                .build();
+    public GmailMessageUpdateResponse updateUserEmailMessage(String accessToken, String id, GmailMessageUpdateRequest request){
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            ModifyMessageRequest modifyMessageRequest = new ModifyMessageRequest();
+            modifyMessageRequest.setAddLabelIds(request.getAddLabelIds());
+            modifyMessageRequest.setRemoveLabelIds(request.getRemoveLabelIds());
+            gmailService.users().messages().modify(USER_ID, id, modifyMessageRequest).execute();
+            return GmailMessageUpdateResponse.builder()
+                    .addLabelIds(request.getAddLabelIds())
+                    .removeLabelIds(request.getRemoveLabelIds())
+                    .build();
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_MODIFY_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_MESSAGES_MODIFY_API_ERROR_MESSAGE.getMessage()
+            );
+        }
     }
 
     @Transactional
-    public PubSubWatchResponse subscribePubSub(String uid, PubSubWatchRequest dto) throws Exception{
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        List<FcmToken> fcmTokens = fcmTokenRepository.findByAccount(account);
-        pubSubValidator.validateWatch(fcmTokens);
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        WatchRequest watchRequest = new WatchRequest()
-                .setLabelIds(dto.getLabelIds())
-                .setLabelFilterBehavior("include")
-                .setTopicName("projects/echo-email-app/topics/gmail");
-        WatchResponse watchResponse = gmailService.users().watch(USER_ID, watchRequest).execute();
-        Optional<PubSubHistory> pubSubHistory = pubSubHistoryRepository.findByAccount(account);
-        if(pubSubHistory.isEmpty()){
-            PubSubHistory newHistory = PubSubHistory.builder()
-                    .historyId(watchResponse.getHistoryId())
-                    .account(account).build();
-            pubSubHistoryRepository.save(newHistory);
-        }else{
-            PubSubHistory findHistory = pubSubHistory.get();
-            findHistory.updateHistoryId(watchResponse.getHistoryId());
-        }
-        return PubSubWatchResponse.builder()
-                .historyId(watchResponse.getHistoryId())
-                .expiration(watchResponse.getExpiration()).build();
-    }
-
-    public void stopPubSub(String uid) throws Exception {
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE
-                        , ErrorCode.NOT_FOUND_ACCESS_TOKEN.getMessage())
-        );
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        gmailService.users().stop(USER_ID).execute();
-    }
-
-    public GmailHistoryListResponse getHistories(String uid, String historyId, String pageToken) throws Exception {
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        ListHistoryResponse historyResponse = gmailService
-                .users()
-                .history()
-                .list(USER_ID)
-                .setLabelId(HISTORY_INBOX_LABEL)
-                .setPageToken(pageToken)
-                .setStartHistoryId(new BigInteger(historyId))
-                .execute();
-        List<History> histories = historyResponse.getHistory(); // get histories
-        GmailHistoryListResponse response = GmailHistoryListResponse.builder()
-                .nextPageToken(historyResponse.getNextPageToken())
-                .historyId(historyResponse.getHistoryId())
-                .build();
-        if(histories == null) return response;
-        // convert history format
-        List<GmailHistoryListData> historyListData = histories.stream().map((history) -> {
-            List<GmailHistoryListMessageAdded> messagesAdded = history.getMessagesAdded() != null
-                    ? history.getMessagesAdded().stream()
-                    .map(GmailHistoryListMessageAdded::toGmailHistoryListMessageAdded)
-                    .toList()
-                    : Collections.emptyList();
-
-            List<GmailHistoryListMessageDeleted> messagesDeleted = history.getMessagesDeleted() != null
-                    ? history.getMessagesDeleted().stream()
-                    .map(GmailHistoryListMessageDeleted::toGmailHistoryListMessageDeleted)
-                    .toList()
-                    : Collections.emptyList();
-
-            List<GmailHistoryListLabelAdded> labelsAdded = history.getLabelsAdded() != null
-                    ? history.getLabelsAdded().stream()
-                    .map(GmailHistoryListLabelAdded::toGmailHistoryListLabelAdded)
-                    .toList()
-                    : Collections.emptyList();
-
-            List<GmailHistoryListLabelRemoved> labelsRemoved = history.getLabelsRemoved() != null
-                    ? history.getLabelsRemoved().stream()
-                    .map(GmailHistoryListLabelRemoved::toGmailHistoryListLabelRemoved)
-                    .toList()
-                    : Collections.emptyList();
-            return GmailHistoryListData.builder()
-                    .messagesAdded(messagesAdded)
-                    .messagesDeleted(messagesDeleted)
-                    .labelsAdded(labelsAdded)
-                    .labelsRemoved(labelsRemoved)
-                    .build();
-        }).toList();
-        response.setHistory(historyListData);
-        return response;
-    }
-
-    public AutoForwardingResponse setUpAutoForwarding(String uid, String q, String email) throws IOException {
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        addForwardingAddress(email, gmailService);
-        createFilter(q, email, gmailService);
-        return AutoForwardingResponse.builder()
-                .q(q)
-                .forwardingEmail(email)
-                .build();
-    }
-
-    public void generateVerificationLabel(String uid) throws IOException {
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
-        // find echo verification label
-        Gmail gmailService = gmailUtility.createGmailService(accessToken);
-        ListLabelsResponse listLabelsResponse = gmailService.users().labels().list(USER_ID).execute();
-        for(Label label : listLabelsResponse.getLabels()){
-            if(label.getName().equals(PARENT_VERIFICATION_LABEL + "/" + CHILD_VERIFICATION_LABEL)){
-                return;
+    public PubSubWatchResponse subscribePubSub(Account activeAccount, PubSubWatchRequest dto){
+        try {
+            List<FcmToken> fcmTokens = fcmTokenRepository.findByAccount(activeAccount);
+            pubSubValidator.validateWatch(fcmTokens);
+            String accessToken = activeAccount.getAccessToken();
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            WatchRequest watchRequest = new WatchRequest()
+                    .setLabelIds(dto.getLabelIds())
+                    .setLabelFilterBehavior("include")
+                    .setTopicName("projects/echo-email-app/topics/gmail");
+            WatchResponse watchResponse = gmailService.users().watch(USER_ID, watchRequest).execute();
+            Optional<PubSubHistory> pubSubHistory = pubSubHistoryRepository.findByAccount(activeAccount);
+            if(pubSubHistory.isEmpty()){
+                PubSubHistory newHistory = PubSubHistory.builder()
+                        .historyId(watchResponse.getHistoryId())
+                        .account(activeAccount).build();
+                pubSubHistoryRepository.save(newHistory);
+            }else{
+                PubSubHistory findHistory = pubSubHistory.get();
+                findHistory.updateHistoryId(watchResponse.getHistoryId());
             }
+            return PubSubWatchResponse.builder()
+                    .historyId(watchResponse.getHistoryId())
+                    .expiration(watchResponse.getExpiration()).build();
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_WATCH_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_WATCH_API_ERROR_MESSAGE.getMessage()
+            );
         }
-        // create echo verification label
-        Label parentLabel = new Label()
-                .setName(PARENT_VERIFICATION_LABEL)
-                .setLabelListVisibility("labelShow")
-                .setMessageListVisibility("show");
-        gmailService.users().labels().create(USER_ID, parentLabel).execute();
-        Label childLabel = new Label()
-                .setName(PARENT_VERIFICATION_LABEL + "/" + CHILD_VERIFICATION_LABEL)
-                .setLabelListVisibility("labelShow")
-                .setMessageListVisibility("show");
-        gmailService.users().labels().create(USER_ID, childLabel).execute();
+    }
+
+    public void stopPubSub(String accessToken){
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            gmailService.users().stop(USER_ID).execute();
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_STOP_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_STOP_API_ERROR_MESSAGE.getMessage()
+            );
+        }
+    }
+
+    public GmailHistoryListResponse getHistories(String accessToken, String historyId, String pageToken){
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            ListHistoryResponse historyResponse = gmailService
+                    .users()
+                    .history()
+                    .list(USER_ID)
+                    .setLabelId(HISTORY_INBOX_LABEL)
+                    .setPageToken(pageToken)
+                    .setStartHistoryId(new BigInteger(historyId))
+                    .execute();
+            List<History> histories = historyResponse.getHistory(); // get histories
+            GmailHistoryListResponse response = GmailHistoryListResponse.builder()
+                    .nextPageToken(historyResponse.getNextPageToken())
+                    .historyId(historyResponse.getHistoryId())
+                    .build();
+            if(histories == null) return response;
+            // convert history format
+            List<GmailHistoryListData> historyListData = histories.stream().map((history) -> {
+                List<GmailHistoryListMessageAdded> messagesAdded = history.getMessagesAdded() != null
+                        ? history.getMessagesAdded().stream()
+                        .map(GmailHistoryListMessageAdded::toGmailHistoryListMessageAdded)
+                        .toList()
+                        : Collections.emptyList();
+
+                List<GmailHistoryListMessageDeleted> messagesDeleted = history.getMessagesDeleted() != null
+                        ? history.getMessagesDeleted().stream()
+                        .map(GmailHistoryListMessageDeleted::toGmailHistoryListMessageDeleted)
+                        .toList()
+                        : Collections.emptyList();
+
+                List<GmailHistoryListLabelAdded> labelsAdded = history.getLabelsAdded() != null
+                        ? history.getLabelsAdded().stream()
+                        .map(GmailHistoryListLabelAdded::toGmailHistoryListLabelAdded)
+                        .toList()
+                        : Collections.emptyList();
+
+                List<GmailHistoryListLabelRemoved> labelsRemoved = history.getLabelsRemoved() != null
+                        ? history.getLabelsRemoved().stream()
+                        .map(GmailHistoryListLabelRemoved::toGmailHistoryListLabelRemoved)
+                        .toList()
+                        : Collections.emptyList();
+                return GmailHistoryListData.builder()
+                        .messagesAdded(messagesAdded)
+                        .messagesDeleted(messagesDeleted)
+                        .labelsAdded(labelsAdded)
+                        .labelsRemoved(labelsRemoved)
+                        .build();
+            }).toList();
+            response.setHistory(historyListData);
+            return response;
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_HISTORY_LIST_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_HISTORY_LIST_API_ERROR_MESSAGE.getMessage()
+            );
+        }
+    }
+
+    public AutoForwardingResponse setUpAutoForwarding(String accessToken, String q, String email){
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            addForwardingAddress(email, gmailService);
+            createFilter(q, email, gmailService);
+            return AutoForwardingResponse.builder()
+                    .q(q)
+                    .forwardingEmail(email)
+                    .build();
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_SETTINGS_FILTERS_CREATE_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_SETTINGS_FILTERS_CREATE_API_ERROR_MESSAGE.getMessage()
+            );
+        }
+    }
+
+    public void generateVerificationLabel(String accessToken){
+        try{
+            // find echo verification label
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            ListLabelsResponse listLabelsResponse = gmailService.users().labels().list(USER_ID).execute();
+            for(Label label : listLabelsResponse.getLabels()){
+                if(label.getName().equals(PARENT_VERIFICATION_LABEL + "/" + CHILD_VERIFICATION_LABEL)){
+                    return;
+                }
+            }
+            // create echo verification label
+            Label parentLabel = new Label()
+                    .setName(PARENT_VERIFICATION_LABEL)
+                    .setLabelListVisibility("labelShow")
+                    .setMessageListVisibility("show");
+            gmailService.users().labels().create(USER_ID, parentLabel).execute();
+            Label childLabel = new Label()
+                    .setName(PARENT_VERIFICATION_LABEL + "/" + CHILD_VERIFICATION_LABEL)
+                    .setLabelListVisibility("labelShow")
+                    .setMessageListVisibility("show");
+            gmailService.users().labels().create(USER_ID, childLabel).execute();
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_LABELS_CREATE_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_LABELS_CREATE_API_ERROR_MESSAGE.getMessage()
+            );
+        }
+    }
+
+    public GmailMessageAttachmentDownloadResponse downloadAttachment(String accessToken, String messageId, String attachmentId){
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            MessagePartBody attachPart = gmailService
+                    .users()
+                    .messages()
+                    .attachments()
+                    .get(USER_ID, messageId, attachmentId).execute();
+            String standardBase64 = attachPart.getData()
+                    .replace('-', '+')
+                    .replace('_', '/');
+            // Add padding if necessary
+            int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
+            for (int i = 0; i < paddingCount; i++) {
+                standardBase64 += "=";
+            }
+            byte[] decodedBinaryContent = java.util.Base64.getDecoder().decode(standardBase64);
+            ByteArrayResource resource = new ByteArrayResource(decodedBinaryContent);
+            return GmailMessageAttachmentDownloadResponse.builder()
+                    .attachmentId(attachmentId)
+                    .size(attachPart.getSize())
+                    .byteData(decodedBinaryContent)
+                    .resource(resource)
+                    .build();
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_ATTACHMENTS_GET_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_MESSAGES_ATTACHMENTS_GET_API_ERROR_MESSAGE.getMessage()
+            );
+        }
+    }
+
+    public void getGoogleDriveFileId(String accessToken, String messageId){
+        try{
+            Gmail gmailService = gmailUtility.createGmailService(accessToken);
+            Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
+            List<String> fileIds = new ArrayList<>();
+            for (MessagePart part : message.getPayload().getParts()) {
+                if ("text/html".equals(part.getMimeType())) {
+                    String standardBase64 = part.getBody().getData()
+                            .replace('-', '+')
+                            .replace('_', '/');
+                    // Add padding if necessary
+                    int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
+                    for (int i = 0; i < paddingCount; i++) {
+                        standardBase64 += "=";
+                    }
+                    byte[] decodedBinaryContent = java.util.Base64.getDecoder().decode(standardBase64);
+                    String decodedData = new String(decodedBinaryContent, "UTF-8");
+                    // Google Drive 파일 URL 패턴을 추출함
+                    Pattern pattern = Pattern.compile("https://docs\\.google\\.com[^\\s]*");
+                    Matcher matcher = pattern.matcher(decodedData);
+                    // 모든 매칭되는 파일 ID를 리스트에 추가
+                    while (matcher.find()) {
+                        fileIds.add(matcher.group());
+                    }
+                }
+            }
+        }catch (IOException e) {
+            System.out.println("An error occurred: " + e);
+        }
     }
 
     // Methods : get something
@@ -587,22 +684,34 @@ public class GmailService {
         }
     }
 
-    private ListThreadsResponse getSearchListThreadsResponse(GmailSearchParams params, Gmail gmailService) throws IOException{
+    private ListThreadsResponse getSearchListThreadsResponse(GmailSearchParams params, Gmail gmailService){
         String q = params.createQ();
-        return gmailService.users().threads()
-                .list(USER_ID)
-                .setMaxResults(THREADS_LIST_MAX_LENGTH)
-                .setPrettyPrint(Boolean.TRUE)
-                .setQ(q)
-                .execute();
+        try{
+             return gmailService.users().threads()
+                    .list(USER_ID)
+                    .setMaxResults(THREADS_LIST_MAX_LENGTH)
+                    .setPrettyPrint(Boolean.TRUE)
+                    .setQ(q)
+                    .execute();
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE.getMessage()
+            );
+        }
     }
 
-    private Thread getOneThreadResponse(String id, Gmail gmailService) throws IOException {
-        return gmailService.users().threads()
-                .get(USER_ID, id)
-                .setFormat(THREADS_GET_FULL_FORMAT)
-                .setPrettyPrint(Boolean.TRUE)
-                .execute();
+    private Thread getOneThreadResponse(String id, Gmail gmailService) {
+        try{
+            return gmailService.users().threads()
+                    .get(USER_ID, id)
+                    .setFormat(THREADS_GET_FULL_FORMAT)
+                    .setPrettyPrint(Boolean.TRUE)
+                    .execute();
+        }catch (IOException e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_THREAD_GET_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_THREAD_GET_API_ERROR_MESSAGE.getMessage()
+            );
+        }
     }
 
     private ListDraftsResponse getListDraftsResponse(Gmail gmailService, String pageToken, String q) throws IOException{
@@ -701,14 +810,20 @@ public class GmailService {
         return list;
     }
 
-    private int getTotalCountThreads(Gmail gmailService, String label) throws IOException {
-        Label result = gmailService.users().labels()
-                .get(USER_ID, label)
-                .execute();
-        return result.getThreadsTotal();
+    private int getTotalCountThreads(Gmail gmailService, String label){
+        try{
+            Label result = gmailService.users().labels()
+                    .get(USER_ID, label)
+                    .execute();
+            return result.getThreadsTotal();
+        }catch (IOException e) {
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_LABELS_GET_API_ERROR_MESSAGE,
+                    ErrorCode.REQUEST_GMAIL_USER_LABELS_GET_API_ERROR_MESSAGE.getMessage()
+            );
+        }
     }
 
-    private void getThreadsAttachments(MessagePart part, Map<String, GmailThreadListAttachments> attachments, Map<String, GmailThreadListInlineImages> inlineImages) throws IOException {
+    private void getThreadsAttachments(MessagePart part, Map<String, GmailThreadListAttachments> attachments, Map<String, GmailThreadListInlineImages> inlineImages) {
         if(part.getParts() == null){ // base condition
             if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();

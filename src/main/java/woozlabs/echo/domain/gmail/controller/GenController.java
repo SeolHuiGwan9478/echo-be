@@ -42,15 +42,9 @@ public class GenController {
 
     @PostMapping("/api/v1/gen/template")
     public ResponseEntity<?> genEmailTemplate(HttpServletRequest httpServletRequest, @RequestBody GenScheduleEmailTemplateRequest dto){
-        try{
-            log.info("Request to generate email template");
-            String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-            genService.generateScheduleEmailTemplate(uid, dto.getContent(), dto.getToEmail());
-            return new ResponseEntity<>(HttpStatus.OK);
-        }catch (JsonProcessingException e){
-            throw new CustomErrorException(ErrorCode.OBJECT_MAPPER_JSON_PARSING_ERROR_MESSAGE, ErrorCode.OBJECT_MAPPER_JSON_PARSING_ERROR_MESSAGE.getMessage());
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        log.info("Request to generate email template");
+        String aAUid = gmailUtility.getActiveAccountUid(httpServletRequest);
+        genService.generateScheduleEmailTemplate(aAUid, dto.getContent(), dto.getToEmail());
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

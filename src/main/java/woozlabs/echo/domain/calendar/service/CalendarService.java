@@ -35,37 +35,45 @@ public class CalendarService {
     private final String DATES_CONNECTION_CHAR = " ~ ";
     private final AccountRepository accountRepository;
 
-    public CalendarListResponse getCalendars(String uid) throws GeneralSecurityException, IOException {
-        Calendar calendarService = getCalendarService(uid);
-        CalendarList calendarList = calendarService.calendarList().list().execute();
-        List<CalendarListEntry> calendarListEntries = calendarList.getItems();
-        List<CalendarListData> calendarListData = calendarListEntries.stream()
-                .map(CalendarListData::toCalendarListData).toList();
-        return CalendarListResponse.builder()
-                .totalCounts(calendarListData.size())
-                .data(calendarListData)
-                .build();
+    public CalendarListResponse getCalendars(String uid){
+        try{
+            Calendar calendarService = getCalendarService(uid);
+            CalendarList calendarList = calendarService.calendarList().list().execute();
+            List<CalendarListEntry> calendarListEntries = calendarList.getItems();
+            List<CalendarListData> calendarListData = calendarListEntries.stream()
+                    .map(CalendarListData::toCalendarListData).toList();
+            return CalendarListResponse.builder()
+                    .totalCounts(calendarListData.size())
+                    .data(calendarListData)
+                    .build();
+        }catch (GeneralSecurityException | IOException e) {
+            throw new CustomErrorException(ErrorCode.CALENDAR_SERVICE_ERROR_MESSAGE, ErrorCode.CALENDAR_SERVICE_ERROR_MESSAGE.getMessage());
+        }
     }
 
-    public UnAvailableDatesResponse getDatesWithNoEventsInTwoWeeks(String uid) throws GeneralSecurityException, IOException {
-        Calendar calendarService = getCalendarService(uid);
-        DateTime today = new DateTime(System.currentTimeMillis());
-        DateTime twoWeeksLater = new DateTime(System.currentTimeMillis() + 14L * 24L * 60L * 60L * 1000L);
-        Events eventsInTwoWeeks = calendarService.events()
-                .list(PRIMARY_CALENDAR_ID)
-                .setTimeMin(today)
-                .setTimeMax(twoWeeksLater)
-                .setSingleEvents(true)
-                .execute();
-        List<Event> events = eventsInTwoWeeks.getItems();
-        List<String> unAvailableDates = events.stream().map((event) -> {
-            DateTime startDateTime = event.getStart().getDateTime();
-            DateTime endDateTime = event.getEnd().getDateTime();
-            return startDateTime + DATES_CONNECTION_CHAR + endDateTime;
-        }).toList();
-        return UnAvailableDatesResponse.builder()
-                .unavailableDates(unAvailableDates)
-                .build();
+    public UnAvailableDatesResponse getDatesWithNoEventsInTwoWeeks(String uid){
+        try{
+            Calendar calendarService = getCalendarService(uid);
+            DateTime today = new DateTime(System.currentTimeMillis());
+            DateTime twoWeeksLater = new DateTime(System.currentTimeMillis() + 14L * 24L * 60L * 60L * 1000L);
+            Events eventsInTwoWeeks = calendarService.events()
+                    .list(PRIMARY_CALENDAR_ID)
+                    .setTimeMin(today)
+                    .setTimeMax(twoWeeksLater)
+                    .setSingleEvents(true)
+                    .execute();
+            List<Event> events = eventsInTwoWeeks.getItems();
+            List<String> unAvailableDates = events.stream().map((event) -> {
+                DateTime startDateTime = event.getStart().getDateTime();
+                DateTime endDateTime = event.getEnd().getDateTime();
+                return startDateTime + DATES_CONNECTION_CHAR + endDateTime;
+            }).toList();
+            return UnAvailableDatesResponse.builder()
+                    .unavailableDates(unAvailableDates)
+                    .build();
+        }catch (GeneralSecurityException | IOException e) {
+            throw new CustomErrorException(ErrorCode.CALENDAR_SERVICE_ERROR_MESSAGE, ErrorCode.CALENDAR_SERVICE_ERROR_MESSAGE.getMessage());
+        }
     }
 
     private Calendar getCalendarService(String uid) throws GeneralSecurityException, IOException {

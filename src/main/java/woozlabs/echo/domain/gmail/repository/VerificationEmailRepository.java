@@ -7,5 +7,5 @@ import woozlabs.echo.domain.member.entity.Account;
 import java.util.Optional;
 
 public interface VerificationEmailRepository extends JpaRepository<VerificationEmail, Long> {
-    Optional<VerificationEmail> findByUuidAndAccount(String uuid, Account account);
+    Optional<VerificationEmail> findByUuid(String uuid);
 }

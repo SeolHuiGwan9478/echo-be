@@ -46,6 +46,7 @@ public final class GlobalConstant {
     public static final String REQUEST_GMAIL_USER_MESSAGES_GET_API_ERR_MSG = "Internal Server Error: Request gmail messages get one api";
     // firebase
     public static final String FIREBASE_UID_KEY = "uid";
+    public static final String ACTIVE_ACCOUNT_UID_KEY = "aAUid";
 
     // Date Format
     public static final String TIMEZONE_PATTERN_2 = "[+-]\\d{4}";

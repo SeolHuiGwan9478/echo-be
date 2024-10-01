@@ -12,6 +12,7 @@ import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -20,21 +21,20 @@ import org.jsoup.select.Elements;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
-import woozlabs.echo.domain.calendar.dto.UnAvailableDatesResponse;
-import woozlabs.echo.domain.calendar.service.CalendarService;
 import woozlabs.echo.domain.chatGPT.service.ChatGptService;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractScheduleInfo;
 import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
-import woozlabs.echo.domain.gmail.dto.extract.GenScheduleEmailTemplateResponse;
+import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.domain.member.entity.MemberAccount;
+import woozlabs.echo.domain.member.repository.query.MemberAccountQueryRepository;
+import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,6 +47,7 @@ public class GmailUtility {
 
     private final ObjectMapper om;
     private final ChatGptService chatGptService;
+    private final MemberAccountQueryRepository memberAccountQueryRepository;
     private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private List<String> keywords;
     private final List<String> SCOPES = Arrays.asList(
@@ -63,6 +64,31 @@ public class GmailUtility {
     public void initKeywords(){
         this.keywords = readKeywords("keywords_en.txt");
         this.keywords.addAll(readKeywords("keywords_ko.txt"));
+    }
+
+    public String getActiveAccountAccessToken(HttpServletRequest request){
+        String uid = (String) request.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        String aAUid = (String) request.getAttribute(GlobalConstant.ACTIVE_ACCOUNT_UID_KEY);
+        MemberAccount memberAccount = memberAccountQueryRepository.findByMemberUidAndAccountUid(uid, aAUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT));
+        Account account = memberAccount.getAccount();
+        return account.getAccessToken();
+    }
+
+    public Account getActiveAccount(HttpServletRequest request){
+        String uid = (String) request.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        String aAUid = (String) request.getAttribute(GlobalConstant.ACTIVE_ACCOUNT_UID_KEY);
+        MemberAccount memberAccount = memberAccountQueryRepository.findByMemberUidAndAccountUid(uid, aAUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT));
+        return memberAccount.getAccount();
+    }
+
+    public String getActiveAccountUid(HttpServletRequest request){
+        String uid = (String) request.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        String aAUid = (String) request.getAttribute(GlobalConstant.ACTIVE_ACCOUNT_UID_KEY);
+        MemberAccount memberAccount = memberAccountQueryRepository.findByMemberUidAndAccountUid(uid, aAUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT));
+        return memberAccount.getAccount().getUid();
     }
 
     public ExtractVerificationInfo extractVerification(String rawContent){
