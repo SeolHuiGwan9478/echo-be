@@ -60,7 +60,7 @@ public class FirebaseAuthInterceptor implements HandlerInterceptor {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, AUTH_UNAUTHORIZED_ERR_MSG);
             return false;
         }        // setting attribute of request obj
-        request.setAttribute(FIREBASE_UID_KEY, firebaseToken.getUid());
+        request.setAttribute(GlobalConstant.FIREBASE_UID_KEY, firebaseToken.getUid());
         return true;
     }
 }

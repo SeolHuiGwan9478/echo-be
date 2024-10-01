@@ -74,10 +74,7 @@ public class GmailService {
     private final GmailUtility gmailUtility;
     private final PubSubValidator pubSubValidator;
 
-    public GmailThreadListResponse getQueryUserEmailThreads(String uid, String pageToken, Long maxResults, String q) {
-        Account account = accountRepository.findByUid(uid).orElseThrow(
-                () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
-        String accessToken = account.getAccessToken();
+    public GmailThreadListResponse getQueryUserEmailThreads(String accessToken, String pageToken, Long maxResults, String q) {
         Gmail gmailService = gmailUtility.createGmailService(accessToken);
         // ---- temp data ----
         LocalDate currentDate = LocalDate.now();

@@ -18,6 +18,7 @@ import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchRequest;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubWatchResponse;
 import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.service.GmailService;
+import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.dto.ResponseDto;
 import woozlabs.echo.global.exception.CustomErrorException;
@@ -28,13 +29,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static org.springframework.web.servlet.function.RequestPredicates.contentType;
-
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 public class GmailController {
     private final GmailService gmailService;
+    private final GmailUtility gmailUtility;
     // threads
     @GetMapping("/api/v1/gmail/threads")
     public ResponseEntity<ResponseDto> getQueryThreads(HttpServletRequest httpServletRequest,
@@ -42,8 +42,8 @@ public class GmailController {
                                                        @RequestParam(value = "maxResults", required = false, defaultValue = "50") Long maxResults,
                                                        @RequestParam(value = "q") String q){
         log.info("Request to get threads");
-        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-        GmailThreadListResponse response = gmailService.getQueryUserEmailThreads(uid, pageToken, maxResults, q);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        GmailThreadListResponse response = gmailService.getQueryUserEmailThreads(accessToken, pageToken, maxResults, q);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
