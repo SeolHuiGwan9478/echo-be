@@ -39,7 +39,7 @@ public class GmailThreadGetMessagesResponse {
     private Map<String, GmailThreadListInlineImages> inlineImages;
     private ExtractVerificationInfo verification = new ExtractVerificationInfo();
 
-    public static GmailThreadGetMessagesResponse toGmailThreadGetMessages(Message message) throws IOException {
+    public static GmailThreadGetMessagesResponse toGmailThreadGetMessages(Message message) {
         GmailThreadGetMessagesResponse gmailThreadGetMessages = new GmailThreadGetMessagesResponse();
         MessagePart payload = message.getPayload();
         GmailThreadGetPayload convertedPayload = new GmailThreadGetPayload(payload);
@@ -153,7 +153,7 @@ public class GmailThreadGetMessagesResponse {
         }
     }
 
-    private static void getThreadsAttachments(MessagePart part, Map<String, GmailThreadListAttachments> attachments, Map<String, GmailThreadListInlineImages> inlineImages) throws IOException {
+    private static void getThreadsAttachments(MessagePart part, Map<String, GmailThreadListAttachments> attachments, Map<String, GmailThreadListInlineImages> inlineImages) {
         if(part.getParts() == null){ // base condition
             if(part.getFilename() != null && !part.getFilename().isBlank() && !GlobalUtility.isInlineFile(part)){
                 MessagePartBody body = part.getBody();

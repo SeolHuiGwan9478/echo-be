@@ -46,8 +46,24 @@ public enum ErrorCode {
 
     // email
     REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE(500, "Failed to get gmail threads api"),
+    REQUEST_GMAIL_USER_THREAD_GET_API_ERROR_MESSAGE(500, "Failed to get gmail thread api"),
+    REQUEST_GMAIL_USER_THREAD_TRASH_API_ERROR_MESSAGE(500, "Failed to trash gmail thread api"),
+    REQUEST_GMAIL_USER_THREADS_MODIFY_API_ERROR_MESSAGE(500, "Failed to modify gmail thread api"),
+    REQUEST_GMAIL_USER_THREAD_DELETE_API_ERROR_MESSAGE(500, "Failed to delete gmail thread api"),
+    REQUEST_GMAIL_USER_LABELS_GET_API_ERROR_MESSAGE(500, "Failed to get gmail labels api"),
     REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE(500, "Failed to send gmail messages api"),
     REQUEST_GMAIL_USER_DRAFTS_SEND_API_ERROR_MESSAGE(500, "Failed to send draft messages api"),
+    REQUEST_GMAIL_USER_MESSAGES_GET_API_ERROR_MESSAGE(500, "Failed to get gmail messages api"),
+    REQUEST_GMAIL_USER_MESSAGES_MODIFY_API_ERROR_MESSAGE(500, "Failed to modify gmail messages api"),
+    REQUEST_GMAIL_USER_MESSAGES_ATTACHMENTS_GET_API_ERROR_MESSAGE(500, "Failed to get gmail attachments api"),
+    REQUEST_GMAIL_USER_DRAFTS_GET_API_ERROR_MESSAGE(500, "Failed to get gmail drafts api"),
+    REQUEST_GMAIL_USER_DRAFTS_CREATE_API_ERROR_MESSAGE(500, "Failed to create gmail drafts api"),
+    REQUEST_GMAIL_USER_DRAFTS_UPDATE_API_ERROR_MESSAGE(500, "Failed to update gmail drafts api"),
+    REQUEST_GMAIL_USER_STOP_API_ERROR_MESSAGE(500, "Failed to stop gmail api"),
+    REQUEST_GMAIL_USER_HISTORY_LIST_API_ERROR_MESSAGE(500, "Failed to get gmail history api"),
+    REQUEST_GMAIL_USER_SETTINGS_FILTERS_CREATE_API_ERROR_MESSAGE(500, "Failed to create gmail filters api"),
+    REQUEST_GMAIL_USER_LABELS_CREATE_API_ERROR_MESSAGE(500, "Failed to create gmail labels api"),
+    REQUEST_GMAIL_USER_WATCH_API_ERROR_MESSAGE(500, "Failed to watch gmail api"),
     FAILED_TO_GET_GMAIL_CONNECTION_REQUEST(500, "Failed to get connection gmail api"),
     FAILED_TO_CHANGE_DATE_FORMAT(500, "Failed to change date format"),
     INVALID_ACCESS_TOKEN(401, "Invalid Access Token"),
@@ -63,6 +79,8 @@ public enum ErrorCode {
     FAILED_TO_POST_GOOGLE_CALENDAR(500, "Failed to post Google Calendar Events"),
     FAILED_TO_UPDATE_GOOGLE_CALENDAR(500, "Failed to update Google Calendar Events"),
     FAILED_TO_DELETE_GOOGLE_CALENDAR(500, "Failed to delete Google Calendar Events"),
+    GENERATE_SCHEDULE_EMAIL_TEMPLATE_ERROR(500, "Failed to generate schedule email template"),
+    CALENDAR_SERVICE_ERROR_MESSAGE(500, "Failed to get Google Calendar Service"),
 
     // gemini
     FAILED_TO_GEMINI_COMPLETION(500, "Error while getting completion from Gemini"),

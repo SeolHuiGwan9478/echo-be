@@ -116,8 +116,6 @@ public class PubSubService {
                         .addAllTokens(fcmTokens)
                         .build();
                 FirebaseMessaging.getInstance().sendEachForMulticastAsync(message);
-            }catch (FirebaseMessagingException e) {
-                throw new CustomErrorException(ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR, ErrorCode.FIREBASE_CLOUD_MESSAGING_SEND_ERR.getMessage());
             } catch (Exception e) {
                 throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST.getMessage());
             }

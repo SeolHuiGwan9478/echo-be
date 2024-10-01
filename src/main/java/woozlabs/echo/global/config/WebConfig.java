@@ -58,7 +58,6 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns(
                         "/api/v1/gmail/**",
                         "/api/v1/calendar/**",
-                        "/api/v1/gemini/**",
                         "/api/v1/fcm",
                         "/api/v1/gen/**"
                 );

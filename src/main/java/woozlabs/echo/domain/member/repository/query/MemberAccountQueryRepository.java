@@ -13,6 +13,7 @@ public class MemberAccountQueryRepository {
     private final EntityManager em;
     public Optional<MemberAccount> findByMemberUidAndAccountUid(String uid, String accountUid){
         String jpql = "select ma from MemberAccount ma" +
+                " join fetch ma.account" +
                 " where ma.member.primaryUid = :uid" +
                 " and ma.account.uid = :accountUid";
         try{

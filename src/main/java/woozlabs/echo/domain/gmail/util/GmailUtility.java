@@ -75,6 +75,22 @@ public class GmailUtility {
         return account.getAccessToken();
     }
 
+    public Account getActiveAccount(HttpServletRequest request){
+        String uid = (String) request.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        String aAUid = (String) request.getAttribute(GlobalConstant.ACTIVE_ACCOUNT_UID_KEY);
+        MemberAccount memberAccount = memberAccountQueryRepository.findByMemberUidAndAccountUid(uid, aAUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT));
+        return memberAccount.getAccount();
+    }
+
+    public String getActiveAccountUid(HttpServletRequest request){
+        String uid = (String) request.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        String aAUid = (String) request.getAttribute(GlobalConstant.ACTIVE_ACCOUNT_UID_KEY);
+        MemberAccount memberAccount = memberAccountQueryRepository.findByMemberUidAndAccountUid(uid, aAUid)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT));
+        return memberAccount.getAccount().getUid();
+    }
+
     public ExtractVerificationInfo extractVerification(String rawContent){
         List<String> codes = new ArrayList<>();
         List<String> links = new ArrayList<>();

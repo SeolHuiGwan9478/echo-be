@@ -12,6 +12,7 @@ import woozlabs.echo.domain.gmail.dto.pubsub.FcmTokenResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.GetVerificationDataResponse;
 import woozlabs.echo.domain.gmail.dto.pubsub.PubSubMessage;
 import woozlabs.echo.domain.gmail.service.PubSubService;
+import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.dto.ResponseDto;
 
@@ -20,6 +21,7 @@ import woozlabs.echo.global.dto.ResponseDto;
 @RequiredArgsConstructor
 public class PubSubController {
     private final PubSubService pubSubService;
+    private final GmailUtility gmailUtility;
 
     @PostMapping(value = "/api/v1/webhook", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseDto> handleGmailWebhook(@RequestBody PubSubMessage pubsubMessage){
@@ -28,7 +30,6 @@ public class PubSubController {
             pubSubService.handleFirebaseCloudMessage(pubsubMessage);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e){
-            log.error(e.getMessage()); // checking bug
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -36,7 +37,7 @@ public class PubSubController {
     @PostMapping("/api/v1/fcm")
     public ResponseEntity<ResponseDto> postFcmToken(HttpServletRequest httpServletRequest, @RequestBody FcmTokenRequest request){
         log.info("Request to post fcmToken");
-        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        String uid = gmailUtility.getActiveAccountUid(httpServletRequest);
         FcmTokenResponse response = pubSubService.saveFcmToken(uid, request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
