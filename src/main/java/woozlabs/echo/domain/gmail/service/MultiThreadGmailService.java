@@ -16,8 +16,12 @@ import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.global.utils.GlobalUtility;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
@@ -39,6 +43,7 @@ public class MultiThreadGmailService {
             List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
             List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
             Map<String, GmailThreadListAttachments> attachments = new HashMap<>();
+            List<String> googleDriveAttachments = new ArrayList<>();
             List<GmailThreadGetMessagesResponse> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
             for(int idx = 0;idx < messages.size();idx++){
@@ -66,6 +71,7 @@ public class MultiThreadGmailService {
                 froms.add(gmailThreadGetMessage.getFrom());
                 ccs.addAll(gmailThreadGetMessage.getCc());
                 bccs.addAll(gmailThreadGetMessage.getBcc());
+                googleDriveAttachments.addAll(getGoogleDriveAttachments(message));
             }
             gmailThreadListThreads.setLabelIds(labelIds.stream().distinct().collect(Collectors.toList()));
             gmailThreadListThreads.setId(id);
@@ -77,8 +83,11 @@ public class MultiThreadGmailService {
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());
             gmailThreadListThreads.setMessages(convertedMessages);
+            gmailThreadListThreads.setGoogleDriveAttachmentSize(googleDriveAttachments.size());
+            gmailThreadListThreads.setGoogleDriveAttachments(googleDriveAttachments.stream().distinct().toList());
             return gmailThreadListThreads;
         } catch (IOException e) {
+            e.printStackTrace();
             throw new GmailException(e.getMessage());
         }
     }
@@ -128,6 +137,33 @@ public class MultiThreadGmailService {
                 }
             }
         }
+    }
+
+    private List<String> getGoogleDriveAttachments(Message message) throws UnsupportedEncodingException {
+        List<String> googleDriveAttachmentsInMessage = new ArrayList<>();
+        if(message.getPayload().getParts() == null){
+            return googleDriveAttachmentsInMessage;
+        }
+        for (MessagePart part : message.getPayload().getParts()) {
+            if ("text/html".equals(part.getMimeType())) {
+                String standardBase64 = part.getBody().getData()
+                        .replace('-', '+')
+                        .replace('_', '/');
+                // Add padding if necessary
+                int paddingCount = (4 - (standardBase64.length() % 4)) % 4;
+                for (int i = 0; i < paddingCount; i++) {
+                    standardBase64 += "=";
+                }
+                byte[] decodedBinaryContent = java.util.Base64.getDecoder().decode(standardBase64);
+                String decodedData = new String(decodedBinaryContent, StandardCharsets.UTF_8);
+                Pattern pattern = Pattern.compile("https://docs\\.google\\.com[^\\s]*");
+                Matcher matcher = pattern.matcher(decodedData);
+                while (matcher.find()) {
+                    googleDriveAttachmentsInMessage.add(matcher.group());
+                }
+            }
+        }
+        return googleDriveAttachmentsInMessage;
     }
 
     private void getDraftsAttachments(MessagePart part, List<GmailDraftListAttachments> attachments) throws IOException {

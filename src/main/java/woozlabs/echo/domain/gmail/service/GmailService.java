@@ -585,12 +585,8 @@ public class GmailService {
     public void getGoogleDriveFileId(String accessToken, String messageId){
         try{
             Gmail gmailService = gmailUtility.createGmailService(accessToken);
-            // Gmail API를 사용하여 메시지를 가져옴
             Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
-
             List<String> fileIds = new ArrayList<>();
-
-            // 메시지의 페이로드 부분에서 MIME 타입이 "text/html"인 부분을 찾음
             for (MessagePart part : message.getPayload().getParts()) {
                 if ("text/html".equals(part.getMimeType())) {
                     String standardBase64 = part.getBody().getData()
@@ -603,19 +599,15 @@ public class GmailService {
                     }
                     byte[] decodedBinaryContent = java.util.Base64.getDecoder().decode(standardBase64);
                     String decodedData = new String(decodedBinaryContent, "UTF-8");
-                    System.out.println(decodedData);
-
                     // Google Drive 파일 URL 패턴을 추출함
-                    Pattern pattern = Pattern.compile("https://docs\\.google\\.com/document/d/([a-zA-Z0-9-_]+)");
+                    Pattern pattern = Pattern.compile("https://docs\\.google\\.com[^\\s]*");
                     Matcher matcher = pattern.matcher(decodedData);
-
                     // 모든 매칭되는 파일 ID를 리스트에 추가
                     while (matcher.find()) {
-                        fileIds.add(matcher.group(1));
+                        fileIds.add(matcher.group());
                     }
                 }
             }
-            System.out.println(fileIds);
         }catch (IOException e) {
             System.out.println("An error occurred: " + e);
         }

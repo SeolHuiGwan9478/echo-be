@@ -1,10 +1,8 @@
 package woozlabs.echo.domain.gmail.dto.thread;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.math.BigInteger;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -22,5 +20,7 @@ public class GmailThreadListThreads {
     private List<GmailThreadGetMessagesBcc> bcc;
     private int attachmentSize;
     private Map<String, GmailThreadListAttachments> attachments;
+    private int googleDriveAttachmentSize;
+    private List<String> googleDriveAttachments;
     private List<GmailThreadGetMessagesResponse> messages;
 }
