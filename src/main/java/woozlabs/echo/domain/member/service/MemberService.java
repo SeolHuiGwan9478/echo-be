@@ -384,13 +384,13 @@ public class MemberService {
         return new ChangePrimaryAccountResponseDto(primaryToken);
     }
 
-    public Map<String, Boolean> checkPrimaryAccountEligibility(CheckPrimaryAccountEligibilityRequestDto requestDto) {
-        Member member = memberRepository.findByPrimaryUid(requestDto.getPrimaryUid())
+    public Map<String, Boolean> checkPrimaryAccountEligibility(String primaryUid, CheckPrimaryAccountEligibilityRequestDto requestDto) {
+        Member member = memberRepository.findByPrimaryUid(primaryUid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
 
         Map<String, Boolean> eligibilityMap = new HashMap<>();
 
-        for (String uid : requestDto.getAccountUids()) {
+        for (String uid : requestDto.getUids()) {
             boolean isEligible = isValidAccountToChangePrimary(member, uid);
             eligibilityMap.put(uid, isEligible);
         }

@@ -84,8 +84,10 @@ public class MemberController {
     }
 
     @PostMapping("/check-primary-eligibility")
-    public ResponseEntity<Map<String, Boolean>> checkEligibility(@RequestBody CheckPrimaryAccountEligibilityRequestDto requestDto) {
-        Map<String, Boolean> responseDto = memberService.checkPrimaryAccountEligibility(requestDto);
+    public ResponseEntity<Map<String, Boolean>> checkEligibility(HttpServletRequest httpServletRequest,
+                                                                 @RequestBody CheckPrimaryAccountEligibilityRequestDto requestDto) {
+        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        Map<String, Boolean> responseDto = memberService.checkPrimaryAccountEligibility(uid, requestDto);
         return ResponseEntity.ok(responseDto);
     }
 }

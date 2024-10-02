@@ -8,6 +8,5 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 public class CheckPrimaryAccountEligibilityRequestDto {
-    private String primaryUid;
-    private List<String> accountUids;
+    private List<String> uids;
 }
