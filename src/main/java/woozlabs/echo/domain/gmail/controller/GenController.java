@@ -1,6 +1,5 @@
 package woozlabs.echo.domain.gmail.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,18 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import woozlabs.echo.domain.gmail.dto.extract.ExtractScheduleInfo;
-import woozlabs.echo.domain.gmail.dto.extract.GenScheduleEmailTemplateResponse;
-import woozlabs.echo.domain.gmail.dto.extract.GenScheduleEmailTemplateRequest;
+import woozlabs.echo.domain.gmail.dto.template.ExtractScheduleInfo;
+import woozlabs.echo.domain.gmail.dto.template.GenScheduleEmailTemplateRequest;
 import woozlabs.echo.domain.gmail.service.GenService;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
-import woozlabs.echo.global.constant.GlobalConstant;
-import woozlabs.echo.global.dto.ResponseDto;
-import woozlabs.echo.global.exception.CustomErrorException;
-import woozlabs.echo.global.exception.ErrorCode;
-
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 
 
 @Slf4j
@@ -44,7 +35,7 @@ public class GenController {
     public ResponseEntity<?> genEmailTemplate(HttpServletRequest httpServletRequest, @RequestBody GenScheduleEmailTemplateRequest dto){
         log.info("Request to generate email template");
         String aAUid = gmailUtility.getActiveAccountUid(httpServletRequest);
-        genService.generateScheduleEmailTemplate(aAUid, dto.getContent(), dto.getToEmail());
+        genService.generateScheduleEmailTemplate(aAUid, dto);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

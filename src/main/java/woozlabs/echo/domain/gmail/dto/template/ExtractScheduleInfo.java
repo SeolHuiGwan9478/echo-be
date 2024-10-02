@@ -1,6 +1,5 @@
-package woozlabs.echo.domain.gmail.dto.extract;
+package woozlabs.echo.domain.gmail.dto.template;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import woozlabs.echo.global.dto.ResponseDto;
 

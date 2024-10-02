@@ -4,26 +4,19 @@ import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import lombok.Data;
-import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetMessagesFrom;
+import woozlabs.echo.domain.gmail.dto.template.ExtractVerificationInfo;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.global.dto.ResponseDto;
-import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.utils.GlobalUtility;
 
 import java.math.BigInteger;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
-import java.time.zone.ZoneRules;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static woozlabs.echo.global.constant.GlobalConstant.*;
-import static woozlabs.echo.global.constant.GlobalConstant.TIMEZONE_PATTERN_2;
 import static woozlabs.echo.global.utils.GlobalUtility.splitCcAndBcc;
 import static woozlabs.echo.global.utils.GlobalUtility.splitSenderData;
 
