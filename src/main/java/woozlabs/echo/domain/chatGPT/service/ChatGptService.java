@@ -6,8 +6,9 @@ import org.springframework.stereotype.Service;
 import woozlabs.echo.domain.chatGPT.ChatGPTInterface;
 import woozlabs.echo.domain.chatGPT.dto.ChatGPTRequest;
 import woozlabs.echo.domain.chatGPT.dto.ChatGPTResponse;
+import woozlabs.echo.domain.chatGPT.prompt.EmailTemplateSuggestionPrompt;
 import woozlabs.echo.domain.chatGPT.prompt.ScheduleEmailPrompt;
-import woozlabs.echo.domain.chatGPT.prompt.ScheduleEmailTemplatePrompt;
+import woozlabs.echo.domain.chatGPT.prompt.EmailTemplatePrompt;
 import woozlabs.echo.domain.gemini.prompt.VerificationMailPrompt;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
@@ -55,8 +56,13 @@ public class ChatGptService {
         return getCompletion(prompt);
     }
 
-    public String generateScheduleEmailTemplate(String emailContent, List<String> availableDates){
-        String prompt = ScheduleEmailTemplatePrompt.getPrompt(emailContent, availableDates);
+    public String generateEmailTemplate(String emailContent, List<String> availableDates){
+        String prompt = EmailTemplatePrompt.getPrompt(emailContent, availableDates);
+        return getCompletion(prompt);
+    }
+
+    public String generateEmailTemplateSuggestion(String emailContent){
+        String prompt = EmailTemplateSuggestionPrompt.getPrompt(emailContent);
         return getCompletion(prompt);
     }
 }

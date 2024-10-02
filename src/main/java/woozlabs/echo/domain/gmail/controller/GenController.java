@@ -9,9 +9,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import woozlabs.echo.domain.gmail.dto.template.ExtractScheduleInfo;
-import woozlabs.echo.domain.gmail.dto.template.GenScheduleEmailTemplateRequest;
+import woozlabs.echo.domain.gmail.dto.template.GenEmailTemplateSuggestionRequest;
+import woozlabs.echo.domain.gmail.dto.template.GenEmailTemplateSuggestionResponse;
+import woozlabs.echo.domain.gmail.dto.template.GenEmailTemplateRequest;
 import woozlabs.echo.domain.gmail.service.GenService;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
+import woozlabs.echo.domain.member.validator.MemberValidator;
 
 
 @Slf4j
@@ -19,6 +22,7 @@ import woozlabs.echo.domain.gmail.util.GmailUtility;
 @RequiredArgsConstructor
 public class GenController {
     private final GmailUtility gmailUtility;
+    private final MemberValidator memberValidator;
     private final GenService genService;
 
     @PostMapping("/ner-test")
@@ -32,10 +36,18 @@ public class GenController {
     }
 
     @PostMapping("/api/v1/gen/template")
-    public ResponseEntity<?> genEmailTemplate(HttpServletRequest httpServletRequest, @RequestBody GenScheduleEmailTemplateRequest dto){
+    public ResponseEntity<?> genEmailTemplate(HttpServletRequest httpServletRequest, @RequestBody GenEmailTemplateRequest dto){
         log.info("Request to generate email template");
         String aAUid = gmailUtility.getActiveAccountUid(httpServletRequest);
-        genService.generateScheduleEmailTemplate(aAUid, dto);
+        genService.generateEmailTemplate(aAUid, dto);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping("/api/v1/gen/suggestions")
+    public ResponseEntity<?> genSuggestionAboutEmailTemplate(HttpServletRequest httpServletRequest, @RequestBody GenEmailTemplateSuggestionRequest dto){
+        log.info("Request to generate question");
+        memberValidator.validateActiveAccountUid(httpServletRequest);
+        GenEmailTemplateSuggestionResponse response = genService.generateEmailTemplateSuggestion(dto);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

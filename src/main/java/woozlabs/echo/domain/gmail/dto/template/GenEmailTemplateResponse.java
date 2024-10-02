@@ -6,7 +6,7 @@ import woozlabs.echo.global.dto.ResponseDto;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GenScheduleEmailTemplateResponse implements ResponseDto {
+public class GenEmailTemplateResponse implements ResponseDto {
     private String template = "";
     private Boolean isSchedule = false;
 }
