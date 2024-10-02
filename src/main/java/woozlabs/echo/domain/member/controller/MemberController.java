@@ -7,12 +7,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import woozlabs.echo.domain.member.dto.ChangePrimaryAccountRequestDto;
 import woozlabs.echo.domain.member.dto.ChangePrimaryAccountResponseDto;
+import woozlabs.echo.domain.member.dto.CheckPrimaryAccountEligibilityRequestDto;
 import woozlabs.echo.domain.member.dto.GetPrimaryAccountResponseDto;
 import woozlabs.echo.domain.member.dto.preference.PreferenceDto;
 import woozlabs.echo.domain.member.dto.preference.UpdatePreferenceRequestDto;
 import woozlabs.echo.domain.member.dto.profile.ChangeProfileRequestDto;
 import woozlabs.echo.domain.member.service.MemberService;
 import woozlabs.echo.global.constant.GlobalConstant;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/echo/user")
@@ -77,6 +80,14 @@ public class MemberController {
                                                                                 @RequestBody ChangePrimaryAccountRequestDto changePrimaryAccountRequestDto) throws FirebaseAuthException {
         String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
         ChangePrimaryAccountResponseDto responseDto = memberService.changePrimaryAccount(uid, changePrimaryAccountRequestDto.getUid());
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @PostMapping("/check-primary-eligibility")
+    public ResponseEntity<Map<String, Boolean>> checkEligibility(HttpServletRequest httpServletRequest,
+                                                                 @RequestBody CheckPrimaryAccountEligibilityRequestDto requestDto) {
+        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        Map<String, Boolean> responseDto = memberService.checkPrimaryAccountEligibility(uid, requestDto);
         return ResponseEntity.ok(responseDto);
     }
 }

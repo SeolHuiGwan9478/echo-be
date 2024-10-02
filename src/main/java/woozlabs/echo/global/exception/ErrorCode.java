@@ -38,6 +38,7 @@ public enum ErrorCode {
     INVALID_SESSION(400, "Session is empty or invalid"),
     NOT_FOUND_MEMBER_ACCOUNT(404, "MemberAccount not found for Member and Account"),
     CANNOT_UNLINK_PRIMARY_ACCOUNT(403, "Cannot unlink the primary account"),
+    INVALID_ACCOUNT_CHANGE(403, "This account can not change to Primary"),
 
     // token
     NOT_FOUND_ACCESS_TOKEN(404, "Not found: Access Token"),

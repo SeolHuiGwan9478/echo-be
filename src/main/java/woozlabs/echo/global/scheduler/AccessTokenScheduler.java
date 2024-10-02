@@ -2,33 +2,34 @@ package woozlabs.echo.global.scheduler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import woozlabs.echo.domain.member.repository.AccountRepository;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class AccessTokenScheduler {
 
-    private final AccountRepository accountRepository;
-    private final TokenRefreshExecutor tokenRefreshExecutor;
+    private final JobLauncher jobLauncher;
+    private final Job refreshTokenJob;
 
     @Scheduled(fixedDelay = 5 * 60 * 1000)
-    public void checkAndRefreshTokens() {
-        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(50);
-        List<Long> expiredAccountIds = accountRepository.findExpiredAccountIds(cutoffTime);
-
-        if (expiredAccountIds.isEmpty()) {
-            log.debug("No expired tokens found.");
-            return;
+    public void runBatchJob() {
+        log.info("Starting batch job to refresh tokens at {}", LocalDateTime.now());
+        try {
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addString("time", LocalDateTime.now().toString())
+                    .toJobParameters();
+            jobLauncher.run(refreshTokenJob, jobParameters);
+            log.info("Batch job submitted successfully.");
+        } catch (Exception e) {
+            log.error("Error occurred while running the job", e);
         }
-
-        log.info("Found {} accounts with expired tokens. Starting refresh process.", expiredAccountIds.size());
-        tokenRefreshExecutor.refreshTokensAsync(expiredAccountIds);
     }
 }
