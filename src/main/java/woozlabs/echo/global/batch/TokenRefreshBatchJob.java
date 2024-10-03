@@ -35,6 +35,8 @@ public class TokenRefreshBatchJob {
     private final AccountRepository accountRepository;
     private final GoogleOAuthUtils googleOAuthUtils;
 
+    private static final int CHUNK_SIZE = 10;
+
     @Bean
     public Job refreshTokenJob() {
         return new JobBuilder("refreshTokenJob", jobRepository)
@@ -45,7 +47,7 @@ public class TokenRefreshBatchJob {
     @Bean
     public Step refreshTokenStep() {
         return new StepBuilder("refreshTokenStep", jobRepository)
-                .<Account, Account>chunk(10, transactionManager)
+                .<Account, Account>chunk(CHUNK_SIZE, transactionManager)
                 .reader(accountReader())
                 .processor(tokenRefreshProcessor())
                 .writer(accountWriter())
@@ -65,8 +67,8 @@ public class TokenRefreshBatchJob {
                 .repository(accountRepository)
                 .methodName("findByAccessTokenFetchedAtBefore")
                 .arguments(cutoffTime)
-                .pageSize(10)
-                .sorts(Collections.singletonMap("accessTokenFetchedAt", Sort.Direction.ASC))
+                .pageSize(CHUNK_SIZE)
+                .sorts(Collections.singletonMap("id", Sort.Direction.ASC))
                 .build();
     }
 
