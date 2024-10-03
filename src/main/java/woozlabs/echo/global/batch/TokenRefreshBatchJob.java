@@ -57,14 +57,16 @@ public class TokenRefreshBatchJob {
 
     @Bean
     public RepositoryItemReader<Account> accountReader() {
-        log.info("TokenRefreshBatchJob: Configuring accountReader");
+        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(50);
+        log.info("TokenRefreshBatchJob: Cutoff time for accessTokenFetchedAtBefore query: {}", cutoffTime);
+
         return new RepositoryItemReaderBuilder<Account>()
                 .name("accountReader")
                 .repository(accountRepository)
                 .methodName("findByAccessTokenFetchedAtBefore")
-                .arguments(LocalDateTime.now().minusMinutes(50))
+                .arguments(cutoffTime)
                 .pageSize(10)
-                .sorts(Collections.singletonMap("id", Sort.Direction.ASC))
+                .sorts(Collections.singletonMap("accessTokenFetchedAt", Sort.Direction.ASC))
                 .build();
     }
 
