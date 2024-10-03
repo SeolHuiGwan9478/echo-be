@@ -39,9 +39,10 @@ public class GmailController {
     public ResponseEntity<ResponseDto> getQueryThreads(HttpServletRequest httpServletRequest,
                                                        @RequestParam(value = "pageToken", required = false) String pageToken,
                                                        @RequestParam(value = "maxResults", required = false, defaultValue = "50") Long maxResults,
-                                                       @RequestParam(value = "q") String q){
+                                                       @RequestParam(value = "q") String q,
+                                                       @RequestParam("aAUid") String aAUid){
         log.info("Request to get threads");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailThreadListResponse response = gmailService.getQueryUserEmailThreads(accessToken, pageToken, maxResults, q);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -50,9 +51,10 @@ public class GmailController {
     public ResponseEntity<ResponseDto> searchThreads(@RequestParam(value = "from", required = false) String from,
                                                      @RequestParam(value = "to", required = false) String to,
                                                      @RequestParam(value = "subject", required = false) String subject,
-                                                     @RequestParam(value = "q", required = false) String query, HttpServletRequest httpServletRequest){
+                                                     @RequestParam(value = "q", required = false) String query, HttpServletRequest httpServletRequest,
+                                                     @RequestParam("aAUid") String aAUid){
         log.info("Request to search threads");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailSearchParams params = GmailSearchParams.builder()
                 .from(from).to(to).subject(subject).query(query).build();
         GmailThreadSearchListResponse response = gmailService.searchUserEmailThreads(accessToken, params);
@@ -60,25 +62,28 @@ public class GmailController {
     }
 
     @GetMapping("/api/v1/gmail/threads/{id}")
-    public ResponseEntity<ResponseDto> getThread(HttpServletRequest httpServletRequest, @PathVariable("id") String id){
+    public ResponseEntity<ResponseDto> getThread(HttpServletRequest httpServletRequest, @PathVariable("id") String id,
+                                                 @RequestParam("aAUid") String aAUid){
         log.info("Request to get thread");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailThreadGetResponse response = gmailService.getUserEmailThread(accessToken, id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @DeleteMapping("/api/v1/gmail/threads/{id}/trash")
-    public ResponseEntity<ResponseDto> trashThread(HttpServletRequest httpServletRequest, @PathVariable("id") String id){
+    public ResponseEntity<ResponseDto> trashThread(HttpServletRequest httpServletRequest, @PathVariable("id") String id,
+                                                   @RequestParam("aAUid") String aAUid){
         log.info("Request to trash thread");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailThreadTrashResponse response = gmailService.trashUserEmailThread(accessToken, id);
         return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
     }
 
     @DeleteMapping("/api/v1/gmail/threads/{id}")
-    public ResponseEntity<ResponseDto> deleteThread(HttpServletRequest httpServletRequest, @PathVariable("id") String id){
+    public ResponseEntity<ResponseDto> deleteThread(HttpServletRequest httpServletRequest, @PathVariable("id") String id,
+                                                    @RequestParam("aAUid") String aAUid){
         log.info("Request to delete thread");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailThreadDeleteResponse response = gmailService.deleteUserEmailThread(accessToken, id);
         return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
     }
@@ -86,18 +91,20 @@ public class GmailController {
     @PatchMapping("/api/v1/gmail/threads/{id}/modify")
     public ResponseEntity<ResponseDto> updateThread(HttpServletRequest httpServletRequest,
                                                     @PathVariable("id") String id,
-                                                    @RequestBody GmailThreadUpdateRequest request){
+                                                    @RequestBody GmailThreadUpdateRequest request,
+                                                    @RequestParam("aAUid") String aAUid){
         log.info("Request to update thread");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailThreadUpdateResponse response = gmailService.updateUserEmailThread(accessToken, id, request);
         return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
     }
 
     @GetMapping("/api/v1/gmail/threads/count")
     public ResponseEntity<ResponseDto> getThreadsTotalCount(HttpServletRequest httpServletRequest,
-                                                            @RequestParam("label") String label){
+                                                            @RequestParam("label") String label,
+                                                            @RequestParam("aAUid") String aAUid){
         log.info("Request to get total count of messages");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailThreadTotalCountResponse response = gmailService.getUserEmailThreadsTotalCount(accessToken, label);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -105,9 +112,10 @@ public class GmailController {
     // messages
     @GetMapping("/api/v1/gmail/messages/{messageId}")
     public ResponseEntity<?> getMessage(HttpServletRequest httpServletRequest,
-                                                  @PathVariable("messageId") String messageId){
+                                                  @PathVariable("messageId") String messageId,
+                                        @RequestParam("aAUid") String aAUid){
         log.info("Request to get message({})", messageId);
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailMessageGetResponse response = gmailService.getUserEmailMessage(accessToken, messageId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -115,18 +123,20 @@ public class GmailController {
     @PatchMapping("/api/v1/gmail/messages/{messageId}/modify")
     public ResponseEntity<?> updateMessage(HttpServletRequest httpServletRequest,
                                            @PathVariable("messageId") String messageId,
-                                           @RequestBody GmailMessageUpdateRequest request){
+                                           @RequestBody GmailMessageUpdateRequest request,
+                                           @RequestParam("aAUid") String aAUid){
         log.info("Request to update message");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailMessageUpdateResponse response = gmailService.updateUserEmailMessage(accessToken, messageId, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/api/v1/gmail/messages/{messageId}/attachments/{id}")
     public ResponseEntity<?> getAttachment(HttpServletRequest httpServletRequest,
-                                                     @PathVariable("messageId") String messageId, @PathVariable("id") String id){
+                                                     @PathVariable("messageId") String messageId, @PathVariable("id") String id,
+                                           @RequestParam("aAUid") String aAUid){
         log.info("Request to get attachment in message");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailMessageAttachmentResponse response = gmailService.getAttachment(accessToken, messageId, id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -134,9 +144,10 @@ public class GmailController {
     @GetMapping("/api/v1/gmail/messages/{messageId}/attachments/{id}/download")
     public ResponseEntity<?> downloadAttachment(HttpServletRequest httpServletRequest,
                                                 @PathVariable("messageId") String messageId, @PathVariable("id") String attachmentId,
-                                                @RequestParam("fileName") String fileName){
+                                                @RequestParam("fileName") String fileName,
+                                                @RequestParam("aAUid") String aAUid){
         log.info("Request to download attachment in message");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailMessageAttachmentDownloadResponse response = gmailService.downloadAttachment(accessToken, messageId, attachmentId);
         HttpHeaders headers = new HttpHeaders(); // set response header
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName);
@@ -152,10 +163,11 @@ public class GmailController {
 
     @GetMapping("/api/v1/gmail/messages/{messageId}/google-drive-attachments")
     public ResponseEntity<?> downloadGoogleDriveAttachment(HttpServletRequest httpServletRequest,
-                                                            @PathVariable("messageId") String messageId){
+                                                            @PathVariable("messageId") String messageId,
+                                                           @RequestParam("aAUid") String aAUid){
         log.info("Request to download google drive attachment in message");
         try {
-            String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+            String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
             gmailService.getGoogleDriveFileId(accessToken, messageId);
             return new ResponseEntity<>(HttpStatus.OK);
         }catch (Exception e){
@@ -168,9 +180,10 @@ public class GmailController {
                                                    @RequestParam("toEmailAddress") String toEmailAddress,
                                                    @RequestParam("subject") String subject,
                                                    @RequestParam("bodyText") String bodyText,
-                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files){
+                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files,
+                                         @RequestParam("aAUid") String aAUid){
         log.info("Request to send message");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailMessageSendRequest request = new GmailMessageSendRequest();
         request.setToEmailAddress(toEmailAddress);
         request.setSubject(subject);
@@ -181,9 +194,10 @@ public class GmailController {
     }
 
     @GetMapping("/api/v1/gmail/drafts/{id}")
-    public ResponseEntity<ResponseDto> getDraft(HttpServletRequest httpServletRequest, @PathVariable("id") String id){
+    public ResponseEntity<ResponseDto> getDraft(HttpServletRequest httpServletRequest, @PathVariable("id") String id,
+                                                @RequestParam("aAUid") String aAUid){
         log.info("Request to get draft");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailDraftGetResponse response = gmailService.getUserEmailDraft(accessToken, id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -193,9 +207,10 @@ public class GmailController {
                                                    @RequestParam("toEmailAddress") String toEmailAddress,
                                                    @RequestParam("subject") String subject,
                                                    @RequestParam("bodyText") String bodyText,
-                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files){
+                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files,
+                                         @RequestParam("aAUid") String aAUid){
         log.info("Request to create draft");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailDraftCommonRequest request = new GmailDraftCommonRequest();
         request.setToEmailAddress(toEmailAddress);
         request.setSubject(subject);
@@ -211,9 +226,10 @@ public class GmailController {
                                                    @RequestParam("toEmailAddress") String toEmailAddress,
                                                    @RequestParam("subject") String subject,
                                                    @RequestParam("bodyText") String bodyText,
-                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files){
+                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files,
+                                         @RequestParam("aAUid") String aAUid){
         log.info("Request to modify draft");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailDraftCommonRequest request = new GmailDraftCommonRequest();
         request.setToEmailAddress(toEmailAddress);
         request.setSubject(subject);
@@ -228,9 +244,10 @@ public class GmailController {
                                                    @RequestParam("toEmailAddress") String toEmailAddress,
                                                    @RequestParam("subject") String subject,
                                                    @RequestParam("bodyText") String bodyText,
-                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files) {
+                                                   @RequestParam(value = "files", required = false) List<MultipartFile> files,
+                                       @RequestParam("aAUid") String aAUid) {
         log.info("Request to send draft");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailDraftCommonRequest request = new GmailDraftCommonRequest();
         request.setToEmailAddress(toEmailAddress);
         request.setSubject(subject);
@@ -241,17 +258,19 @@ public class GmailController {
     }
 
     @PostMapping("/api/v1/gmail/watch")
-    public ResponseEntity<?> postWatch(HttpServletRequest httpServletRequest, @RequestBody PubSubWatchRequest request){
+    public ResponseEntity<?> postWatch(HttpServletRequest httpServletRequest, @RequestBody PubSubWatchRequest request,
+                                       @RequestParam("aAUid") String aAUid){
         log.info("Request to watch pub/sub");
-        Account activeAccount = gmailUtility.getActiveAccount(httpServletRequest);
+        Account activeAccount = gmailUtility.getActiveAccount(httpServletRequest, aAUid);
         PubSubWatchResponse response = gmailService.subscribePubSub(activeAccount, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/api/v1/gmail/stop")
-    public ResponseEntity<?> getStop(HttpServletRequest httpServletRequest){
+    public ResponseEntity<?> getStop(HttpServletRequest httpServletRequest,
+                                     @RequestParam("aAUid") String aAUid){
         log.info("Request to stop pub/sub");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         gmailService.stopPubSub(accessToken);
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -259,25 +278,27 @@ public class GmailController {
     @GetMapping("/api/v1/gmail/histories")
     public ResponseEntity<?> getHistories(HttpServletRequest httpServletRequest,
                                                     @RequestParam("historyId") String historyId,
-                                                    @RequestParam(value = "pageToken", required = false) String pageToken){
+                                                    @RequestParam(value = "pageToken", required = false) String pageToken,
+                                          @RequestParam("aAUid") String aAUid){
         log.info("Request to get histories from {}", historyId);
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailHistoryListResponse response = gmailService.getHistories(accessToken, historyId, pageToken);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/api/v1/gmail/auto-forwarding")
-    public ResponseEntity<?> setAutoForwarding(HttpServletRequest httpServletRequest, @RequestParam("q") String q, @RequestParam("email") String email){
+    public ResponseEntity<?> setAutoForwarding(HttpServletRequest httpServletRequest, @RequestParam("q") String q, @RequestParam("email") String email,
+                                               @RequestParam("aAUid") String aAUid){
         log.info("Request to set auto forwarding");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         AutoForwardingResponse response = gmailService.setUpAutoForwarding(accessToken, q, email);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/api/v1/gmail/gen-verification-label")
-    public ResponseEntity<?> generateVerificationLabel(HttpServletRequest httpServletRequest) {
+    public ResponseEntity<?> generateVerificationLabel(HttpServletRequest httpServletRequest, @RequestParam("aAUid") String aAUid){
         log.info("Request to generate verification label");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest);
+        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         gmailService.generateVerificationLabel(accessToken);
         return new ResponseEntity<>(HttpStatus.OK);
     }

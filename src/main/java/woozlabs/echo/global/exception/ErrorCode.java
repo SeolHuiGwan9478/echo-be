@@ -80,8 +80,9 @@ public enum ErrorCode {
     FAILED_TO_POST_GOOGLE_CALENDAR(500, "Failed to post Google Calendar Events"),
     FAILED_TO_UPDATE_GOOGLE_CALENDAR(500, "Failed to update Google Calendar Events"),
     FAILED_TO_DELETE_GOOGLE_CALENDAR(500, "Failed to delete Google Calendar Events"),
-    GENERATE_SCHEDULE_EMAIL_TEMPLATE_ERROR(500, "Failed to generate schedule email template"),
+    GENERATE_EMAIL_TEMPLATE_ERROR(500, "Failed to generate email template"),
     CALENDAR_SERVICE_ERROR_MESSAGE(500, "Failed to get Google Calendar Service"),
+    GENERATE_EMAIL_TEMPLATE_QUESTION_ERROR(500, "Failed to generate email template question"),
 
     // gemini
     FAILED_TO_GEMINI_COMPLETION(500, "Error while getting completion from Gemini"),

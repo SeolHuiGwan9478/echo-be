@@ -22,8 +22,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 import woozlabs.echo.domain.chatGPT.service.ChatGptService;
-import woozlabs.echo.domain.gmail.dto.extract.ExtractScheduleInfo;
-import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
+import woozlabs.echo.domain.gmail.dto.template.ExtractScheduleInfo;
+import woozlabs.echo.domain.gmail.dto.template.ExtractVerificationInfo;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.MemberAccount;
 import woozlabs.echo.domain.member.repository.query.MemberAccountQueryRepository;
@@ -66,26 +66,23 @@ public class GmailUtility {
         this.keywords.addAll(readKeywords("keywords_ko.txt"));
     }
 
-    public String getActiveAccountAccessToken(HttpServletRequest request){
+    public String getActiveAccountAccessToken(HttpServletRequest request, String aAUid){
         String uid = (String) request.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-        String aAUid = (String) request.getAttribute(GlobalConstant.ACTIVE_ACCOUNT_UID_KEY);
         MemberAccount memberAccount = memberAccountQueryRepository.findByMemberUidAndAccountUid(uid, aAUid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT));
         Account account = memberAccount.getAccount();
         return account.getAccessToken();
     }
 
-    public Account getActiveAccount(HttpServletRequest request){
+    public Account getActiveAccount(HttpServletRequest request, String aAUid){
         String uid = (String) request.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-        String aAUid = (String) request.getAttribute(GlobalConstant.ACTIVE_ACCOUNT_UID_KEY);
         MemberAccount memberAccount = memberAccountQueryRepository.findByMemberUidAndAccountUid(uid, aAUid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT));
         return memberAccount.getAccount();
     }
 
-    public String getActiveAccountUid(HttpServletRequest request){
+    public String getActiveAccountUid(HttpServletRequest request, String aAUid){
         String uid = (String) request.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-        String aAUid = (String) request.getAttribute(GlobalConstant.ACTIVE_ACCOUNT_UID_KEY);
         MemberAccount memberAccount = memberAccountQueryRepository.findByMemberUidAndAccountUid(uid, aAUid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT));
         return memberAccount.getAccount().getUid();

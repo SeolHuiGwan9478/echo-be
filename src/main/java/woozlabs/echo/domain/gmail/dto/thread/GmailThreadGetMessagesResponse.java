@@ -6,10 +6,9 @@ import com.google.api.services.gmail.model.MessagePartBody;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import woozlabs.echo.domain.gmail.dto.extract.ExtractVerificationInfo;
+import woozlabs.echo.domain.gmail.dto.template.ExtractVerificationInfo;
 import woozlabs.echo.global.utils.GlobalUtility;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.time.*;
 import java.util.*;

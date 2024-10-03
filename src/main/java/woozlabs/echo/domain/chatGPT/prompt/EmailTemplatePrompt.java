@@ -3,8 +3,8 @@ package woozlabs.echo.domain.chatGPT.prompt;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class ScheduleEmailTemplatePrompt {
-    private static String SCHEDULE_EMAIL_TEMPLATE_PROMPT = """
+public class EmailTemplatePrompt {
+    private static String EMAIL_TEMPLATE_PROMPT = """
     You are an AI assistant tasked with analyzing email content and generating appropriate responses. Your job is to review the given email content, determine its nature, and generate an appropriate response template.
     
     Email content to analyze:
@@ -50,6 +50,6 @@ public class ScheduleEmailTemplatePrompt {
     """;
 
     public static String getPrompt(String messageContent, List<String> unAvailableDates) {
-        return String.format(SCHEDULE_EMAIL_TEMPLATE_PROMPT, messageContent, String.join("\n", unAvailableDates), LocalDateTime.now());
+        return String.format(EMAIL_TEMPLATE_PROMPT, messageContent, String.join("\n", unAvailableDates), LocalDateTime.now());
     }
 }

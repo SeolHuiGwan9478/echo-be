@@ -47,7 +47,7 @@ public class AsyncGmailService {
     private final GmailUtility gmailUtility;
 
     @Async
-    public void createDraftForReplyTemplate(String uid, GmailDraftCommonRequest request) throws Exception{
+    public void createDraftForReplyTemplate(String uid, GmailDraftCommonRequest request, String threadId) throws Exception{
         Account account = accountRepository.findByUid(uid).orElseThrow(
                 () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
         String accessToken = account.getAccessToken();
@@ -56,7 +56,7 @@ public class AsyncGmailService {
         String fromEmailAddress = profile.getEmailAddress();
         request.setFromEmailAddress(fromEmailAddress);
         MimeMessage mimeMessage = createDraft(request);
-        Message message = createMessage(mimeMessage);
+        Message message = createMessage(mimeMessage, threadId);
         // create new draft
         Draft draft = new Draft().setMessage(message);
         Draft newDraft = gmailService.users().drafts().create(USER_ID, draft).execute();
@@ -94,13 +94,14 @@ public class AsyncGmailService {
     }
 
 
-    private Message createMessage(MimeMessage emailContent) throws MessagingException, IOException{
+    private Message createMessage(MimeMessage emailContent, String threadId) throws MessagingException, IOException{
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         emailContent.writeTo(buffer);
         byte[] bytes = buffer.toByteArray();
         String encodedEmail = Base64.encodeBase64URLSafeString(bytes);
         Message message = new Message();
         message.setRaw(encodedEmail);
+        message.setThreadId(threadId);
         return message;
     }
 
