@@ -12,7 +12,6 @@ import woozlabs.echo.global.interceptor.FirebaseAuthInterceptor;
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
     private final FirebaseAuthInterceptor firebaseAuthInterceptor;
-    private final ActiveAccountAuthInterceptor activeAccountAuthInterceptor;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -52,13 +51,6 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/v1/gemini/**",
                         "/api/v1/fcm",
                         "/api/v1/echo/**",
-                        "/api/v1/gen/**"
-                );
-        registry.addInterceptor(activeAccountAuthInterceptor)
-                .addPathPatterns(
-                        "/api/v1/gmail/**",
-                        "/api/v1/calendar/**",
-                        "/api/v1/fcm",
                         "/api/v1/gen/**"
                 );
     }

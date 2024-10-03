@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import woozlabs.echo.domain.gmail.dto.template.ExtractScheduleInfo;
 import woozlabs.echo.domain.gmail.dto.template.GenEmailTemplateSuggestionRequest;
@@ -36,9 +37,8 @@ public class GenController {
     }
 
     @PostMapping("/api/v1/gen/template")
-    public ResponseEntity<?> genEmailTemplate(HttpServletRequest httpServletRequest, @RequestBody GenEmailTemplateRequest dto){
+    public ResponseEntity<?> genEmailTemplate(HttpServletRequest httpServletRequest, @RequestBody GenEmailTemplateRequest dto, @RequestParam("aAUid") String aAUid){
         log.info("Request to generate email template");
-        String aAUid = gmailUtility.getActiveAccountUid(httpServletRequest);
         genService.generateEmailTemplate(aAUid, dto);
         return new ResponseEntity<>(HttpStatus.OK);
     }

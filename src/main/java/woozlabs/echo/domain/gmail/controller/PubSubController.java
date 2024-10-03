@@ -35,9 +35,9 @@ public class PubSubController {
     }
 
     @PostMapping("/api/v1/fcm")
-    public ResponseEntity<ResponseDto> postFcmToken(HttpServletRequest httpServletRequest, @RequestBody FcmTokenRequest request){
+    public ResponseEntity<ResponseDto> postFcmToken(HttpServletRequest httpServletRequest, @RequestBody FcmTokenRequest request, @RequestParam("aAUid") String aAUid){
         log.info("Request to post fcmToken");
-        String uid = gmailUtility.getActiveAccountUid(httpServletRequest);
+        String uid = gmailUtility.getActiveAccountUid(httpServletRequest, aAUid);
         FcmTokenResponse response = pubSubService.saveFcmToken(uid, request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
