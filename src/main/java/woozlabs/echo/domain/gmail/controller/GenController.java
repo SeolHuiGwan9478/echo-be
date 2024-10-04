@@ -15,7 +15,6 @@ import woozlabs.echo.domain.gmail.dto.template.GenEmailTemplateSuggestionRespons
 import woozlabs.echo.domain.gmail.dto.template.GenEmailTemplateRequest;
 import woozlabs.echo.domain.gmail.service.GenService;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
-import woozlabs.echo.domain.member.validator.MemberValidator;
 
 
 @Slf4j
@@ -23,7 +22,6 @@ import woozlabs.echo.domain.member.validator.MemberValidator;
 @RequiredArgsConstructor
 public class GenController {
     private final GmailUtility gmailUtility;
-    private final MemberValidator memberValidator;
     private final GenService genService;
 
     @PostMapping("/ner-test")
