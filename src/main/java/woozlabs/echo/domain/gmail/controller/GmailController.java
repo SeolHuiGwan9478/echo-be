@@ -161,20 +161,6 @@ public class GmailController {
                 .body(response.getByteData());
     }
 
-    @GetMapping("/api/v1/gmail/messages/{messageId}/google-drive-attachments")
-    public ResponseEntity<?> downloadGoogleDriveAttachment(HttpServletRequest httpServletRequest,
-                                                            @PathVariable("messageId") String messageId,
-                                                           @RequestParam("aAUid") String aAUid){
-        log.info("Request to download google drive attachment in message");
-        try {
-            String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
-            gmailService.getGoogleDriveFileId(accessToken, messageId);
-            return new ResponseEntity<>(HttpStatus.OK);
-        }catch (Exception e){
-            throw new CustomErrorException(ErrorCode.FAILED_TO_GET_GMAIL_CONNECTION_REQUEST, e.getMessage());
-        }
-    }
-
     @PostMapping("/api/v1/gmail/messages/send")
     public ResponseEntity<?> sendMessage(HttpServletRequest httpServletRequest,
                                                    @RequestParam("toEmailAddress") String toEmailAddress,
