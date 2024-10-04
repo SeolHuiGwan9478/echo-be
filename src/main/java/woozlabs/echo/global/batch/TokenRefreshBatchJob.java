@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.batch.core.configuration.annotation.JobScope;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
@@ -38,6 +40,7 @@ public class TokenRefreshBatchJob {
     private static final int CHUNK_SIZE = 10;
 
     @Bean
+    @JobScope
     public Job refreshTokenJob() {
         return new JobBuilder("refreshTokenJob", jobRepository)
                 .start(refreshTokenStep())
@@ -45,6 +48,7 @@ public class TokenRefreshBatchJob {
     }
 
     @Bean
+    @JobScope
     public Step refreshTokenStep() {
         return new StepBuilder("refreshTokenStep", jobRepository)
                 .<Account, Account>chunk(CHUNK_SIZE, transactionManager)
@@ -58,6 +62,7 @@ public class TokenRefreshBatchJob {
     }
 
     @Bean
+    @StepScope
     public RepositoryItemReader<Account> accountReader() {
         LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(50);
         log.info("TokenRefreshBatchJob: Cutoff time for accessTokenFetchedAtBefore query: {}", cutoffTime);
@@ -73,6 +78,7 @@ public class TokenRefreshBatchJob {
     }
 
     @Bean
+    @StepScope
     public ItemProcessor<Account, Account> tokenRefreshProcessor() {
         return account -> {
             log.info("TokenRefreshBatchJob: Processing account ID: {}", account.getId());
@@ -91,6 +97,7 @@ public class TokenRefreshBatchJob {
     }
 
     @Bean
+    @StepScope
     public ItemWriter<Account> accountWriter() {
         return accounts -> {
             for (Account account : accounts) {
