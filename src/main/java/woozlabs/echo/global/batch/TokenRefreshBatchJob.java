@@ -55,6 +55,8 @@ public class TokenRefreshBatchJob {
                 .faultTolerant()
                 .retry(Exception.class)
                 .retryLimit(3)
+                .skip(Exception.class)
+                .skipLimit(3)
                 .build();
     }
 
