@@ -15,7 +15,6 @@ import woozlabs.echo.domain.gmail.dto.template.GenEmailTemplateSuggestionRespons
 import woozlabs.echo.domain.gmail.dto.template.GenEmailTemplateRequest;
 import woozlabs.echo.domain.gmail.service.GenService;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
-import woozlabs.echo.domain.member.validator.MemberValidator;
 
 
 @Slf4j
@@ -23,7 +22,6 @@ import woozlabs.echo.domain.member.validator.MemberValidator;
 @RequiredArgsConstructor
 public class GenController {
     private final GmailUtility gmailUtility;
-    private final MemberValidator memberValidator;
     private final GenService genService;
 
     @PostMapping("/ner-test")
@@ -39,14 +37,17 @@ public class GenController {
     @PostMapping("/api/v1/gen/template")
     public ResponseEntity<?> genEmailTemplate(HttpServletRequest httpServletRequest, @RequestBody GenEmailTemplateRequest dto, @RequestParam("aAUid") String aAUid){
         log.info("Request to generate email template");
-        genService.generateEmailTemplate(aAUid, dto);
+        String uid = gmailUtility.getActiveAccountUid(httpServletRequest, aAUid);
+        genService.generateEmailTemplate(uid, dto);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PostMapping("/api/v1/gen/suggestions")
-    public ResponseEntity<?> genSuggestionAboutEmailTemplate(HttpServletRequest httpServletRequest, @RequestBody GenEmailTemplateSuggestionRequest dto){
+    public ResponseEntity<?> genSuggestionAboutEmailTemplate(HttpServletRequest httpServletRequest,
+                                                             @RequestBody GenEmailTemplateSuggestionRequest dto,
+                                                             @RequestParam("aAUid") String aAUid){
         log.info("Request to generate question");
-        memberValidator.validateActiveAccountUid(httpServletRequest);
+        gmailUtility.getActiveAccountUid(httpServletRequest, aAUid);
         GenEmailTemplateSuggestionResponse response = genService.generateEmailTemplateSuggestion(dto);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
