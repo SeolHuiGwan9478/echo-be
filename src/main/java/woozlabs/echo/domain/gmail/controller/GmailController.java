@@ -167,7 +167,8 @@ public class GmailController {
                                                    @RequestParam("subject") String subject,
                                                    @RequestParam("bodyText") String bodyText,
                                                    @RequestParam(value = "files", required = false) List<MultipartFile> files,
-                                         @RequestParam("aAUid") String aAUid){
+                                                   @RequestParam(value = "inlines", required = false) List<MultipartFile> inlines,
+                                                   @RequestParam("aAUid") String aAUid){
         log.info("Request to send message");
         String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
         GmailMessageSendRequest request = new GmailMessageSendRequest();
@@ -175,6 +176,7 @@ public class GmailController {
         request.setSubject(subject);
         request.setBodyText(bodyText);
         request.setFiles(Objects.requireNonNullElseGet(files, ArrayList::new));
+        request.setInlines(Objects.requireNonNullElseGet(inlines, ArrayList::new));
         GmailMessageSendResponse response = gmailService.sendUserEmailMessage(accessToken, request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -254,10 +256,10 @@ public class GmailController {
 
     @PostMapping("/api/v1/gmail/stop")
     public ResponseEntity<?> getStop(HttpServletRequest httpServletRequest,
-                                     @RequestParam("aAUid") String aAUid){
+                                     @RequestParam(value = "aAUid", required = false) String aAUid){
         log.info("Request to stop pub/sub");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
-        gmailService.stopPubSub(accessToken);
+        String uid = (String) httpServletRequest.getAttribute("uid");
+        gmailService.stopPubSub(uid, aAUid);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

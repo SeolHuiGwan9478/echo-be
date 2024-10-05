@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import woozlabs.echo.domain.member.entity.MemberAccount;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -25,5 +26,14 @@ public class MemberAccountQueryRepository {
         }catch (Exception e){
             return Optional.empty();
         }
+    }
+
+    public List<MemberAccount> findByMemberPrimaryUid(String uid){
+        String jpql = "select ma from MemberAccount ma" +
+                " fetch join ma.account" +
+                " where ma.member.primaryUid = :uid";
+        return em.createQuery(jpql, MemberAccount.class)
+                .setParameter("uid", uid)
+                .getResultList();
     }
 }

@@ -63,7 +63,7 @@ class EmailTemplateServiceTest {
 
         // when
         when(accountRepository.findByUid("1234567891")).thenReturn(Optional.of(account));
-        when(emailTemplateRepository.findByMember(account)).thenReturn(templates);
+        when(emailTemplateRepository.findByAccount(account)).thenReturn(templates);
 
         // then
         List<EmailTemplateResponse> responses = emailTemplateService.getAllTemplates("1234567891");
