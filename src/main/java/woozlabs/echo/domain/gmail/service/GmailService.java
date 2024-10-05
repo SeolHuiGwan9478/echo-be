@@ -443,7 +443,7 @@ public class GmailService {
 
     public void stopPubSub(String uid, String aAUid){
         try{
-            if(!aAUid.isBlank()){
+            if(aAUid != null){
                 Account account = accountRepository.findByUid(aAUid).orElseThrow(
                         () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
                 String accessToken = account.getAccessToken();

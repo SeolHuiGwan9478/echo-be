@@ -95,7 +95,7 @@ public class PubSubService {
         for(MessageInHistoryData historyData : getHistoryList){
             try{
                 // get detailed message info
-                GmailMessageGetResponse gmailMessage = gmailServiceImpl.getUserEmailMessage(account.getUid(), historyData.getId());
+                GmailMessageGetResponse gmailMessage = gmailServiceImpl.getUserEmailMessage(account.getAccessToken(), historyData.getId());
                 HistoryType historyType = historyData.getHistoryType();
                 String from = historyType.equals(HistoryType.MESSAGE_DELETED) ?
                         DELETED_MESSAGE_ALERT_MSG :
