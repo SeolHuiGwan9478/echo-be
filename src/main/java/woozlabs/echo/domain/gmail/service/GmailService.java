@@ -765,7 +765,7 @@ public class GmailService {
         StringBuilder htmlContent = new StringBuilder(request.getBodyText());
         // Add image references to HTML content
         for (int i = 0; i < request.getInlines().size(); i++) {
-            MultipartFile inlineFile = request.getInlines().get(i);
+            //MultipartFile inlineFile = request.getInlines().get(i);
             String cid = "image" + i;
             htmlContent.append("<img src=\"cid:").append(cid).append("\" />");
         }

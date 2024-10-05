@@ -30,7 +30,7 @@ public class MemberAccountQueryRepository {
 
     public List<MemberAccount> findByMemberPrimaryUid(String uid){
         String jpql = "select ma from MemberAccount ma" +
-                " fetch join ma.account" +
+                " join fetch ma.account" +
                 " where ma.member.primaryUid = :uid";
         return em.createQuery(jpql, MemberAccount.class)
                 .setParameter("uid", uid)
