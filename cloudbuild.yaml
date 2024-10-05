@@ -15,6 +15,14 @@ steps:
       - |
         gcloud secrets versions access latest --secret="application-prod" > application-prod.yml
 
+  # Retrieve the latest version of the 'credentials.json' secret from Secrets Manager
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud secrets versions access latest --secret="credentials" > credentials.json
+
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
     args: [
