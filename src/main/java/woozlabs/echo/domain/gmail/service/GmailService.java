@@ -38,7 +38,9 @@ import woozlabs.echo.domain.gmail.repository.PubSubHistoryRepository;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.domain.gmail.validator.PubSubValidator;
 import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.domain.member.entity.MemberAccount;
 import woozlabs.echo.domain.member.repository.AccountRepository;
+import woozlabs.echo.domain.member.repository.query.MemberAccountQueryRepository;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 import woozlabs.echo.global.utils.GlobalUtility;
@@ -70,6 +72,7 @@ public class GmailService {
     private final MultiThreadGmailService multiThreadGmailService;
     private final AccountRepository accountRepository;
     private final PubSubHistoryRepository pubSubHistoryRepository;
+    private final MemberAccountQueryRepository memberAccountQueryRepository;
     private final FcmTokenRepository fcmTokenRepository;
     private final GmailUtility gmailUtility;
     private final PubSubValidator pubSubValidator;
@@ -431,17 +434,30 @@ public class GmailService {
             return PubSubWatchResponse.builder()
                     .historyId(watchResponse.getHistoryId())
                     .expiration(watchResponse.getExpiration()).build();
-        }catch (IOException e) {
+        }catch (Exception e) {
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_WATCH_API_ERROR_MESSAGE,
-                    ErrorCode.REQUEST_GMAIL_USER_WATCH_API_ERROR_MESSAGE.getMessage()
+                    e.getMessage()
             );
         }
     }
 
-    public void stopPubSub(String accessToken){
+    public void stopPubSub(String uid, String aAUid){
         try{
-            Gmail gmailService = gmailUtility.createGmailService(accessToken);
-            gmailService.users().stop(USER_ID).execute();
+            if(!aAUid.isBlank()){
+                Account account = accountRepository.findByUid(aAUid).orElseThrow(
+                        () -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+                String accessToken = account.getAccessToken();
+                Gmail gmailService = gmailUtility.createGmailService(accessToken);
+                gmailService.users().stop(USER_ID).execute();
+            }else{
+                List<MemberAccount> memberAccounts = memberAccountQueryRepository.findByMemberPrimaryUid(uid);
+                for(MemberAccount memberAccount : memberAccounts){
+                    Account account = memberAccount.getAccount();
+                    String accessToken = account.getAccessToken();
+                    Gmail gmailService = gmailUtility.createGmailService(accessToken);
+                    gmailService.users().stop(USER_ID).execute();
+                }
+            }
         }catch (IOException e) {
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_STOP_API_ERROR_MESSAGE,
                     ErrorCode.REQUEST_GMAIL_USER_STOP_API_ERROR_MESSAGE.getMessage()

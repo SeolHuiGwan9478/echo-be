@@ -256,10 +256,10 @@ public class GmailController {
 
     @PostMapping("/api/v1/gmail/stop")
     public ResponseEntity<?> getStop(HttpServletRequest httpServletRequest,
-                                     @RequestParam("aAUid") String aAUid){
+                                     @RequestParam(value = "aAUid", required = false) String aAUid){
         log.info("Request to stop pub/sub");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
-        gmailService.stopPubSub(accessToken);
+        String uid = (String) httpServletRequest.getAttribute("uid");
+        gmailService.stopPubSub(uid, aAUid);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
