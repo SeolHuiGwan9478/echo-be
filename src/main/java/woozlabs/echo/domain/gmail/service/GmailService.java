@@ -745,9 +745,16 @@ public class GmailService {
         email.setSubject(request.getSubject());
         // setting body
         Multipart multipart = new MimeMultipart();
-        MimeBodyPart mimeBodyPart = new MimeBodyPart();
-        mimeBodyPart.setContent(request.getBodyText(), MULTI_PART_TEXT_PLAIN);
-        multipart.addBodyPart(mimeBodyPart); // set bodyText
+        MimeBodyPart htmlPart = new MimeBodyPart();
+        StringBuilder htmlContent = new StringBuilder(request.getBodyText());
+        // Add image references to HTML content
+        for (int i = 0; i < request.getInlines().size(); i++) {
+            MultipartFile inlineFile = request.getInlines().get(i);
+            String cid = "image" + i;
+            htmlContent.append("<img src=\"cid:").append(cid).append("\" />");
+        }
+        htmlPart.setContent(htmlContent.toString(), "text/html");
+        multipart.addBodyPart(htmlPart);
 
         for(MultipartFile mimFile : request.getFiles()){
             MimeBodyPart fileMimeBodyPart = new MimeBodyPart();
@@ -759,6 +766,14 @@ public class GmailService {
             fileMimeBodyPart.setDataHandler(new DataHandler(source));
             multipart.addBodyPart(fileMimeBodyPart);
             file.deleteOnExit();
+        }
+        for(int i = 0;i < request.getInlines().size();i++){
+            MultipartFile inlineFile = request.getInlines().get(i);
+            MimeBodyPart imagePart = new MimeBodyPart();
+            imagePart.setContent(inlineFile.getBytes(), inlineFile.getContentType());
+            imagePart.setContentID("<image" + i + ">");
+            imagePart.setDisposition(MimeBodyPart.INLINE);
+            multipart.addBodyPart(imagePart);
         }
         email.setContent(multipart);
         return email;

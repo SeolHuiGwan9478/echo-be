@@ -43,7 +43,7 @@ public class MultiThreadGmailService {
             List<GmailThreadGetMessagesCc> ccs = new ArrayList<>();
             List<GmailThreadGetMessagesBcc> bccs = new ArrayList<>();
             Map<String, GmailThreadListAttachments> attachments = new HashMap<>();
-            List<String> googleDriveAttachments = new ArrayList<>();
+            //List<String> googleDriveAttachments = new ArrayList<>();
             List<GmailThreadGetMessagesResponse> convertedMessages = new ArrayList<>();
             List<String> labelIds = new ArrayList<>();
             for(int idx = 0;idx < messages.size();idx++){
@@ -71,7 +71,7 @@ public class MultiThreadGmailService {
                 froms.add(gmailThreadGetMessage.getFrom());
                 ccs.addAll(gmailThreadGetMessage.getCc());
                 bccs.addAll(gmailThreadGetMessage.getBcc());
-                googleDriveAttachments.addAll(getGoogleDriveAttachments(message));
+                //googleDriveAttachments.addAll(getGoogleDriveAttachments(message));
             }
             gmailThreadListThreads.setLabelIds(labelIds.stream().distinct().collect(Collectors.toList()));
             gmailThreadListThreads.setId(id);
@@ -83,8 +83,8 @@ public class MultiThreadGmailService {
             gmailThreadListThreads.setAttachments(attachments);
             gmailThreadListThreads.setAttachmentSize(attachments.size());
             gmailThreadListThreads.setMessages(convertedMessages);
-            gmailThreadListThreads.setGoogleDriveAttachmentSize(googleDriveAttachments.size());
-            gmailThreadListThreads.setGoogleDriveAttachments(googleDriveAttachments.stream().distinct().toList());
+            //gmailThreadListThreads.setGoogleDriveAttachmentSize(googleDriveAttachments.size());
+            //gmailThreadListThreads.setGoogleDriveAttachments(googleDriveAttachments.stream().distinct().toList());
             return gmailThreadListThreads;
         } catch (IOException e) {
             e.printStackTrace();
