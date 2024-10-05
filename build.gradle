@@ -53,6 +53,7 @@ dependencies {
 	implementation group: 'com.google.firebase', name: 'firebase-admin', version: '9.3.0'
 	implementation 'org.jsoup:jsoup:1.15.3'
 	implementation 'com.amazonaws:aws-java-sdk-ses:1.12.429'
+	implementation 'com.google.apis:google-api-services-people:v1-rev20220531-2.0.0'
 
 	// test dl
 	implementation 'com.squareup.okhttp3:okhttp:4.9.3'
