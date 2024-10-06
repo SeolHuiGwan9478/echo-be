@@ -13,9 +13,9 @@ import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.people.v1.PeopleService;
 import com.google.api.services.people.v1.PeopleServiceScopes;
 import com.google.api.services.people.v1.model.ListOtherContactsResponse;
-import com.google.api.services.people.v1.model.Person;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import woozlabs.echo.domain.contact.dto.GoogleContactResponseDto;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -24,6 +24,7 @@ import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -61,14 +62,45 @@ public class GooglePeopleService {
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
 
-    public List<Person> getOtherContacts() throws IOException {
+    public List<GoogleContactResponseDto> getOtherContacts() throws IOException {
         ListOtherContactsResponse response = peopleService.otherContacts()
                 .list()
                 .setPageSize(30)
-                .setReadMask("names,emailAddresses")
+                .setReadMask("names,emailAddresses,photos")
                 .execute();
 
-        return response.getOtherContacts();
-    }
+        return response.getOtherContacts().stream()
+                .map(person -> {
+                    String email = (person.getEmailAddresses() != null && !person.getEmailAddresses().isEmpty())
+                            ? person.getEmailAddresses().get(0).getValue()
+                            : null;
 
+                    String displayName = (person.getNames() != null && !person.getNames().isEmpty())
+                            ? person.getNames().get(0).getDisplayName()
+                            : null;
+
+                    String familyName = (person.getNames() != null && !person.getNames().isEmpty())
+                            ? person.getNames().get(0).getFamilyName()
+                            : null;
+
+                    String givenName = (person.getNames() != null && !person.getNames().isEmpty())
+                            ? person.getNames().get(0).getGivenName()
+                            : null;
+
+                    String profileImageUrl = (person.getPhotos() != null && !person.getPhotos().isEmpty())
+                            ? person.getPhotos().get(0).getUrl()
+                            : null;
+
+                    return GoogleContactResponseDto.builder()
+                            .email(email)
+                            .names(GoogleContactResponseDto.Name.builder()
+                                    .displayName(displayName)
+                                    .familyName(familyName)
+                                    .givenName(givenName)
+                                    .build())
+                            .profileImageUrl(profileImageUrl)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
 }
