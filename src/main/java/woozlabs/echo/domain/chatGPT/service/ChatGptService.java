@@ -22,6 +22,7 @@ import java.util.List;
 public class ChatGptService {
 
     private static final String GPT_4 = "gpt-4o-mini";
+    private static final String GPT_3_P_5 = "gpt-3.5-turbo";
 
     private final ChatGPTInterface chatGPTInterface;
 
@@ -36,6 +37,17 @@ public class ChatGptService {
 
     public String getCompletion(String text) {
         ChatGPTRequest chatGPTRequest = new ChatGPTRequest(GPT_4, text);
+        ChatGPTResponse response = getChatCompletion(chatGPTRequest);
+
+        return response.getChoices()
+                .stream()
+                .findFirst()
+                .map(choice -> choice.getMessage().getContent())
+                .orElse(null);
+    }
+
+    public String getCompletion3(String text){
+        ChatGPTRequest chatGPTRequest = new ChatGPTRequest(GPT_3_P_5, text);
         ChatGPTResponse response = getChatCompletion(chatGPTRequest);
 
         return response.getChoices()
@@ -63,6 +75,6 @@ public class ChatGptService {
 
     public String generateEmailTemplateSuggestion(String emailContent){
         String prompt = EmailTemplateSuggestionPrompt.getPrompt(emailContent);
-        return getCompletion(prompt);
+        return getCompletion3(prompt);
     }
 }
