@@ -208,22 +208,24 @@ public class PubSubService {
     }
 
     private void createMessageData(MessageInHistoryData historyData, Map<String, String> data, GmailMessageGetResponse gmailMessage, Account owner) throws IOException {
-        String FCM_MSG_ID_KEY = "id";
-        String FCM_MSG_THREAD_ID_KEY = "threadId";
-        String FCM_MSG_TYPE_KEY = "type";
-        String FCM_MSG_VERIFICATION_KEY = "verification";
-        String FCM_MSG_LABEL_KEY = "label";
-        String FCM_MSG_LINK_ID_KEY = "link";
-        String FCM_MSG_CODE_KEY = "code";
+        String fcmMsgIdKey = "id";
+        String fcmMsgThreadIdKey = "threadId";
+        String fcmMsgTypeKey = "type";
+        String fcmMsgVerificationKey = "verification";
+        String fcmMsgLabelKey = "label";
+        String fcmMsgLinkIdKey = "link";
+        String fcmMsgCodeKey = "code";
+        String fcmMsgAccountUidKey = "aUid";
         HistoryType historyType = historyData.getHistoryType();
         // set base info
-        data.put(FCM_MSG_ID_KEY, historyData.getId());
-        data.put(FCM_MSG_THREAD_ID_KEY, historyData.getThreadId());
-        data.put(FCM_MSG_TYPE_KEY, historyData.getHistoryType().getType());
+        data.put(fcmMsgIdKey, historyData.getId());
+        data.put(fcmMsgThreadIdKey, historyData.getThreadId());
+        data.put(fcmMsgTypeKey, historyData.getHistoryType().getType());
+        data.put(fcmMsgAccountUidKey, owner.getUid());
         if(historyType.equals(HistoryType.MESSAGE_ADDED)){
             // set verification data
             Boolean isVerification = gmailMessage.getVerification().getVerification();
-            data.put(FCM_MSG_VERIFICATION_KEY, isVerification.toString());
+            data.put(fcmMsgVerificationKey, isVerification.toString());
             // process verification label
             if(isVerification.equals(Boolean.TRUE)){
                 getOrCreateLabel(owner.getAccessToken(), gmailMessage);
@@ -236,21 +238,21 @@ public class PubSubService {
                         .build();
                 if(!gmailMessage.getVerification().getLinks().isEmpty()){ // save shortened link
                     String linkId = UUID.randomUUID().toString();
-                    data.put(FCM_MSG_LINK_ID_KEY, linkId);
-                    data.put(FCM_MSG_CODE_KEY, "");
+                    data.put(fcmMsgLinkIdKey, linkId);
+                    data.put(fcmMsgCodeKey, "");
                     verificationEmail.setUuid(linkId);
                     verificationEmailRepository.save(verificationEmail);
                 }else{
                     String code = gmailMessage.getVerification().getCodes().get(0);
-                    data.put(FCM_MSG_LINK_ID_KEY, "");
-                    data.put(FCM_MSG_CODE_KEY, code);
+                    data.put(fcmMsgLinkIdKey, "");
+                    data.put(fcmMsgCodeKey, code);
                 }
             }
             // process gen reply template
             // write my code
         }else if(historyType.equals(HistoryType.LABEL_ADDED) || historyType.equals(HistoryType.LABEL_REMOVED)){
             List<String> labelIds = historyData.getLabelIds();
-            data.put(FCM_MSG_LABEL_KEY, String.join(",", labelIds));
+            data.put(fcmMsgLabelKey, String.join(",", labelIds));
         }
     }
 

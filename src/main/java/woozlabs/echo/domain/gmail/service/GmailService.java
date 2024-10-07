@@ -17,6 +17,10 @@ import jakarta.mail.internet.MimeMultipart;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -762,14 +766,26 @@ public class GmailService {
         // setting body
         Multipart multipart = new MimeMultipart();
         MimeBodyPart htmlPart = new MimeBodyPart();
-        StringBuilder htmlContent = new StringBuilder(request.getBodyText());
-        // Add image references to HTML content
-        for (int i = 0; i < request.getInlines().size(); i++) {
-            //MultipartFile inlineFile = request.getInlines().get(i);
-            String cid = "image" + i;
-            htmlContent.append("<img src=\"cid:").append(cid).append("\" />");
+        String bodyText = request.getBodyText();
+        Document doc = Jsoup.parse(bodyText);
+        Element body = doc.body();
+        List<GmailMessageInlineImage> base64Images = new ArrayList<>();
+        Pattern pattern = Pattern.compile("data:(.*?);base64,([^\"']*)");
+        int cidNum = 0;
+        for(Element element : body.children()){
+            if(element.tagName().equals("img") && element.attr("src").startsWith("data:")){
+                String src = element.attr("src");
+                Matcher matcher = pattern.matcher(src);
+                if (matcher.find()) {
+                    String mimeType = matcher.group(1);
+                    String base64Data = matcher.group(2);
+                    byte[] imageData = java.util.Base64.getDecoder().decode(base64Data);
+                    base64Images.add(new GmailMessageInlineImage(mimeType, imageData));
+                }
+                element.attr("src", "cid:image" + cidNum);
+            }
         }
-        htmlPart.setContent(htmlContent.toString(), "text/html");
+        htmlPart.setContent(body.toString(), "text/html");
         multipart.addBodyPart(htmlPart);
 
         for(MultipartFile mimFile : request.getFiles()){
@@ -783,10 +799,11 @@ public class GmailService {
             multipart.addBodyPart(fileMimeBodyPart);
             file.deleteOnExit();
         }
-        for(int i = 0;i < request.getInlines().size();i++){
-            MultipartFile inlineFile = request.getInlines().get(i);
+        for(int i = 0;i < base64Images.size();i++){
+            GmailMessageInlineImage inlineFile = base64Images.get(i);
             MimeBodyPart imagePart = new MimeBodyPart();
-            imagePart.setContent(inlineFile.getBytes(), inlineFile.getContentType());
+            imagePart.setContent(inlineFile.getData(), inlineFile.getMimeType());
+            imagePart.setFileName("image.png");
             imagePart.setContentID("<image" + i + ">");
             imagePart.setDisposition(MimeBodyPart.INLINE);
             multipart.addBodyPart(imagePart);
