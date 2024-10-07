@@ -32,7 +32,6 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Theme theme = Theme.LIGHT;
 
-    private String watchNotification;
     private boolean marketingEmails;
     private LocalDateTime deletedAt;
 
@@ -44,6 +43,12 @@ public class Member extends BaseEntity {
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MemberAccount> memberAccounts = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "accounts_watch_notifications", joinColumns = @JoinColumn(name = "member_id"))
+    @MapKeyColumn(name = "account_uid")
+    @Column(name = "notification_preference")
+    private Map<String, Watch> watchNotifications = new HashMap<>();
 
     @ElementCollection
     @CollectionTable(name = "member_term_agreements", joinColumns = @JoinColumn(name = "member_id"))
