@@ -12,5 +12,4 @@ public class GmailMessageSendRequest {
     private String subject;
     private String bodyText;
     private List<MultipartFile> files;
-    private List<MultipartFile> inlines;
 }

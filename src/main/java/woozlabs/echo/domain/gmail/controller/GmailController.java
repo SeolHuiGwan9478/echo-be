@@ -167,7 +167,6 @@ public class GmailController {
                                                    @RequestParam("subject") String subject,
                                                    @RequestParam("bodyText") String bodyText,
                                                    @RequestParam(value = "files", required = false) List<MultipartFile> files,
-                                                   @RequestParam(value = "inlines", required = false) List<MultipartFile> inlines,
                                                    @RequestParam("aAUid") String aAUid){
         log.info("Request to send message");
         String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
@@ -176,7 +175,6 @@ public class GmailController {
         request.setSubject(subject);
         request.setBodyText(bodyText);
         request.setFiles(Objects.requireNonNullElseGet(files, ArrayList::new));
-        request.setInlines(Objects.requireNonNullElseGet(inlines, ArrayList::new));
         GmailMessageSendResponse response = gmailService.sendUserEmailMessage(accessToken, request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
