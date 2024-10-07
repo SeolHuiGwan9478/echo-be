@@ -64,6 +64,8 @@ public class AccountService {
         member.getMemberAccounts().remove(memberAccount);
         account.getMemberAccounts().remove(memberAccount);
 
+        member.getWatchNotifications().remove(accountUid);
+
         memberAccountRepository.delete(memberAccount);
         memberRepository.save(member);
         accountRepository.save(account);

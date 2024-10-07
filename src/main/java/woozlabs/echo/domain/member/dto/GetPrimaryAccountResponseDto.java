@@ -45,6 +45,7 @@ public class GetPrimaryAccountResponseDto {
         private String displayName;
         private String profileImageUrl;
         private String provider;
+        private List<String> scopes;
     }
 
     @Getter

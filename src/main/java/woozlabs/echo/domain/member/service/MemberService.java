@@ -26,6 +26,7 @@ import woozlabs.echo.domain.member.utils.AuthUtils;
 import woozlabs.echo.domain.member.utils.FirebaseUtils;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
+import woozlabs.echo.global.utils.GoogleOAuthUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -41,6 +42,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final MemberAccountRepository memberAccountRepository;
     private final FirebaseUtils firebaseUtils;
+    private final GoogleOAuthUtils googleOAuthUtils;
 
     @Transactional
     public void updatePreference(String primaryUid, UpdatePreferenceRequestDto updatePreferenceRequest) {
@@ -66,7 +68,7 @@ public class MemberService {
             NotificationDto notificationDto = preferenceDto.getNotification();
             if (notificationDto != null) {
                 if (notificationDto.getWatchNotification() != null) {
-                    member.setWatchNotification(notificationDto.getWatchNotification());
+                    member.setWatchNotifications(notificationDto.getWatchNotification());
                 }
                 if (notificationDto.getMarketingEmails() != null) {
                     member.setMarketingEmails(notificationDto.getMarketingEmails());
@@ -89,7 +91,7 @@ public class MemberService {
                         .density(member.getDensity())
                         .build())
                 .notification(NotificationDto.builder()
-                        .watchNotification(member.getWatchNotification())
+                        .watchNotification(member.getWatchNotifications())
                         .marketingEmails(member.isMarketingEmails())
                         .securityEmails(member.isSecurityEmails())
                         .build())
@@ -184,6 +186,8 @@ public class MemberService {
         Account currentAccount = accountRepository.findByUid(uid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
+        List<String> grantedScopes = googleOAuthUtils.getGrantedScopes(currentAccount.getAccessToken());
+
         List<MemberAccount> memberAccounts = memberAccountRepository.findByAccount(currentAccount);
         if (memberAccounts.isEmpty()) {
             throw new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT);
@@ -217,6 +221,7 @@ public class MemberService {
                             .displayName(account.getDisplayName())
                             .profileImageUrl(account.getProfileImageUrl())
                             .provider(account.getProvider())
+                            .scopes(grantedScopes)
                             .build())
                     .collect(Collectors.toList());
 
@@ -246,6 +251,7 @@ public class MemberService {
                     .displayName(currentAccount.getDisplayName())
                     .profileImageUrl(currentAccount.getProfileImageUrl())
                     .provider(currentAccount.getProvider())
+                    .scopes(grantedScopes)
                     .build();
 
             List<GetAccountResponseDto.RelatedMemberDto> relatedMembers = memberAccounts.stream()

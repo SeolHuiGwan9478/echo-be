@@ -14,6 +14,8 @@ import org.springframework.web.client.RestTemplate;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -99,6 +101,30 @@ public class GoogleOAuthUtils {
         } catch (Exception e) {
             log.error("Failed to refresh Google OAuth token. Refresh token: {}", refreshToken, e);
             throw new CustomErrorException(ErrorCode.FAILED_TO_REFRESH_GOOGLE_TOKEN, "Failed to refresh Google OAuth token", e);
+        }
+    }
+
+    public List<String> getGrantedScopes(String accessToken) {
+        String tokenInfoUrl = "https://oauth2.googleapis.com/tokeninfo?access_token=" + accessToken;
+
+        try {
+            ResponseEntity<Map> responseEntity = restTemplate.getForEntity(tokenInfoUrl, Map.class);
+            if (responseEntity.getStatusCode().is2xxSuccessful()) {
+                Map<String, Object> tokenInfo = responseEntity.getBody();
+                if (tokenInfo != null && tokenInfo.containsKey("scope")) {
+                    String scopeString = (String) tokenInfo.get("scope");
+                    return Arrays.asList(scopeString.split(" "));
+                } else {
+                    log.error("Failed to get granted scopes, response did not contain scope. Response: {}", tokenInfo);
+                    throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_SCOPES, "Google response did not contain scope information");
+                }
+            } else {
+                log.error("Failed to get granted scopes. Status code: {}, response: {}", responseEntity.getStatusCode(), responseEntity.getBody());
+                throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_SCOPES, "Failed to get granted scopes");
+            }
+        } catch (Exception e) {
+            log.error("Failed to get granted scopes. Access token: {}", accessToken, e);
+            throw new CustomErrorException(ErrorCode.FAILED_TO_FETCH_GOOGLE_SCOPES, "Failed to get granted scopes", e);
         }
     }
 }

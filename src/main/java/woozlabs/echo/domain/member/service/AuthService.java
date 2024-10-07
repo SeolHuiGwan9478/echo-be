@@ -11,6 +11,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.entity.Member;
 import woozlabs.echo.domain.member.entity.MemberAccount;
+import woozlabs.echo.domain.member.entity.Watch;
 import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.domain.member.repository.MemberAccountRepository;
 import woozlabs.echo.domain.member.repository.MemberRepository;
@@ -238,6 +239,7 @@ public class AuthService {
         member.setDisplayName(displayName);
         member.setEmail(email);
         member.setProfileImageUrl((String) userInfo.get("picture"));
+        member.setWatchNotifications(Map.of(account.getUid(), Watch.INBOX));
 
         MemberAccount memberAccount = new MemberAccount(member, account);
         member.addMemberAccount(memberAccount);

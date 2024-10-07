@@ -44,6 +44,7 @@ public enum ErrorCode {
     NOT_FOUND_ACCESS_TOKEN(404, "Not found: Access Token"),
     NOT_FOUND_REFRESH_TOKEN(404, "Not found: Refresh Token"),
     FAILED_TO_VERIFY_ID_TOKEN(500, "failed to verify Id Token"),
+    FAILED_TO_FETCH_GOOGLE_SCOPES(500, "Failed to get granted scopes, response did not contain scope"),
 
     // email
     REQUEST_GMAIL_USER_THREADS_GET_API_ERROR_MESSAGE(500, "Failed to get gmail threads api"),
