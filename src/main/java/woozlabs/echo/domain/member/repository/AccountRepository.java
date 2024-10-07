@@ -2,7 +2,6 @@ package woozlabs.echo.domain.member.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -33,4 +32,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     @Modifying
     @Query(value = "DELETE FROM account WHERE uid IN :uids", nativeQuery = true)
     int bulkDeleteByUids(@Param("uids") List<String> uids);
+
+    @Query("SELECT a.accessToken FROM Account a WHERE a.uid = :uid")
+    String findAccessTokenByUid(String uid);
 }
