@@ -18,10 +18,9 @@ public class SharedInboxController {
     private final SharedInboxService sharedInboxService;
 
     @PostMapping("/public-share/create")
-    public ResponseEntity<SharedEmailResponseDto> createSharePost(HttpServletRequest httpServletRequest,
+    public ResponseEntity<SharedEmailResponseDto> createSharePost(@RequestParam("aAUid") String activeAccountUid,
                                                        @RequestBody CreateSharedRequestDto createSharedRequestDto) {
-        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
-        SharedEmailResponseDto responseDto = sharedInboxService.createSharePost(uid, createSharedRequestDto);
+        SharedEmailResponseDto responseDto = sharedInboxService.createSharePost(activeAccountUid, createSharedRequestDto);
         return ResponseEntity.ok(responseDto);
     }
 
