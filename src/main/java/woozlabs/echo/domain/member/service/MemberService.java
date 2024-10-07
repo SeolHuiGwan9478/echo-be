@@ -66,7 +66,7 @@ public class MemberService {
             NotificationDto notificationDto = preferenceDto.getNotification();
             if (notificationDto != null) {
                 if (notificationDto.getWatchNotification() != null) {
-                    member.setWatchNotification(notificationDto.getWatchNotification());
+                    member.setWatchNotifications(notificationDto.getWatchNotification());
                 }
                 if (notificationDto.getMarketingEmails() != null) {
                     member.setMarketingEmails(notificationDto.getMarketingEmails());
@@ -89,7 +89,7 @@ public class MemberService {
                         .density(member.getDensity())
                         .build())
                 .notification(NotificationDto.builder()
-                        .watchNotification(member.getWatchNotification())
+                        .watchNotification(member.getWatchNotifications())
                         .marketingEmails(member.isMarketingEmails())
                         .securityEmails(member.isSecurityEmails())
                         .build())
