@@ -186,8 +186,6 @@ public class MemberService {
         Account currentAccount = accountRepository.findByUid(uid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
-        List<String> grantedScopes = googleOAuthUtils.getGrantedScopes(currentAccount.getAccessToken());
-
         List<MemberAccount> memberAccounts = memberAccountRepository.findByAccount(currentAccount);
         if (memberAccounts.isEmpty()) {
             throw new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER_ACCOUNT);
@@ -215,14 +213,17 @@ public class MemberService {
                     .build();
 
             List<GetPrimaryAccountResponseDto.AccountDto> accountDtos = accounts.stream()
-                    .map(account -> GetPrimaryAccountResponseDto.AccountDto.builder()
-                            .uid(account.getUid())
-                            .email(account.getEmail())
-                            .displayName(account.getDisplayName())
-                            .profileImageUrl(account.getProfileImageUrl())
-                            .provider(account.getProvider())
-                            .scopes(grantedScopes)
-                            .build())
+                    .map(account -> {
+                        List<String> grantedScopes = googleOAuthUtils.getGrantedScopes(account.getAccessToken());
+                        return GetPrimaryAccountResponseDto.AccountDto.builder()
+                                .uid(account.getUid())
+                                .email(account.getEmail())
+                                .displayName(account.getDisplayName())
+                                .profileImageUrl(account.getProfileImageUrl())
+                                .provider(account.getProvider())
+                                .scopes(grantedScopes)
+                                .build();
+                    })
                     .collect(Collectors.toList());
 
             List<GetPrimaryAccountResponseDto.RelatedMemberDto> relatedMembers = memberAccounts.stream()
@@ -251,7 +252,7 @@ public class MemberService {
                     .displayName(currentAccount.getDisplayName())
                     .profileImageUrl(currentAccount.getProfileImageUrl())
                     .provider(currentAccount.getProvider())
-                    .scopes(grantedScopes)
+                    .scopes(googleOAuthUtils.getGrantedScopes(currentAccount.getAccessToken()))
                     .build();
 
             List<GetAccountResponseDto.RelatedMemberDto> relatedMembers = memberAccounts.stream()

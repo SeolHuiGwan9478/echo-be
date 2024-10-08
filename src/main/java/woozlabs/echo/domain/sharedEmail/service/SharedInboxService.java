@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import woozlabs.echo.domain.gmail.dto.thread.GmailThreadGetResponse;
 import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.repository.AccountRepository;
@@ -39,6 +38,7 @@ public class SharedInboxService {
 
         Optional<SharedEmail> existingSharedEmail = sharedInboxRepository.findByDataId(createSharedRequestDto.getDataId());
         if (existingSharedEmail.isPresent()) {
+            log.info("SharedEmail already exists for dataId: {}", createSharedRequestDto.getDataId());
             SharedEmail sharedEmail = existingSharedEmail.get();
 
             return SharedEmailResponseDto.builder()
@@ -54,6 +54,7 @@ public class SharedInboxService {
                     .build();
         }
 
+        log.info("Creating new SharedEmail for dataId: {}", createSharedRequestDto.getDataId());
         SharedEmail sharedEmail = SharedEmail.builder()
                 .access(createSharedRequestDto.getAccess())
                 .dataId(createSharedRequestDto.getDataId())
@@ -64,16 +65,19 @@ public class SharedInboxService {
                 .build();
 
         sharedInboxRepository.save(sharedEmail);
+        log.info("New SharedEmail saved with id: {}", sharedEmail.getId());
 
         Map<String, Permission> inviteePermissions = new HashMap<>();
         inviteePermissions.put(account.getEmail(), Permission.OWNER);
 
+        log.info("Setting owner permission for account email: {}", account.getEmail());
         SharedEmailPermission sharedEmailPermission = SharedEmailPermission.builder()
                 .sharedEmail(sharedEmail)
                 .inviteePermissions(inviteePermissions)
                 .build();
 
         sharedEmailPermissionRepository.save(sharedEmailPermission);
+        log.info("SharedEmailPermission saved for sharedEmailId: {}", sharedEmail.getId());
 
         return SharedEmailResponseDto.builder()
                 .id(sharedEmail.getId())
