@@ -6,6 +6,7 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.people.v1.PeopleService;
 import com.google.api.services.people.v1.model.ListOtherContactsResponse;
+import com.google.api.services.people.v1.model.Person;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -16,6 +17,7 @@ import woozlabs.echo.domain.member.repository.AccountRepository;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +27,7 @@ public class GooglePeopleService {
 
     private static final String APPLICATION_NAME = "Echo";
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
+    private static final int PAGE_SIZE = 1000;
 
     private final AccountRepository accountRepository;
 
@@ -41,13 +44,28 @@ public class GooglePeopleService {
         String accessToken = accountRepository.findAccessTokenByUid(activeAccountUid);
         PeopleService peopleService = createPeopleService(accessToken);
 
-        ListOtherContactsResponse response = peopleService.otherContacts()
-                .list()
-                .setPageSize(30)
-                .setReadMask("names,emailAddresses,photos")
-                .execute();
+        List<Person> allContacts = new ArrayList<>();
+        String pageToken = null;
 
-        return response.getOtherContacts().stream()
+        while (true) {
+            ListOtherContactsResponse response = peopleService.otherContacts()
+                    .list()
+                    .setPageSize(PAGE_SIZE)
+                    .setReadMask("names,emailAddresses,photos")
+                    .setPageToken(pageToken)
+                    .execute();
+
+            if (response.getOtherContacts() != null) {
+                allContacts.addAll(response.getOtherContacts());
+            }
+
+            pageToken = response.getNextPageToken();
+            if (pageToken == null) {
+                break;
+            }
+        }
+
+        return allContacts.stream()
                 .map(person -> {
                     String email = (person.getEmailAddresses() != null && !person.getEmailAddresses().isEmpty())
                             ? person.getEmailAddresses().get(0).getValue()
