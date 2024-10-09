@@ -31,16 +31,28 @@ public class SharedInboxService {
     private final InviteShareEmailService inviteShareEmailService;
     private final GmailService gmailService;
 
+    private static String generateId(String id, SharedDataType sharedDataType) {
+        if (sharedDataType.equals(SharedDataType.THREAD)) {
+            return "t_" + id;
+        } else if (sharedDataType.equals(SharedDataType.MESSAGE)) {
+            return "m_" + id;
+        }
+        return id;
+    }
+
     @Transactional
     public SharedEmailResponseDto createSharePost(String uid, CreateSharedRequestDto createSharedRequestDto) {
         Account account = accountRepository.findByUid(uid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+        String generatedDataId = generateId(createSharedRequestDto.getDataId(), createSharedRequestDto.getSharedDataType());
 
         Optional<SharedEmail> existingSharedEmail = sharedInboxRepository.findByDataId(createSharedRequestDto.getDataId());
         if (existingSharedEmail.isPresent()) {
             log.info("SharedEmail already exists for dataId: {}", createSharedRequestDto.getDataId());
             SharedEmail sharedEmail = existingSharedEmail.get();
 
+            // 이미 존재하는 경우, 기존 데이터를 반환 (덮어씌우는 대신 반환만)
             return SharedEmailResponseDto.builder()
                     .id(sharedEmail.getId())
                     .access(sharedEmail.getAccess())
@@ -54,10 +66,11 @@ public class SharedInboxService {
                     .build();
         }
 
-        log.info("Creating new SharedEmail for dataId: {}", createSharedRequestDto.getDataId());
+        // 새로운 SharedEmail 생성
+        log.info("Creating new SharedEmail for dataId: {}", generatedDataId);
         SharedEmail sharedEmail = SharedEmail.builder()
                 .access(createSharedRequestDto.getAccess())
-                .dataId(createSharedRequestDto.getDataId())
+                .dataId(generatedDataId)
                 .sharedDataType(createSharedRequestDto.getSharedDataType())
                 .owner(account)
                 .canEditorEditPermission(createSharedRequestDto.isCanEditorEditPermission())
@@ -67,6 +80,7 @@ public class SharedInboxService {
         sharedInboxRepository.save(sharedEmail);
         log.info("New SharedEmail saved with id: {}", sharedEmail.getId());
 
+        // 초대 권한 생성 및 저장
         Map<String, Permission> inviteePermissions = new HashMap<>();
         inviteePermissions.put(account.getEmail(), Permission.OWNER);
 
@@ -112,6 +126,10 @@ public class SharedInboxService {
 
         if (sendSharedEmailInvitationDto.isNotifyInvitation()) {
             for (String invitee : invitees) {
+                if (invitee.equals(account.getEmail())) {
+                    continue;
+                }
+
                 accountRepository.findByEmail(invitee).ifPresentOrElse(
                         existingAccount -> {
                             newInviteePermissions.put(invitee, sendSharedEmailInvitationDto.getPermission());
@@ -215,12 +233,18 @@ public class SharedInboxService {
             permissionLevel = Permission.PUBLIC_VIEWER;
         }
 
+        String dataId = sharedEmailPermission.getSharedEmail().getDataId();
+        if (dataId.startsWith("m_") || dataId.startsWith("t_")) {
+            dataId = dataId.substring(2);
+        }
+
         Object sharedEmailData;
         try {
+            String ownerUid = sharedEmailPermission.getSharedEmail().getOwner().getUid();
             if (sharedEmail.getSharedDataType() == SharedDataType.THREAD) {
-                sharedEmailData = gmailService.getUserEmailThread(sharedEmailPermission.getSharedEmail().getOwner().getUid(), sharedEmailPermission.getSharedEmail().getDataId());
+                sharedEmailData = gmailService.getUserEmailThread(ownerUid, sharedEmailPermission.getSharedEmail().getDataId());
             } else if (sharedEmail.getSharedDataType() == SharedDataType.MESSAGE) {
-                sharedEmailData = gmailService.getUserEmailMessage(sharedEmailPermission.getSharedEmail().getOwner().getUid(), sharedEmailPermission.getSharedEmail().getDataId());
+                sharedEmailData = gmailService.getUserEmailMessage(ownerUid, sharedEmailPermission.getSharedEmail().getDataId());
             } else {
                 throw new CustomErrorException(ErrorCode.INVALID_SHARED_DATA_TYPE);
             }
@@ -235,56 +259,34 @@ public class SharedInboxService {
             throw new RuntimeException(e);
         }
 
-        Map<String, Permission> inviteePermissions = new HashMap<>();
-        for (Map.Entry<String, Permission> entry : sharedEmailPermission.getInviteePermissions().entrySet()) {
-            String inviteeEmail = entry.getKey();
-            Permission originalPermission = entry.getValue();
+        Map<String, Permission> inviteePermissions = new HashMap<>(sharedEmailPermission.getInviteePermissions());
+        inviteePermissions.replaceAll((email, permission) ->
+            accountRepository.findByEmail(email).isPresent() ? permission : Permission.PUBLIC_VIEWER);
 
-            if (accountRepository.findByEmail(inviteeEmail).isPresent()) {
-                inviteePermissions.put(inviteeEmail, originalPermission);
-            } else {
-                inviteePermissions.put(inviteeEmail, Permission.PUBLIC_VIEWER);
-            }
-        }
-
+        // 권한에 따라 반환할 inviteePermission 설정
         Map<String, Permission> filteredPermissions = new HashMap<>();
+        String ownerEmail = sharedEmailPermission.getSharedEmail().getOwner().getEmail();
+
         if (permissionLevel == Permission.OWNER || permissionLevel == Permission.EDITOR) {
             filteredPermissions = inviteePermissions;
         } else if (permissionLevel == Permission.VIEWER) {
-            for (Map.Entry<String, Permission> entry : inviteePermissions.entrySet()) {
-                String inviteeEmail = entry.getKey();
-                Permission originalPermission = entry.getValue();
-
-                if (inviteeEmail.equals(sharedEmailPermission.getSharedEmail().getOwner().getEmail()) || (account != null && inviteeEmail.equals(account.getEmail()))) {
-                    filteredPermissions.put(inviteeEmail, originalPermission);
-                }
-            }
-            filteredPermissions.put(sharedEmailPermission.getSharedEmail().getOwner().getEmail(), Permission.OWNER);
+            filteredPermissions.put(ownerEmail, Permission.OWNER);
             if (account != null) {
                 filteredPermissions.put(account.getEmail(), Permission.VIEWER);
             }
         } else if (permissionLevel == Permission.PUBLIC_VIEWER) {
-            for (Map.Entry<String, Permission> entry : inviteePermissions.entrySet()) {
-                String inviteeEmail = entry.getKey();
-                if (inviteeEmail.equals(sharedEmailPermission.getSharedEmail().getOwner().getEmail())) {
-                    filteredPermissions.put(inviteeEmail, entry.getValue());
-                }
-            }
-            filteredPermissions.put(sharedEmailPermission.getSharedEmail().getOwner().getEmail(), Permission.OWNER);
+            filteredPermissions.put(ownerEmail, Permission.OWNER);
         }
 
-        GetSharedEmailResponseDto responseDto = GetSharedEmailResponseDto.builder()
+        return GetSharedEmailResponseDto.builder()
                 .sharedEmailData(sharedEmailData)
                 .dataId(sharedEmailPermission.getSharedEmail().getDataId())
                 .permissionLevel(permissionLevel)
-                .canEdit(permissionLevel == Permission.EDITOR && sharedEmailPermission.getSharedEmail().isCanEditorEditPermission())
-                .canViewToolMenu(permissionLevel == Permission.EDITOR || (permissionLevel == Permission.OWNER && sharedEmailPermission.getSharedEmail().isCanViewerViewToolMenu()))
-                .sharedDataType(sharedEmailPermission.getSharedEmail().getSharedDataType())
+                .canEdit(permissionLevel == Permission.EDITOR && sharedEmail.isCanEditorEditPermission())
+                .canViewToolMenu(permissionLevel == Permission.EDITOR || (permissionLevel == Permission.OWNER && sharedEmail.isCanViewerViewToolMenu()))
+                .sharedDataType(sharedEmail.getSharedDataType())
+                .inviteePermissions(filteredPermissions)
                 .build();
-
-        responseDto.setInviteePermissions(filteredPermissions);
-
-        return responseDto;
     }
 
 
