@@ -112,6 +112,10 @@ public class SharedInboxService {
 
         if (sendSharedEmailInvitationDto.isNotifyInvitation()) {
             for (String invitee : invitees) {
+                if (invitee.equals(account.getEmail())) {
+                    continue;
+                }
+
                 accountRepository.findByEmail(invitee).ifPresentOrElse(
                         existingAccount -> {
                             newInviteePermissions.put(invitee, sendSharedEmailInvitationDto.getPermission());
