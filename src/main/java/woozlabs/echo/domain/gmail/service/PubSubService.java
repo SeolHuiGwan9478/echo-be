@@ -215,7 +215,7 @@ public class PubSubService {
         String fcmMsgLabelKey = "label";
         String fcmMsgLinkIdKey = "link";
         String fcmMsgCodeKey = "code";
-        String fcmMsgAccountUidKey = "aUid";
+        String fcmMsgAccountUidKey = "aAUid";
         HistoryType historyType = historyData.getHistoryType();
         // set base info
         data.put(fcmMsgIdKey, historyData.getId());
