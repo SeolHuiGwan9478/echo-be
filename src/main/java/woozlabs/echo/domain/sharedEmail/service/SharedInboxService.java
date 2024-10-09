@@ -31,16 +31,28 @@ public class SharedInboxService {
     private final InviteShareEmailService inviteShareEmailService;
     private final GmailService gmailService;
 
+    private static String generateId(String id, SharedDataType sharedDataType) {
+        if (sharedDataType.equals(SharedDataType.THREAD)) {
+            return "t_" + id;
+        } else if (sharedDataType.equals(SharedDataType.MESSAGE)) {
+            return "m_" + id;
+        }
+        return id;
+    }
+
     @Transactional
     public SharedEmailResponseDto createSharePost(String uid, CreateSharedRequestDto createSharedRequestDto) {
         Account account = accountRepository.findByUid(uid)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+        String generatedDataId = generateId(createSharedRequestDto.getDataId(), createSharedRequestDto.getSharedDataType());
 
         Optional<SharedEmail> existingSharedEmail = sharedInboxRepository.findByDataId(createSharedRequestDto.getDataId());
         if (existingSharedEmail.isPresent()) {
             log.info("SharedEmail already exists for dataId: {}", createSharedRequestDto.getDataId());
             SharedEmail sharedEmail = existingSharedEmail.get();
 
+            // 이미 존재하는 경우, 기존 데이터를 반환 (덮어씌우는 대신 반환만)
             return SharedEmailResponseDto.builder()
                     .id(sharedEmail.getId())
                     .access(sharedEmail.getAccess())
@@ -54,10 +66,11 @@ public class SharedInboxService {
                     .build();
         }
 
-        log.info("Creating new SharedEmail for dataId: {}", createSharedRequestDto.getDataId());
+        // 새로운 SharedEmail 생성
+        log.info("Creating new SharedEmail for dataId: {}", generatedDataId);
         SharedEmail sharedEmail = SharedEmail.builder()
                 .access(createSharedRequestDto.getAccess())
-                .dataId(createSharedRequestDto.getDataId())
+                .dataId(generatedDataId)
                 .sharedDataType(createSharedRequestDto.getSharedDataType())
                 .owner(account)
                 .canEditorEditPermission(createSharedRequestDto.isCanEditorEditPermission())
@@ -67,6 +80,7 @@ public class SharedInboxService {
         sharedInboxRepository.save(sharedEmail);
         log.info("New SharedEmail saved with id: {}", sharedEmail.getId());
 
+        // 초대 권한 생성 및 저장
         Map<String, Permission> inviteePermissions = new HashMap<>();
         inviteePermissions.put(account.getEmail(), Permission.OWNER);
 
