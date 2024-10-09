@@ -48,6 +48,7 @@ public class GenService {
             String result = chatGptService.generateEmailTemplateSuggestion(dto.getContent());
             return om.readValue(result, GenEmailTemplateSuggestionResponse.class);
         }catch (Exception e) {
+            e.printStackTrace();
             throw new CustomErrorException(ErrorCode.GENERATE_EMAIL_TEMPLATE_QUESTION_ERROR, ErrorCode.GENERATE_EMAIL_TEMPLATE_QUESTION_ERROR.getMessage());
         }
     }
