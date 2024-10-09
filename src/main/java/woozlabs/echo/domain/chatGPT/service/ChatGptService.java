@@ -75,6 +75,6 @@ public class ChatGptService {
 
     public String generateEmailTemplateSuggestion(String emailContent){
         String prompt = EmailTemplateSuggestionPrompt.getPrompt(emailContent);
-        return getCompletion3(prompt);
+        return getCompletion(prompt);
     }
 }
