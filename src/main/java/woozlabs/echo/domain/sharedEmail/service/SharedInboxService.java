@@ -49,7 +49,8 @@ public class SharedInboxService {
 
         Optional<SharedEmail> existingSharedEmail = sharedInboxRepository.findByDataId(generatedDataId);
         if (existingSharedEmail.isPresent()) {
-            log.info("SharedEmail already exists for dataId: {}", generatedDataId);
+            log.info("SharedEmail already exists for dataId: {}", createSharedRequestDto.getDataId());
+            
             SharedEmail sharedEmail = existingSharedEmail.get();
 
             // 이미 존재하는 경우, 기존 데이터를 반환 (덮어씌우는 대신 반환만)
