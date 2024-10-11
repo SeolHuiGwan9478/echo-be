@@ -197,12 +197,14 @@ public class SharedInboxService {
             String userEmail = account.getEmail();
             if (sharedEmail.getInviteePermissions().containsKey(userEmail)) {
                 permissionLevel = sharedEmail.getInviteePermissions().get(userEmail);
+                log.debug("User {} has permission level {} for SharedEmail {}", userEmail, permissionLevel, sharedEmailId);
             } else {
                 log.error("Forbidden access to shared email for account: {}", userEmail);
                 throw new CustomErrorException(ErrorCode.FORBIDDEN_ACCESS_TO_SHARED_EMAIL);
             }
         } else {
             permissionLevel = Permission.PUBLIC_VIEWER;
+            log.debug("Anonymous access to SharedEmail {}. Setting permission to PUBLIC_VIEWER", sharedEmailId);
         }
 
         String dataId = sharedEmail.getDataId();
@@ -213,10 +215,16 @@ public class SharedInboxService {
         Object sharedEmailData;
         try {
             String ownerUid = sharedEmail.getOwner().getUid();
+            Account ownerAccount = accountRepository.findByUid(ownerUid)
+                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
+
+            String ownerAccessToken = ownerAccount.getAccessToken();
             if (sharedEmail.getSharedDataType() == SharedDataType.THREAD) {
-                sharedEmailData = gmailService.getUserEmailThread(ownerUid, sharedEmail.getDataId());
+                log.debug("Fetching thread data for SharedEmail {}. Owner UID: {}", sharedEmailId, ownerUid);
+                sharedEmailData = gmailService.getUserEmailThread(ownerAccessToken, dataId);
             } else if (sharedEmail.getSharedDataType() == SharedDataType.MESSAGE) {
-                sharedEmailData = gmailService.getUserEmailMessage(ownerUid, sharedEmail.getDataId());
+                log.debug("Fetching message data for SharedEmail {}. Owner UID: {}", sharedEmailId, ownerUid);
+                sharedEmailData = gmailService.getUserEmailMessage(ownerAccessToken, dataId);
             } else {
                 throw new CustomErrorException(ErrorCode.INVALID_SHARED_DATA_TYPE);
             }
@@ -252,6 +260,7 @@ public class SharedInboxService {
             filteredPermissions.put(ownerEmail, Permission.OWNER);
         }
 
+        log.info("Successfully fetched shared email data for SharedEmailId: {}", sharedEmailId);
         return GetSharedEmailResponseDto.builder()
                 .sharedEmailData(sharedEmailData)
                 .dataId(sharedEmail.getDataId())
