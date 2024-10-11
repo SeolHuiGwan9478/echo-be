@@ -217,9 +217,7 @@ public class GmailService {
             Message message = gmailService.users().messages().get(USER_ID, messageId).execute();
             return GmailMessageGetResponse.toGmailMessageGet(message, gmailUtility);
         }catch (IOException e) {
-            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERROR_MESSAGE,
-                    ErrorCode.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERROR_MESSAGE.getMessage()
-            );
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_GET_API_ERROR_MESSAGE, e.getMessage());
         }
     }
 
