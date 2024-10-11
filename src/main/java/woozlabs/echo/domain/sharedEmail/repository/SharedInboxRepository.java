@@ -9,6 +9,4 @@ import java.util.UUID;
 public interface SharedInboxRepository extends JpaRepository<SharedEmail, UUID> {
 
     Optional<SharedEmail> findByDataId(String dataId);
-
-    boolean existsByDataId(String dataId);
 }

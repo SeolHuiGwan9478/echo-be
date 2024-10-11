@@ -7,6 +7,8 @@ import org.hibernate.annotations.UuidGenerator;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.global.common.entity.BaseEntity;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -36,7 +38,10 @@ public class SharedEmail extends BaseEntity {
     private boolean canEditorEditPermission;
     private boolean canViewerViewToolMenu;
 
-    @OneToOne(mappedBy = "sharedEmail", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private SharedEmailPermission sharedEmailPermission;
+    @ElementCollection
+    @CollectionTable(name = "shared_email_invitee", joinColumns = @JoinColumn(name = "shared_email_id"))
+    @MapKeyColumn(name = "invitee_email")
+    @Column(name = "permission")
+    @Enumerated(EnumType.STRING)
+    private Map<String, Permission> inviteePermissions = new HashMap<>();
 }
