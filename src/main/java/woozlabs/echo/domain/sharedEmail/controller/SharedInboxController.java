@@ -41,9 +41,10 @@ public class SharedInboxController {
     }
 
     @GetMapping("/public-share/{sharedEmailId}")
-    public ResponseEntity<GetSharedEmailResponseDto> getSharedEmail(@RequestParam("aAUid") String activeAccountUid,
+    public ResponseEntity<GetSharedEmailResponseDto> getSharedEmail(HttpServletRequest httpServletRequest,
                                                                     @PathVariable("sharedEmailId") UUID sharedEmailId) {
-        GetSharedEmailResponseDto responseDto = sharedInboxService.getSharedEmail(activeAccountUid, sharedEmailId);
+        String uid = (String) httpServletRequest.getAttribute(GlobalConstant.FIREBASE_UID_KEY);
+        GetSharedEmailResponseDto responseDto = sharedInboxService.getSharedEmail(uid, sharedEmailId);
         return ResponseEntity.ok(responseDto);
     }
 
