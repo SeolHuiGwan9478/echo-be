@@ -20,10 +20,14 @@ import woozlabs.echo.domain.gmail.dto.thread.*;
 import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.domain.gmail.util.GmailUtility;
 import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.dto.ResponseDto;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -169,14 +173,23 @@ public class GmailController {
                                                    @RequestParam(value = "files", required = false) List<MultipartFile> files,
                                                    @RequestParam("aAUid") String aAUid){
         log.info("Request to send message");
-        String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
-        GmailMessageSendRequest request = new GmailMessageSendRequest();
-        request.setToEmailAddress(toEmailAddress);
-        request.setSubject(subject);
-        request.setBodyText(bodyText);
-        request.setFiles(Objects.requireNonNullElseGet(files, ArrayList::new));
-        GmailMessageSendResponse response = gmailService.sendUserEmailMessage(accessToken, request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        List<File> attachments = new ArrayList<>();
+        try{
+            String accessToken = gmailUtility.getActiveAccountAccessToken(httpServletRequest, aAUid);
+            GmailMessageSendRequest request = new GmailMessageSendRequest();
+            request.setToEmailAddress(toEmailAddress);
+            request.setSubject(subject);
+            request.setBodyText(bodyText);
+            for(MultipartFile multipartFile : files){
+                File tmpFile = gmailUtility.convertMultipartFileToTempFile(multipartFile);
+                attachments.add(tmpFile);
+            }
+            request.setFiles(attachments);
+            gmailService.sendUserEmailMessage(accessToken, request);
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        }catch (Exception e){
+            throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE, ErrorCode.REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE.getMessage());
+        }
     }
 
     @GetMapping("/api/v1/gmail/drafts/{id}")

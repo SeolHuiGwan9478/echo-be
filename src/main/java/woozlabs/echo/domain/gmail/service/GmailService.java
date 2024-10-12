@@ -1,6 +1,8 @@
 package woozlabs.echo.domain.gmail.service;
 
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.*;
 import com.google.api.services.gmail.model.Thread;
@@ -14,6 +16,7 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.util.ByteArrayDataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
@@ -22,6 +25,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -69,6 +74,7 @@ import static woozlabs.echo.global.constant.GlobalConstant.*;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@EnableAsync
 public class GmailService {
     // constants
     private final String TEMP_FILE_PREFIX = "echo";
@@ -262,7 +268,8 @@ public class GmailService {
         }
     }
 
-    public GmailMessageSendResponse sendUserEmailMessage(String accessToken, GmailMessageSendRequest request) {
+    @Async
+    public void sendUserEmailMessage(String accessToken, GmailMessageSendRequest request) {
         try{
             Gmail gmailService = gmailUtility.createGmailService(accessToken);
             Profile profile = gmailService.users().getProfile(USER_ID).execute();
@@ -270,16 +277,18 @@ public class GmailService {
             request.setFromEmailAddress(fromEmailAddress);
             MimeMessage mimeMessage = createEmail(request);
             Message message = createMessage(mimeMessage);
-            Message responseMessage = gmailService.users().messages().send(USER_ID, message).execute();
-            return GmailMessageSendResponse.builder()
-                    .id(responseMessage.getId())
-                    .threadId(responseMessage.getThreadId())
-                    .labelsId(responseMessage.getLabelIds())
-                    .snippet(responseMessage.getSnippet()).build();
+            gmailService.users().messages().send(USER_ID, message).execute();
         }catch (Exception e) {
+            e.printStackTrace();
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE,
                     ErrorCode.REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE.getMessage()
             );
+        }finally {
+            for (File file : request.getFiles()) {
+                if (file.exists()) {
+                    file.delete();
+                }
+            }
         }
     }
 
@@ -788,17 +797,14 @@ public class GmailService {
         htmlPart.setContent(body.toString(), "text/html");
         multipart.addBodyPart(htmlPart);
 
-        for(MultipartFile mimFile : request.getFiles()){
+        for(File file : request.getFiles()){
             MimeBodyPart fileMimeBodyPart = new MimeBodyPart();
-            if(mimFile.getOriginalFilename() == null) throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE);
-            File file = File.createTempFile(TEMP_FILE_PREFIX, mimFile.getOriginalFilename());
-            mimFile.transferTo(file);
             DataSource source = new FileDataSource(file);
-            fileMimeBodyPart.setFileName(mimFile.getOriginalFilename());
             fileMimeBodyPart.setDataHandler(new DataHandler(source));
+            fileMimeBodyPart.setFileName(file.getName());
             multipart.addBodyPart(fileMimeBodyPart);
-            file.deleteOnExit();
         }
+
         for(int i = 0;i < base64Images.size();i++){
             GmailMessageInlineImage inlineFile = base64Images.get(i);
             MimeBodyPart imagePart = new MimeBodyPart();
@@ -965,4 +971,5 @@ public class GmailService {
         Filter filter = new Filter().setCriteria(filterCriteria).setAction(filterAction);
         gmailService.users().settings().filters().create(USER_ID, filter).execute();
     }
+
 }

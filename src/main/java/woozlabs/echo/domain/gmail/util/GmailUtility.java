@@ -3,6 +3,7 @@ package woozlabs.echo.domain.gmail.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -21,6 +22,7 @@ import org.jsoup.select.Elements;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 import woozlabs.echo.domain.chatGPT.service.ChatGptService;
 import woozlabs.echo.domain.gmail.dto.template.ExtractScheduleInfo;
 import woozlabs.echo.domain.gmail.dto.template.ExtractVerificationInfo;
@@ -31,9 +33,7 @@ import woozlabs.echo.global.constant.GlobalConstant;
 import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -136,13 +136,29 @@ public class GmailUtility {
         }
     }
 
-    private HttpRequestInitializer createCredentialWithAccessToken(String accessToken){
+    public File convertMultipartFileToTempFile(MultipartFile multipartFile) throws IOException {
+        File tempFile = File.createTempFile("echo-", "-" + multipartFile.getOriginalFilename());
+        try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+            fos.write(multipartFile.getBytes());
+        }
+        tempFile.deleteOnExit();
+        return tempFile;
+    }
+
+    private HttpRequestInitializer createCredentialWithAccessToken(String accessToken) {
         AccessToken token = AccessToken.newBuilder()
                 .setTokenValue(accessToken)
                 .setScopes(SCOPES)
                 .build();
+
         GoogleCredentials googleCredentials = GoogleCredentials.create(token);
-        return new HttpCredentialsAdapter(googleCredentials);
+
+        return httpRequest -> {
+            new HttpCredentialsAdapter(googleCredentials).initialize(httpRequest);
+            // setting timeout
+            httpRequest.setConnectTimeout(3 * 60 * 1000);  // connect timeout 3분
+            httpRequest.setReadTimeout(5 * 60 * 1000);     // read timeout 5분
+        };
     }
 
     private List<String> getVerificationLink(String decodedContent){
