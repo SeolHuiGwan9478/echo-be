@@ -8,6 +8,7 @@ import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.domain.member.entity.Account;
 import woozlabs.echo.domain.member.repository.AccountRepository;
 import woozlabs.echo.domain.sharedEmail.dto.*;
+import woozlabs.echo.domain.sharedEmail.entity.Access;
 import woozlabs.echo.domain.sharedEmail.entity.Permission;
 import woozlabs.echo.domain.sharedEmail.entity.SharedDataType;
 import woozlabs.echo.domain.sharedEmail.entity.SharedEmail;
@@ -190,6 +191,11 @@ public class SharedInboxService {
         Permission permissionLevel = Permission.VIEWER;
         Account account = null;
 
+        if (sharedEmail.getAccess() == Access.RESTRICTED && uid == null) {
+            log.error("Access to RESTRICTED shared email without a UID is forbidden.");
+            throw new CustomErrorException(ErrorCode.FORBIDDEN_ACCESS_TO_SHARED_EMAIL);
+        }
+
         if (uid != null) {
             account = accountRepository.findByUid(uid)
                     .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
@@ -198,13 +204,13 @@ public class SharedInboxService {
             if (sharedEmail.getInviteePermissions().containsKey(userEmail)) {
                 permissionLevel = sharedEmail.getInviteePermissions().get(userEmail);
                 log.debug("User {} has permission level {} for SharedEmail {}", userEmail, permissionLevel, sharedEmailId);
-            } else {
-                log.error("Forbidden access to shared email for account: {}", userEmail);
+            } else if (sharedEmail.getAccess() == Access.RESTRICTED) {
+                log.error("Forbidden access to RESTRICTED shared email for account: {}", userEmail);
                 throw new CustomErrorException(ErrorCode.FORBIDDEN_ACCESS_TO_SHARED_EMAIL);
             }
         } else {
             permissionLevel = Permission.PUBLIC_VIEWER;
-            log.debug("Anonymous access to SharedEmail {}. Setting permission to PUBLIC_VIEWER", sharedEmailId);
+            log.debug("Anonymous access to PUBLIC SharedEmail {}. Setting permission to PUBLIC_VIEWER", sharedEmailId);
         }
 
         String dataId = sharedEmail.getDataId();
