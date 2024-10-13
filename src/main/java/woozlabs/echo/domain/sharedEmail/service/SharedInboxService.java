@@ -6,7 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import woozlabs.echo.domain.gmail.service.GmailService;
 import woozlabs.echo.domain.member.entity.Account;
+import woozlabs.echo.domain.member.entity.Member;
+import woozlabs.echo.domain.member.entity.MemberAccount;
 import woozlabs.echo.domain.member.repository.AccountRepository;
+import woozlabs.echo.domain.member.repository.MemberRepository;
 import woozlabs.echo.domain.sharedEmail.dto.*;
 import woozlabs.echo.domain.sharedEmail.entity.Access;
 import woozlabs.echo.domain.sharedEmail.entity.Permission;
@@ -17,6 +20,7 @@ import woozlabs.echo.global.exception.CustomErrorException;
 import woozlabs.echo.global.exception.ErrorCode;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -26,6 +30,7 @@ public class SharedInboxService {
 
     private final SharedInboxRepository sharedInboxRepository;
     private final AccountRepository accountRepository;
+    private final MemberRepository memberRepository;
     private final InviteShareEmailService inviteShareEmailService;
     private final GmailService gmailService;
 
@@ -183,8 +188,6 @@ public class SharedInboxService {
     }
 
     public GetSharedEmailResponseDto getSharedEmail(String uid, UUID sharedEmailId) {
-        log.info("Fetching shared email for UID: {}", uid);
-
         SharedEmail sharedEmail = sharedInboxRepository.findById(sharedEmailId)
                 .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_SHARED_EMAIL));
 
@@ -200,12 +203,29 @@ public class SharedInboxService {
             account = accountRepository.findByUid(uid)
                     .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_ACCOUNT_ERROR_MESSAGE));
 
-            String userEmail = account.getEmail();
-            if (sharedEmail.getInviteePermissions().containsKey(userEmail)) {
-                permissionLevel = sharedEmail.getInviteePermissions().get(userEmail);
-                log.debug("User {} has permission level {} for SharedEmail {}", userEmail, permissionLevel, sharedEmailId);
-            } else if (sharedEmail.getAccess() == Access.RESTRICTED) {
-                log.error("Forbidden access to RESTRICTED shared email for account: {}", userEmail);
+            Member member = memberRepository.findByPrimaryUid(uid)
+                    .orElseThrow(() -> new CustomErrorException(ErrorCode.NOT_FOUND_MEMBER));
+
+            List<Account> memberAccounts = member.getMemberAccounts().stream()
+                    .map(MemberAccount::getAccount)
+                    .collect(Collectors.toList());
+
+
+            // 멤버의 모든 계정 중 하나라도 공유된 이메일의 초대 목록에 있을 경우 권한 부여
+            boolean hasPermission = false;
+            for (Account memberAccount : memberAccounts) {
+                String userEmail = memberAccount.getEmail();
+                if (sharedEmail.getInviteePermissions().containsKey(userEmail)) {
+                    permissionLevel = sharedEmail.getInviteePermissions().get(userEmail);
+                    log.debug("User {} has permission level {} for SharedEmail {}", userEmail, permissionLevel, sharedEmailId);
+                    hasPermission = true;
+                    break;
+                }
+            }
+
+            // 권한이 없고, 공유 이메일이 제한된 접근(RESTRICTED)인 경우
+            if (!hasPermission && sharedEmail.getAccess() == Access.RESTRICTED) {
+                log.error("Forbidden access to RESTRICTED shared email for member: {}", member.getDisplayName());
                 throw new CustomErrorException(ErrorCode.FORBIDDEN_ACCESS_TO_SHARED_EMAIL);
             }
         } else {
