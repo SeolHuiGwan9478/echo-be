@@ -2,41 +2,60 @@ package woozlabs.echo.domain.chatGPT.prompt;
 
 public class EmailTemplateSuggestionPrompt {
     private static String EMAIL_TEMPLATE_SUGGESTION_PROMPT = """
-    You are an AI assistant that analyzes email content, detects if it's a non-conversational email, and suggests context-appropriate response topics if applicable. 
-    First, determine if the email is non-conversational (promotional, containing authentication codes/links, or simple notifications). 
-    Then, only if it is conversational, provide 1-3 concise topic suggestions for the response, such as questions related to "salary negotiation", "company benefits", or "scheduling an interview". 
-    If no relevant suggestions apply, it is not necessary to provide all three suggestions.
-
-    Email content:
-    %s
-
-    Analyze the above email content and respond in the following JSON format:
+    You are an AI assistant tasked with analyzing email content and suggesting appropriate response keywords. Please follow these instructions based on the given email content:
+    
+    1. Carefully read and analyze the following email content:
+       "%s"
+    
+    2. Determine the language of the email content and ensure that your response keywords are in the same language.
+    
+    3. Determine if a response is needed:
+       - If no response is required (e.g., simple information delivery), set isNonConversational to true.
+       - If a response is needed, set isNonConversational to false.
+    
+    4. When a response is needed (isNonConversational is false):
+       - Generate 1-3 possible response keywords in the same language as the email content.
+       - Each keyword should be concise and clear.
+       - For Yes/No questions, include appropriate affirmative and negative responses in the email's language.
+    
+    5. Return the result in the following JSON format:
+       {
+         "isNonConversational": boolean,
+         "suggestions": [string] (only when isNonConversational is false)
+       }
+    
+    IMPORTANT: Strictly adhere to the specified JSON output format. Do not include any additional text, explanations, or formatting outside of this JSON structure. The output must be valid JSON that can be directly parsed by a JSON parser.
+    
+    Examples:
+    Input: "What should we have for dinner tomorrow?"
+    Output:
     {
-      "isNonConversational": boolean,
+      "isNonConversational": false,
       "suggestions": [
-        "[Topic suggestion 1]",
-        "[Topic suggestion 2 (if applicable)]",
-        "[Topic suggestion 3 (if applicable)]"
+        "Suggest everyone's okay with anything",
+        "Mention having prior plans",
+        "Express desire for chicken"
       ]
     }
-
-    Guidelines:
-    1. Set "isNonConversational" to true if the email is:
-       - Promotional or advertising in nature
-       - Contains authentication codes or links
-       - Is a simple notification or alert
-       - Any other type of email that doesn't require a conversational response
-    2. If "isNonConversational" is true, provide an empty list for "suggestions".
-    3. If "isNonConversational" is false, provide 1-3 topic suggestions, each limited to 20 characters.
-    4. IMPORTANT: Ensure that each suggestion represents a potential "response" to the email. 
-       The suggestions should be highly relevant to the email's context and content, addressing key points or questions raised in the email that require a reply.
-       For example, suggestions may include: "Ask about salary", "Discuss company benefits", or "Schedule an interview".
-    5. For Yes/No questions, frame them as "Please answer 'Yes'" or "Please answer 'No'".
-    6. Make suggestions specific, concise, and cover different aspects of the content that need to be addressed in a reply.
-    7. CRITICAL: If no suitable suggestions are found, do not feel obligated to provide 3 suggestions; fewer is acceptable.
-       Your entire response, including all text within the JSON object, MUST be in the exact same language as the provided email content. Do not translate any part of your response to a different language.
-
-    Note: Provide only the JSON object as specified. Do not include any other explanations or additional information.
+    
+    Input: "明日の夕食は何にしましょうか？"
+    Output:
+    {
+      "isNonConversational": false,
+      "suggestions": [
+        "何でも大丈夫だと答える",
+        "予定があると伝える",
+        "チキンが食べたいと答える"
+      ]
+    }
+    
+    Input: "Here's the meeting schedule for next week: Monday at 10 AM, Tuesday at 2 PM"
+    Output:
+    {
+      "isNonConversational": true
+    }
+    
+    Now, please analyze the given email content according to these guidelines, matching the language of the email, and provide an appropriate JSON response. Remember to strictly follow the specified output format.
     """;
 
     public static String getPrompt(String messageContent) {

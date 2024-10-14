@@ -107,7 +107,8 @@ public class GmailUtility {
         byte[] decodedBinaryContent = Base64.getDecoder().decode(standardBase64);
         String decodedContent = new String(decodedBinaryContent, StandardCharsets.UTF_8);
         if(!isVerificationEmail(decodedContent)) return extractVerificationInfo; // check verification email
-        links.addAll(getVerificationLink(decodedContent));
+        List<String> link_test = getVerificationLink(decodedContent);
+        links.addAll(link_test);
         if(links.isEmpty()){
             codes.addAll(getVerificationCode(decodedContent));
         }
@@ -197,9 +198,11 @@ public class GmailUtility {
                     contents.add(element.text());
                 }
             }
+            System.out.println("regexCodes: " + regexCodes);
             if(elements.isEmpty()) continue;
             Elements convertElements = new Elements(elements);
             codes.addAll(extractCoreContentCode(convertElements));
+            System.out.println("codes: " + codes);
         }
         if(!regexCodes.isEmpty()){
             return regexCodes.stream().distinct().toList();
@@ -285,6 +288,7 @@ public class GmailUtility {
 
         // running gpt
         String resultGpt = chatGptService.analyzeVerificationEmail(coreElements.toString());
+        System.out.println("resultGpt: " + resultGpt);
         if(resultGpt.equals("false")){
             return verificationInfo;
         }else{
@@ -357,6 +361,7 @@ public class GmailUtility {
         if(resultGpt.equals("false")){
             return verificationInfo;
         }else{
+            System.out.println(resultGpt);
             Pattern pattern = Pattern.compile(ID_PATTERN);
             Matcher matcher = pattern.matcher(resultGpt);
             if(matcher.find()){
