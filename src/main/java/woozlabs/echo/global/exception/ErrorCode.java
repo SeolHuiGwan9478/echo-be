@@ -74,6 +74,8 @@ public enum ErrorCode {
     BILLING_ERROR_MESSAGE(402, "Payment Required"),
     NOT_FOUND_GMAIL_THREAD(404, "Not found Gmail Thread"),
     THREAD_NOT_FOUND_AND_REMOVED(404, "The thread was deleted and the shared email has been removed."),
+    FAILED_TO_CONVERT_MULTI_PART_FILE_TO_TEMP_FILE(500,"Failed to convert MultipartFile to TempFile"),
+    EXCEED_ATTACHMENT_FILE_SIZE(400, "Exceed your attachment's file size, max: 25MB"),
 
     // calendar
     GOOGLE_CALENDAR_SECURITY_ERROR(500, "Security error while fetching Google Calendar events"),

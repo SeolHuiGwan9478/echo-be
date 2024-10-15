@@ -181,6 +181,8 @@ public class GmailController {
             request.setSubject(subject);
             request.setBodyText(bodyText);
             for(MultipartFile multipartFile : files){
+                // check exceed maximum
+                if(multipartFile.getSize() > 25 * 1000 * 1000) throw new CustomErrorException(ErrorCode.EXCEED_ATTACHMENT_FILE_SIZE);
                 File tmpFile = gmailUtility.convertMultipartFileToTempFile(multipartFile);
                 attachments.add(tmpFile);
             }
