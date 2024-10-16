@@ -44,6 +44,7 @@ import java.util.regex.Pattern;
 public class GmailUtility {
     private final String DOMAIN_PATTERN = "(?i)^(https?://(?:www\\.)?[^/]+)";
     private final String ID_PATTERN = "id=(\\d+)";
+    private final String ELEMENT_PATTERN = "<element=(.*?),";
 
     private final ObjectMapper om;
     private final ChatGptService chatGptService;
@@ -198,11 +199,9 @@ public class GmailUtility {
                     contents.add(element.text());
                 }
             }
-            System.out.println("regexCodes: " + regexCodes);
             if(elements.isEmpty()) continue;
             Elements convertElements = new Elements(elements);
             codes.addAll(extractCoreContentCode(convertElements));
-            System.out.println("codes: " + codes);
         }
         if(!regexCodes.isEmpty()){
             return regexCodes.stream().distinct().toList();
@@ -288,14 +287,19 @@ public class GmailUtility {
 
         // running gpt
         String resultGpt = chatGptService.analyzeVerificationEmail(coreElements.toString());
-        System.out.println("resultGpt: " + resultGpt);
-        if(resultGpt.equals("false")){
+        if(resultGpt.equals("false") || resultGpt.equals("unknown")){
             return verificationInfo;
         }else{
-            Pattern pattern = Pattern.compile(ID_PATTERN);
-            Matcher matcher = pattern.matcher(resultGpt);
-            if(matcher.find()){
-                String idValue = matcher.group(1);
+            Pattern idPattern = Pattern.compile(ID_PATTERN);
+            Pattern elementPattern = Pattern.compile(ELEMENT_PATTERN);
+            Matcher idMatcher = idPattern.matcher(resultGpt);
+            Matcher elementMatcher = elementPattern.matcher(resultGpt);
+            if(idMatcher.find() && elementMatcher.find()){
+                String elementValue = elementMatcher.group(1);
+                if(!elementValue.strip().equals("CODE")){
+                    return verificationInfo;
+                }
+                String idValue = idMatcher.group(1);
                 String cssSelector = "#" + idValue;
                 Elements searchElements = coreElements.select(cssSelector);
                 for(Element element : searchElements){
@@ -358,14 +362,16 @@ public class GmailUtility {
 
         // running gpt
         String resultGpt = chatGptService.analyzeVerificationEmail(coreElements.toString());
-        if(resultGpt.equals("false")){
+        if(resultGpt.equals("false") || resultGpt.equals("unknown")){
             return verificationInfo;
         }else{
-            System.out.println(resultGpt);
-            Pattern pattern = Pattern.compile(ID_PATTERN);
-            Matcher matcher = pattern.matcher(resultGpt);
-            if(matcher.find()){
-                String idValue = matcher.group(1);
+            Pattern idPattern = Pattern.compile(ID_PATTERN);
+            //Pattern elementPattern = Pattern.compile(ELEMENT_PATTERN);
+            Matcher idMatcher = idPattern.matcher(resultGpt);
+            //Matcher elementMatcher = elementPattern.matcher(resultGpt);
+            if(idMatcher.find()){
+                //String elementValue = elementMatcher.group(1);
+                String idValue = idMatcher.group(1);
                 String cssSelector = "a[id='" + idValue + "']";
                 Elements searchElements = beforeOptimizeElements.select(cssSelector);
                 for(Element element : searchElements){

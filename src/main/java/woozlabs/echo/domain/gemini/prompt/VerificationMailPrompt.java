@@ -27,7 +27,7 @@ public class VerificationMailPrompt {
     ===
 
     Your analysis (respond ONLY with <element=ELEMENT, id=ID_ATTRIBUTE>, "false", or "unknown"):
-    """;;
+    """;
 
     public static String getPrompt(String threadContent) {
         return String.format(VERIFICATION_MAIL_ANALYSIS, threadContent);

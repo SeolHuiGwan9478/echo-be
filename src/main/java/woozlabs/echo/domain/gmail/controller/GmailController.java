@@ -180,6 +180,7 @@ public class GmailController {
             request.setToEmailAddress(toEmailAddress);
             request.setSubject(subject);
             request.setBodyText(bodyText);
+            if(files == null) files = new ArrayList<>();
             for(MultipartFile multipartFile : files){
                 // check exceed maximum
                 if(multipartFile.getSize() > 25 * 1000 * 1000) throw new CustomErrorException(ErrorCode.EXCEED_ATTACHMENT_FILE_SIZE);
@@ -190,6 +191,7 @@ public class GmailController {
             gmailService.sendUserEmailMessage(accessToken, request);
             return new ResponseEntity<>(HttpStatus.CREATED);
         }catch (Exception e){
+            e.printStackTrace();
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE, ErrorCode.REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE.getMessage());
         }
     }
