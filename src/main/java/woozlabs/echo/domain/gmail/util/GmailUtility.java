@@ -139,7 +139,7 @@ public class GmailUtility {
     }
 
     public File convertMultipartFileToTempFile(MultipartFile multipartFile) throws IOException {
-        File tempFile = File.createTempFile("echo-", "-" + multipartFile.getOriginalFilename());
+        File tempFile = File.createTempFile("",multipartFile.getOriginalFilename());
         try (FileOutputStream fos = new FileOutputStream(tempFile)) {
             fos.write(multipartFile.getBytes());
         }

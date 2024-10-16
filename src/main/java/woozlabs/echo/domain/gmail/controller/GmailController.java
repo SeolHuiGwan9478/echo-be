@@ -191,7 +191,6 @@ public class GmailController {
             gmailService.sendUserEmailMessage(accessToken, request);
             return new ResponseEntity<>(HttpStatus.CREATED);
         }catch (Exception e){
-            e.printStackTrace();
             throw new CustomErrorException(ErrorCode.REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE, ErrorCode.REQUEST_GMAIL_USER_MESSAGES_SEND_API_ERROR_MESSAGE.getMessage());
         }
     }
